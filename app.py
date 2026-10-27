@@ -143,6 +143,16 @@ def create_app() -> Flask:
         """Gestión y Consulta del Padrón Universitario"""
         return render_template('usuarios.html')
 
+    @app.route('/pasantias')
+    def pasantias():
+        """Catálogo de Pasantías (Vista Admin / Usuario)"""
+        return render_template('index.html')
+
+    @app.route('/perfil')
+    def perfil():
+        """Vista de Perfil de Usuario (Lectura y Edición)"""
+        return render_template('perfil.html')
+
     @app.route('/favicon.ico')
     def favicon():
         """Manejador de favicon para prevenir peticiones 404 innecesarias"""

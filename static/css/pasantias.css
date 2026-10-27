@@ -1,0 +1,1269 @@
+/* ==========================================================================
+   EVENTOS-UNI / PASANTÍAS - NUEVA INTERFAZ FIEL AL PDF
+   Paleta institucional, fuentes Outfit & Inter, componentes responsivos
+   ========================================================================== */
+
+:root {
+  --uni-blue-deep: #0B1B48;
+  --uni-blue-card-top: #173477;
+  --uni-blue-card-bottom: #0C1B44;
+  --uni-blue-pill: #2F4C9C;
+  --uni-blue-border: #99B2D8;
+  --uni-blue-border-light: #D5E0F0;
+  --uni-green-active: #00C853;
+  --uni-amber-btn: #E69500;
+  --uni-red-logout: #E53935;
+  --uni-drawer-bg: #D4DBE5;
+  --uni-drawer-btn: #BFCAD8;
+  --uni-drawer-btn-hover: #AFBAC8;
+  --uni-notification-bg: #1B212D;
+  --uni-text-dark: #0F172A;
+  --uni-text-muted: #64748B;
+  --uni-radius-card: 18px;
+  --uni-radius-pill: 9999px;
+  --uni-radius-btn: 12px;
+}
+
+/* ==========================================================================
+   CONTENEDOR GENERAL
+   ========================================================================== */
+.pasantias-page-wrapper {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 16px 24px 60px 24px;
+  background-color: #FFFFFF;
+  min-height: 100vh;
+  position: relative;
+  transition: filter 0.3s ease;
+}
+
+/* Efecto desenfoque en la vista principal cuando el Drawer está activo (Página 7) */
+body.drawer-opened .pasantias-page-wrapper {
+  filter: blur(8px) brightness(0.92);
+  pointer-events: none;
+  user-select: none;
+}
+
+/* ==========================================================================
+   BARRA SUPERIOR (HEADER)
+   ========================================================================== */
+.pasantias-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0 20px 0;
+}
+
+.topbar-logo-link {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+}
+
+.uni-topbar-logo {
+  height: 48px;
+  width: auto;
+  object-fit: contain;
+}
+
+.topbar-actions-group {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+/* Switch de demostración de Roles: Admin vs Usuario */
+.role-toggle-pill {
+  display: inline-flex;
+  background: #EEF2F7;
+  padding: 4px;
+  border-radius: var(--uni-radius-pill);
+  border: 1px solid var(--uni-blue-border-light);
+  gap: 4px;
+}
+
+.role-toggle-btn {
+  border: none;
+  background: transparent;
+  padding: 6px 14px;
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: #475569;
+  border-radius: var(--uni-radius-pill);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.role-toggle-btn.active {
+  background: var(--uni-blue-deep);
+  color: #FFFFFF;
+  box-shadow: 0 2px 6px rgba(11, 27, 72, 0.25);
+}
+
+/* Avatar de perfil redondo del PDF */
+.topbar-profile-avatar-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #000000;
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+  position: relative;
+}
+
+.topbar-profile-avatar-btn:hover {
+  transform: scale(1.06);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.topbar-profile-avatar-btn i,
+.topbar-profile-avatar-btn svg {
+  width: 26px;
+  height: 26px;
+}
+
+/* ==========================================================================
+   BOTÓN "AGREGAR PASANTIA" (EXCLUSIVO VISTA ADMIN - PÁGINA 3)
+   ========================================================================== */
+.admin-action-container {
+  display: flex;
+  justify-content: center;
+  margin: 10px 0 20px 0;
+  width: 100%;
+}
+
+.btn-agregar-pasantia {
+  width: 100%;
+  background: var(--uni-blue-deep);
+  color: #FFFFFF;
+  font-family: 'Inter', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  padding: 14px 24px;
+  border: none;
+  border-radius: var(--uni-radius-btn);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  box-shadow: 0 4px 14px rgba(11, 27, 72, 0.18);
+  transition: all 0.2s ease;
+}
+
+.btn-agregar-pasantia:hover {
+  background: #122864;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(11, 27, 72, 0.25);
+}
+
+/* Ocultar botón en Vista Usuario */
+.view-usuario-mode .admin-action-container {
+  display: none !important;
+}
+
+/* ==========================================================================
+   BARRA DE BÚSQUEDA Y FILTROS
+   ========================================================================== */
+.pasantias-filter-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.pasantias-search-bar {
+  width: 100%;
+  max-width: 720px;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.pasantias-search-input {
+  width: 100%;
+  padding: 10px 42px 10px 20px;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  color: #1E293B;
+  background-color: #FAFCFE;
+  border: 1px solid #DCE4EE;
+  border-radius: var(--uni-radius-btn);
+  text-align: center;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+.pasantias-search-input::placeholder {
+  color: #94A3B8;
+  font-weight: 400;
+}
+
+.pasantias-search-input:focus {
+  background-color: #FFFFFF;
+  border-color: var(--uni-blue-pill);
+  box-shadow: 0 0 0 3px rgba(47, 76, 156, 0.12);
+  text-align: left;
+}
+
+.pasantias-search-icon {
+  position: absolute;
+  right: 16px;
+  color: #94A3B8;
+  pointer-events: none;
+  width: 18px;
+  height: 18px;
+}
+
+/* Fila de filtros Pill */
+.pasantias-pills-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 14px;
+  width: 100%;
+}
+
+.filter-dropdown-container {
+  position: relative;
+}
+
+.filter-pill-button {
+  background: #FFFFFF;
+  border: 1.5px solid var(--uni-blue-border);
+  color: var(--uni-blue-pill);
+  font-family: 'Inter', sans-serif;
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  padding: 8px 18px;
+  border-radius: var(--uni-radius-pill);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.filter-pill-button:hover {
+  background: #F4F8FD;
+  border-color: var(--uni-blue-pill);
+}
+
+.filter-pill-button i,
+.filter-pill-button svg {
+  width: 14px;
+  height: 14px;
+  transition: transform 0.2s ease;
+}
+
+/* Estado Activo / Seleccionado de filtro (Página 6 para PRESENCIAL) */
+.filter-pill-button.is-active,
+.filter-pill-button.highlight-blue {
+  background: var(--uni-blue-pill) !important;
+  color: #FFFFFF !important;
+  border-color: var(--uni-blue-pill) !important;
+  box-shadow: 0 3px 8px rgba(47, 76, 156, 0.25);
+}
+
+.filter-pill-button.is-active i,
+.filter-pill-button.highlight-blue i {
+  color: #FFFFFF;
+}
+
+/* Menú dropdown flotante para los filtros */
+.filter-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%) translateY(-6px);
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.12);
+  min-width: 180px;
+  padding: 6px;
+  z-index: 50;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.18s ease, transform 0.18s ease, visibility 0.18s ease;
+}
+
+.filter-dropdown-menu.show {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
+}
+
+.filter-dropdown-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #334155;
+  background: none;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.filter-dropdown-item:hover,
+.filter-dropdown-item.selected {
+  background: #EFF6FF;
+  color: var(--uni-blue-pill);
+  font-weight: 600;
+}
+
+/* ==========================================================================
+   INDICADOR DE ESTADO "ACTIVO"
+   ========================================================================== */
+.pasantias-status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.status-dot-green {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background-color: var(--uni-green-active);
+  box-shadow: 0 0 8px rgba(0, 200, 83, 0.5);
+  display: inline-block;
+}
+
+.status-text-label {
+  font-family: 'Inter', sans-serif;
+  font-size: 17px;
+  font-weight: 700;
+  color: #0F172A;
+}
+
+/* ==========================================================================
+   GRID DE PASANTÍAS (3 COLUMNAS - PÁGINAS 3 Y 5)
+   ========================================================================== */
+.pasantias-grid-container {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 22px;
+}
+
+@media (max-width: 960px) {
+  .pasantias-grid-container {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .pasantias-grid-container {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Tarjeta de Pasantía */
+.pasantia-card {
+  border-radius: var(--uni-radius-card);
+  overflow: hidden;
+  box-shadow: 0 6px 16px rgba(11, 27, 72, 0.08);
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  cursor: pointer;
+  position: relative;
+  border: 1px solid transparent;
+}
+
+.pasantia-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 28px rgba(11, 27, 72, 0.16);
+}
+
+.pasantia-card-banner {
+  width: 100%;
+  height: 135px;
+  object-fit: cover;
+  display: block;
+  background-color: #CBD5E1;
+}
+
+.pasantia-card-body {
+  background: linear-gradient(180deg, var(--uni-blue-card-top) 0%, var(--uni-blue-card-bottom) 100%);
+  padding: 16px 20px 22px 20px;
+  color: #FFFFFF;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.pasantia-card-title {
+  font-family: 'Inter', sans-serif;
+  font-size: 17px;
+  font-weight: 700;
+  margin-bottom: 6px;
+  color: #FFFFFF;
+}
+
+.pasantia-card-desc-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: #CAD5E8;
+  margin-bottom: 4px;
+}
+
+.pasantia-card-desc-text {
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.88);
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ==========================================================================
+   TARJETA EXPANDIDA / DETALLE INTERACTIVO (PÁGINA 6 - VISTA USUARIO)
+   ========================================================================== */
+.pasantia-card.is-expanded {
+  grid-column: span 1;
+  box-shadow: 0 16px 36px rgba(11, 27, 72, 0.25);
+  border-color: #38BDF8;
+}
+
+/* Si la pantalla es ancha, permitir que ocupe ancho destacado */
+@media (min-width: 960px) {
+  .pasantia-card.is-expanded {
+    grid-column: 1 / 2;
+  }
+}
+
+.pasantia-card.is-expanded .pasantia-card-body {
+  padding-bottom: 20px;
+}
+
+/* Fila de Badges / Pastillas en la tarjeta expandida */
+.pasantia-badges-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 10px 0 14px 0;
+}
+
+.pasantia-badge {
+  background: #FFFFFF;
+  color: var(--uni-blue-deep);
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 4px 12px;
+  border-radius: var(--uni-radius-pill);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.pasantia-badge.badge-presencial {
+  background: #2563EB;
+  color: #FFFFFF;
+}
+
+/* Fila de Botones: GUARDAR y SOLICITAR */
+.pasantia-actions-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.btn-pasantia-guardar {
+  flex: 1;
+  background: var(--uni-blue-deep);
+  color: #FFFFFF;
+  border: 1.5px solid rgba(255, 255, 255, 0.7);
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  padding: 8px 14px;
+  border-radius: var(--uni-radius-btn);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-pasantia-guardar:hover {
+  background: #14285D;
+  border-color: #FFFFFF;
+}
+
+.btn-pasantia-solicitar {
+  flex: 1;
+  background: var(--uni-green-active);
+  color: #FFFFFF;
+  border: none;
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  padding: 8px 14px;
+  border-radius: var(--uni-radius-btn);
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(0, 200, 83, 0.3);
+  transition: all 0.2s ease;
+}
+
+.btn-pasantia-solicitar:hover {
+  background: #00B34A;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(0, 200, 83, 0.4);
+}
+
+/* ==========================================================================
+   DRAWER LATERAL DE AJUSTES & NOTIFICACIONES (PÁGINA 7 DEL PDF)
+   ========================================================================== */
+.uni-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(15, 23, 42, 0.35);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  z-index: 998;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.uni-backdrop.is-active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.uni-drawer-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 360px;
+  max-width: 90vw;
+  background-color: var(--uni-drawer-bg);
+  z-index: 999;
+  transform: translateX(100%);
+  transition: transform 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: -8px 0 28px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  padding: 20px 22px 24px 22px;
+  overflow-y: auto;
+}
+
+.uni-drawer-panel.is-open {
+  transform: translateX(0);
+}
+
+/* Botón colapsar '>' en la esquina superior izquierda */
+.drawer-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  margin-bottom: 8px;
+}
+
+.btn-drawer-collapse {
+  background: #C4CFDC;
+  border: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #1E293B;
+  transition: background 0.18s ease;
+}
+
+.btn-drawer-collapse:hover {
+  background: #B2BFCE;
+}
+
+.btn-drawer-collapse i,
+.btn-drawer-collapse svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* Perfil dentro del Drawer */
+.drawer-profile-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.drawer-profile-avatar-circle {
+  width: 74px;
+  height: 74px;
+  border-radius: 50%;
+  background: #000000;
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+}
+
+.drawer-profile-avatar-circle i,
+.drawer-profile-avatar-circle svg {
+  width: 44px;
+  height: 44px;
+}
+
+.drawer-user-name {
+  font-family: 'Inter', sans-serif;
+  font-size: 19px;
+  font-weight: 700;
+  color: #0F172A;
+  margin-bottom: 2px;
+}
+
+.drawer-user-cup {
+  font-family: 'Inter', sans-serif;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: #64748B;
+  margin-bottom: 16px;
+}
+
+/* Botón Ajustes con engranaje */
+.btn-drawer-ajustes {
+  width: 100%;
+  background: var(--uni-drawer-btn);
+  border: none;
+  border-radius: var(--uni-radius-btn);
+  padding: 12px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 12px;
+  font-family: 'Inter', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: #0F172A;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.18s ease, transform 0.18s ease;
+}
+
+.btn-drawer-ajustes:hover {
+  background: var(--uni-drawer-btn-hover);
+  transform: translateY(-1px);
+}
+
+.btn-drawer-ajustes i,
+.btn-drawer-ajustes svg {
+  width: 22px;
+  height: 22px;
+}
+
+/* Sección Notificaciones */
+.drawer-notifications-section {
+  display: flex;
+  flex-direction: column;
+  margin-top: 10px;
+  flex: 1;
+}
+
+.notifications-heading {
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  color: #475569;
+  margin-bottom: 10px;
+}
+
+/* Tarjeta Notificación (Oscura con acento rojo) */
+.notification-card-item {
+  background: var(--uni-notification-bg);
+  border-radius: 12px;
+  padding: 12px 14px;
+  display: flex;
+  gap: 12px;
+  position: relative;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  margin-bottom: 12px;
+}
+
+.notif-avatar-col {
+  display: flex;
+  align-items: flex-start;
+}
+
+.notif-avatar-circle {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #334155;
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.notif-avatar-circle i,
+.notif-avatar-circle svg {
+  width: 18px;
+  height: 18px;
+}
+
+.notif-body-col {
+  flex: 1;
+  padding-right: 18px;
+}
+
+.notif-title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #FFFFFF;
+  margin-bottom: 2px;
+}
+
+.notif-text {
+  font-size: 11.5px;
+  color: #94A3B8;
+  margin-bottom: 8px;
+}
+
+.notif-buttons-row {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-notif-aceptar {
+  background: var(--uni-green-active);
+  color: #FFFFFF;
+  border: none;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.btn-notif-aceptar:hover {
+  opacity: 0.9;
+}
+
+.btn-notif-vermas {
+  background: var(--uni-amber-btn);
+  color: #FFFFFF;
+  border: none;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.btn-notif-vermas:hover {
+  opacity: 0.9;
+}
+
+/* Botón cerrar 'X' de la notificación */
+.btn-notif-dismiss {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 28px;
+  background: #EF4444;
+  border: none;
+  border-top-right-radius: 12px;
+  border-bottom-right-radius: 12px;
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.18s ease;
+}
+
+.btn-notif-dismiss:hover {
+  background: #DC2626;
+}
+
+.btn-notif-dismiss i,
+.btn-notif-dismiss svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* Botón Cerrar Sesión en rojo al pie del Drawer */
+.drawer-footer-section {
+  margin-top: 24px;
+}
+
+.btn-drawer-cerrar-sesion {
+  width: 100%;
+  background: var(--uni-red-logout);
+  color: #FFFFFF;
+  border: none;
+  border-radius: var(--uni-radius-btn);
+  padding: 13px 18px;
+  font-family: 'Inter', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(229, 57, 53, 0.3);
+  transition: all 0.2s ease;
+  text-decoration: none;
+}
+
+.btn-drawer-cerrar-sesion:hover {
+  background: #D32F2F;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(229, 57, 53, 0.4);
+}
+
+.btn-drawer-cerrar-sesion i,
+.btn-drawer-cerrar-sesion svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* ==========================================================================
+   MODAL PARA "AGREGAR PASANTIA" (VISTA ADMIN)
+   ========================================================================== */
+.uni-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+  padding: 16px;
+}
+
+.uni-modal-overlay.is-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.uni-modal-content {
+  background: #FFFFFF;
+  width: 100%;
+  max-width: 580px;
+  border-radius: 20px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+  transform: translateY(20px) scale(0.97);
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.uni-modal-overlay.is-visible .uni-modal-content {
+  transform: translateY(0) scale(1);
+}
+
+.uni-modal-header {
+  background: var(--uni-blue-deep);
+  color: #FFFFFF;
+  padding: 18px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.uni-modal-header h3 {
+  font-family: 'Outfit', 'Inter', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.btn-close-modal {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.8);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-close-modal:hover {
+  color: #FFFFFF;
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.uni-modal-body {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-height: 75vh;
+  overflow-y: auto;
+}
+
+.modal-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.modal-form-group label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.modal-form-input,
+.modal-form-select,
+.modal-form-textarea {
+  width: 100%;
+  padding: 10px 14px;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  border: 1.5px solid #CBD5E1;
+  border-radius: 10px;
+  background-color: #F8FAFC;
+  outline: none;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.modal-form-input:focus,
+.modal-form-select:focus,
+.modal-form-textarea:focus {
+  border-color: var(--uni-blue-pill);
+  background-color: #FFFFFF;
+}
+
+.modal-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.uni-modal-footer {
+  padding: 16px 24px;
+  background: #F8FAFC;
+  border-top: 1px solid #E2E8F0;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.btn-modal-cancel {
+  background: #E2E8F0;
+  color: #334155;
+  border: none;
+  font-family: 'Inter', sans-serif;
+  font-size: 13.5px;
+  font-weight: 600;
+  padding: 10px 18px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.btn-modal-cancel:hover {
+  background: #CBD5E1;
+}
+
+.btn-modal-submit {
+  background: var(--uni-blue-deep);
+  color: #FFFFFF;
+  border: none;
+  font-family: 'Inter', sans-serif;
+  font-size: 13.5px;
+  font-weight: 700;
+  padding: 10px 22px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.btn-modal-submit:hover {
+  background: #14285D;
+}
+
+/* ==========================================================================
+   VISTA DE PERFIL DE USUARIO (PÁGINAS 8 Y 9 DEL PDF)
+   Modo Lectura vs Modo Edición
+   ========================================================================== */
+.perfil-page-wrapper {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 24px 20px 80px 20px;
+  background-color: #FFFFFF;
+  min-height: 100vh;
+}
+
+.perfil-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.btn-perfil-regresar {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: none;
+  color: #1E293B;
+  font-family: 'Inter', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: none;
+  transition: transform 0.18s ease;
+}
+
+.btn-perfil-regresar:hover {
+  transform: translateX(-3px);
+}
+
+.btn-perfil-mode-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: none;
+  border-radius: 12px;
+  padding: 10px 22px;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+/* Botón 'EDITAR' en negro (Página 8) */
+.btn-perfil-mode-toggle.mode-editar {
+  background: #111827;
+  color: #FFFFFF;
+}
+
+.btn-perfil-mode-toggle.mode-editar:hover {
+  background: #1F2937;
+  transform: translateY(-1px);
+}
+
+/* Botón 'GUARDAR' en verde esmeralda (Página 9) */
+.btn-perfil-mode-toggle.mode-guardar {
+  background: var(--uni-green-active);
+  color: #FFFFFF;
+  box-shadow: 0 4px 12px rgba(0, 200, 83, 0.3);
+}
+
+.btn-perfil-mode-toggle.mode-guardar:hover {
+  background: #00B34A;
+  transform: translateY(-1px);
+}
+
+/* Contenedor central redondeado en gris suave */
+.perfil-card-container {
+  background: #DCE3EB;
+  border-radius: 28px;
+  padding: 40px 36px 36px 36px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
+}
+
+/* Avatar central grande con botón de lápiz */
+.perfil-avatar-wrapper {
+  position: relative;
+  margin-top: -75px;
+  margin-bottom: 28px;
+}
+
+.perfil-avatar-circle {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  background: #000000;
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 4px solid #FFFFFF;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+}
+
+.perfil-avatar-circle i,
+.perfil-avatar-circle svg {
+  width: 54px;
+  height: 54px;
+}
+
+.btn-perfil-avatar-edit {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #FFFFFF;
+  border: 1.5px solid #CBD5E1;
+  color: #1E293B;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  transition: transform 0.15s ease;
+}
+
+.btn-perfil-avatar-edit:hover {
+  transform: scale(1.1);
+}
+
+/* Formulario de campos */
+.perfil-form-grid {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.perfil-row-2col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+@media (max-width: 640px) {
+  .perfil-row-2col {
+    grid-template-columns: 1fr;
+  }
+}
+
+.perfil-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.perfil-field-group label {
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: #475569;
+}
+
+.perfil-input,
+.perfil-select,
+.perfil-textarea {
+  width: 100%;
+  padding: 11px 16px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  background-color: #CAD5E2;
+  color: #1E293B;
+  font-family: 'Inter', sans-serif;
+  font-size: 14.5px;
+  font-weight: 500;
+  outline: none;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+/* Modo Lectura: campos bloqueados */
+.mode-reading .perfil-input,
+.mode-reading .perfil-select,
+.mode-reading .perfil-textarea {
+  pointer-events: none;
+  user-select: text;
+  color: #334155;
+}
+
+/* Modo Edición: campos interactivos */
+.mode-editing .perfil-input,
+.mode-editing .perfil-select,
+.mode-editing .perfil-textarea {
+  background-color: #FFFFFF;
+  border-color: #94A3B8;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.mode-editing .perfil-input:focus,
+.mode-editing .perfil-select:focus,
+.mode-editing .perfil-textarea:focus {
+  border-color: var(--uni-blue-pill);
+  box-shadow: 0 0 0 3px rgba(47, 76, 156, 0.15);
+}
+
+.perfil-textarea {
+  resize: vertical;
+  min-height: 120px;
+}
+
+/* Botón 'Eliminar Cuenta' en rojo al fondo a la derecha */
+.perfil-footer-actions {
+  width: 100%;
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 24px;
+}
+
+.btn-perfil-eliminar-cuenta {
+  background: var(--uni-red-logout);
+  color: #FFFFFF;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 18px;
+  font-family: 'Inter', sans-serif;
+  font-size: 13.5px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(229, 57, 53, 0.25);
+  transition: all 0.18s ease;
+}
+
+.btn-perfil-eliminar-cuenta:hover {
+  background: #D32F2F;
+  transform: translateY(-1px);
+}
+

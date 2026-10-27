@@ -29,3 +29,11 @@ def rector_view():
 @views_bp.route("/usuarios")
 def usuarios_view():
     return render_template("usuarios.html")
+
+@views_bp.route("/pasantias")
+def pasantias_view():
+    return render_template("index.html")
+
+@views_bp.route("/perfil")
+def perfil_view():
+    return render_template("perfil.html")

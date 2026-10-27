@@ -4,281 +4,318 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Mis Actividades - Plataforma de Eventos UNI (Encargado)</title>
+  <title>Pasantías - Universidad Nacional de Ingeniería (UNI)</title>
+  
+  <!-- Estilos base y variables -->
   <link rel="stylesheet" href="{{ url_for('static', filename='css/variables.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/global.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/layout-components.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/crear-actividad.css') }}">
+  <!-- Nueva hoja de estilos fiel al PDF -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/pasantias.css') }}">
+
   <!-- Google Fonts: Inter & Outfit -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
     href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@500;600;700;800&display=swap"
     rel="stylesheet">
+  
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 
-<body data-page="encargado">
-  <div id="app" class="app-container">
+<body>
+  <!-- Contenedor Principal de la Página de Pasantías -->
+  <div id="pasantias-wrapper" class="pasantias-page-wrapper view-admin-mode">
 
-    <!-- HEADER DE LA PLATAFORMA (VISTA ENCARGADO) -->
-    <header class="main-header">
-      <div class="header-left">
-        <!-- Logo UNI -->
-        <div class="uni-logo-box">
-          <img src="{{ url_for('static', filename='img/uni_logo.png') }}" alt="Logo UNI" class="uni-logo-img">
-        </div>
-        <!-- Sub-navigation links -->
-        <nav class="header-nav-links">
-          <a href="rector.html" class="nav-link-item">ESTADÍSTICAS</a>
-          <a href="usuarios.html" class="nav-link-item">USUARIOS</a>
-          <a href="index.html" class="nav-link-item active">ACTIVIDADES</a>
-        </nav>
-      </div>
+    <!-- ====================================================================
+         HEADER INSTITUCIONAL (PÁGINAS 3, 5, 6 DEL PDF)
+         ==================================================================== -->
+    <header class="pasantias-topbar">
+      <!-- Logotipo Oficial UNI a la izquierda -->
+      <a href="/" class="topbar-logo-link" title="Universidad Nacional de Ingeniería">
+        <img src="{{ url_for('static', filename='img/uni_logo.png') }}" alt="Logo UNI" class="uni-topbar-logo">
+      </a>
 
-      <!-- User Profile trigger -->
-      <div class="header-right" id="user-profile-trigger">
-        <div class="user-info-text">
-          <span class="nup-id">#CUP <strong class="user-name-highlight">Nombre de usuario</strong></span>
-          <span class="user-role-label">Responsable x area</span>
+      <!-- Conmutador de Rol (Admin / Usuario) y Avatar de Usuario a la derecha -->
+      <div class="topbar-actions-group">
+        <!-- Switch visual para alternar y evaluar Vista Admin vs Vista Usuario -->
+        <div class="role-toggle-pill" title="Alternar entre Vista Admin y Vista Usuario">
+          <button type="button" id="role-toggle-admin" class="role-toggle-btn active">Vista Admin</button>
+          <button type="button" id="role-toggle-usuario" class="role-toggle-btn">Vista Usuario</button>
         </div>
-        <div class="user-avatar-circle" title="Abrir menú de usuario">
+
+        <!-- Avatar circular del PDF (Abre el Drawer de Ajustes y Notificaciones - Pág 7) -->
+        <button type="button" id="btn-profile-trigger" class="topbar-profile-avatar-btn" title="Abrir Ajustes y Perfil">
           <i data-lucide="user"></i>
-        </div>
+        </button>
       </div>
     </header>
 
-    <!-- BARRA DE ACCIÓN "CREAR ACTIVIDAD" (REDIRIGE A crear-actividad.html) -->
-    <div id="encargado-action-bar" class="encargado-action-container">
-      <a href="crear-actividad.html" class="btn-create-activity">
-        <span>Crear Actividad</span>
-      </a>
+    <!-- ====================================================================
+         BOTÓN "AGREGAR PASANTIA" (VISTA ADMIN - PÁGINA 3 DEL PDF)
+         ==================================================================== -->
+    <div class="admin-action-container">
+      <button type="button" id="btn-agregar-pasantia" class="btn-agregar-pasantia">
+        <span>AGREGAR PASANTIA</span>
+      </button>
     </div>
 
-    <!-- SECCIÓN DE BÚSQUEDA Y FILTROS -->
-    <section class="filters-section">
-      <!-- Search Input Bar -->
-      <div class="search-bar-container">
-        <input type="text" id="search-input" class="search-input" placeholder="Buscar actividad" autocomplete="off" />
-        <i data-lucide="search" class="search-icon"></i>
+    <!-- ====================================================================
+         BARRA DE BÚSQUEDA Y FILTROS TIPO PASTILLA (PÁGINAS 3, 5, 6 DEL PDF)
+         ==================================================================== -->
+    <section class="pasantias-filter-section">
+      <!-- Input de búsqueda centrado -->
+      <div class="pasantias-search-bar">
+        <input 
+          type="text" 
+          id="pasantias-search-input" 
+          class="pasantias-search-input" 
+          placeholder="Buscar pasantia" 
+          autocomplete="off" 
+        />
+        <i data-lucide="search" class="pasantias-search-icon"></i>
       </div>
 
-      <!-- Filter Buttons Row -->
-      <div class="filter-pills-row">
-        <div class="filter-pill pill-direccion">
-          <select id="filter-direccion" class="filter-select">
-            <option value="">Dirección Académica</option>
-            <option value="ingenieria">Facultad de Ingeniería</option>
-            <option value="arquitectura">Facultad de Arquitectura</option>
-            <option value="ciencias">Facultad de Ciencias</option>
-          </select>
-          <i data-lucide="chevron-down" class="pill-chevron"></i>
+      <!-- Fila de filtros tipo pill (EXPERIENCIA, MODALIDAD, SECTOR, CIUDAD) -->
+      <div class="pasantias-pills-row">
+        <!-- Filtro 1: EXPERIENCIA -->
+        <div class="filter-dropdown-container" data-filter-key="experiencia">
+          <button type="button" class="filter-pill-button" id="btn-filter-experiencia">
+            <span class="pill-text">EXPERIENCIA</span>
+            <i data-lucide="chevron-down"></i>
+          </button>
+          <div class="filter-dropdown-menu">
+            <button type="button" class="filter-dropdown-item" data-value="">Todas</button>
+            <button type="button" class="filter-dropdown-item" data-value="Sin experiencia">Sin experiencia</button>
+            <button type="button" class="filter-dropdown-item" data-value="Prácticas">Prácticas</button>
+            <button type="button" class="filter-dropdown-item" data-value="Junior">Junior</button>
+          </div>
         </div>
 
-        <div class="filter-pill pill-tipo">
-          <select id="filter-tipo" class="filter-select">
-            <option value="">Tipo de evento</option>
-            <option value="feria">Feria Científica</option>
-            <option value="conferencia">Conferencia Magistral</option>
-            <option value="taller">Taller Práctico</option>
-            <option value="simposio">Simposio</option>
-          </select>
-          <i data-lucide="chevron-down" class="pill-chevron"></i>
+        <!-- Filtro 2: MODALIDAD (En la Pág 6 se ilumina en azul sólido como 'PRESENCIAL') -->
+        <div class="filter-dropdown-container" data-filter-key="modalidad">
+          <button type="button" class="filter-pill-button" id="btn-filter-modalidad">
+            <span class="pill-text">MODALIDAD</span>
+            <i data-lucide="chevron-down"></i>
+          </button>
+          <div class="filter-dropdown-menu">
+            <button type="button" class="filter-dropdown-item" data-value="">Todas</button>
+            <button type="button" class="filter-dropdown-item" data-value="Presencial">Presencial</button>
+            <button type="button" class="filter-dropdown-item" data-value="Virtual">Virtual</button>
+            <button type="button" class="filter-dropdown-item" data-value="Híbrida">Híbrida</button>
+          </div>
         </div>
 
-        <div class="filter-pill pill-area">
-          <select id="filter-area" class="filter-select">
-            <option value="">Área</option>
-            <option value="dactic">DACTIC</option>
-            <option value="investigacion">Investigación y Posgrado</option>
-            <option value="extension">Extensión Universitaria</option>
-          </select>
-          <i data-lucide="chevron-down" class="pill-chevron"></i>
+        <!-- Filtro 3: SECTOR -->
+        <div class="filter-dropdown-container" data-filter-key="sector">
+          <button type="button" class="filter-pill-button" id="btn-filter-sector">
+            <span class="pill-text">SECTOR</span>
+            <i data-lucide="chevron-down"></i>
+          </button>
+          <div class="filter-dropdown-menu">
+            <button type="button" class="filter-dropdown-item" data-value="">Todos</button>
+            <button type="button" class="filter-dropdown-item" data-value="Tecnología">Tecnología / TI</button>
+            <button type="button" class="filter-dropdown-item" data-value="Química">Ing. Química</button>
+            <button type="button" class="filter-dropdown-item" data-value="Industrial">Ing. Industrial</button>
+            <button type="button" class="filter-dropdown-item" data-value="Civil">Ing. Civil</button>
+            <button type="button" class="filter-dropdown-item" data-value="Eléctrica">Ing. Eléctrica</button>
+          </div>
         </div>
 
-        <div class="filter-pill pill-recinto">
-          <select id="filter-recinto" class="filter-select">
-            <option value="">Todos los CUR</option>
-            <option value="CUR Pedro Aráuz Palacios (RUPAP)">CUR Pedro Aráuz Palacios (RUPAP)</option>
-            <option value="CUR Simón Bolívar (RUSB)">CUR Simón Bolívar (RUSB)</option>
-            <option value="uni-norte">UNI Sede Norte</option>
-          </select>
-          <i data-lucide="chevron-down" class="pill-chevron"></i>
-        </div>
-
-        <div class="filter-pill pill-fecha">
-          <select id="filter-fecha" class="filter-select">
-            <option value="">Fecha</option>
-            <option value="hoy">Hoy</option>
-            <option value="semana">Esta semana</option>
-            <option value="mes">Este mes</option>
-          </select>
-          <i data-lucide="chevron-down" class="pill-chevron"></i>
-          <input type="date" title="Seleccionar fecha" style="position: absolute; left: 0; top: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; z-index: 10;" onchange="
-            const select = document.getElementById('filter-fecha');
-            select.options[0].text = this.value ? this.value : 'Fecha';
-            select.value = '';
-            select.dispatchEvent(new Event('change'));
-          " />
+        <!-- Filtro 4: CIUDAD -->
+        <div class="filter-dropdown-container" data-filter-key="ciudad">
+          <button type="button" class="filter-pill-button" id="btn-filter-ciudad">
+            <span class="pill-text">CIUDAD</span>
+            <i data-lucide="chevron-down"></i>
+          </button>
+          <div class="filter-dropdown-menu">
+            <button type="button" class="filter-dropdown-item" data-value="">Todas</button>
+            <button type="button" class="filter-dropdown-item" data-value="Managua">Managua</button>
+            <button type="button" class="filter-dropdown-item" data-value="Chinandega">Chinandega</button>
+            <button type="button" class="filter-dropdown-item" data-value="León">León</button>
+            <button type="button" class="filter-dropdown-item" data-value="Estelí">Estelí</button>
+            <button type="button" class="filter-dropdown-item" data-value="Matagalpa">Matagalpa</button>
+          </div>
         </div>
       </div>
     </section>
 
-    <!-- MAIN CONTENT: SOLAMENTE EVENTOS EN VISTA ENCARGADO -->
-    <main class="main-content">
+    <!-- ====================================================================
+         INDICADOR DE ESTADO "ACTIVO" (PÁGINAS 3, 5, 6 DEL PDF)
+         ==================================================================== -->
+    <div class="pasantias-status-indicator">
+      <span class="status-dot-green"></span>
+      <span class="status-text-label">Activo</span>
+    </div>
 
-      <!-- CARROUSELES DE EVENTOS -->
-      <section class="events-carousel-section">
-
-        <!-- CATEGORÍA 1: ACTIVOS -->
-        <div class="carousel-group" data-status="activos">
-          <div class="status-badge-container">
-            <span class="status-badge badge-activos">
-              <span class="status-dot green"></span>
-              <strong>Activos</strong>
-              <span class="status-count" id="count-activos">0</span>
-            </span>
-          </div>
-
-          <div class="carousel-viewport">
-            <button class="carousel-nav nav-prev" onclick="changeCarouselPage('activos', -1)" aria-label="Anterior">
-              <i data-lucide="chevron-left"></i>
-            </button>
-
-            <div class="carousel-track" id="track-activos">
-              <!-- Event Cards populated via JS -->
-            </div>
-
-            <button class="carousel-nav nav-next" onclick="changeCarouselPage('activos', 1)" aria-label="Siguiente">
-              <i data-lucide="chevron-right"></i>
-            </button>
-          </div>
-
-          <!-- Puntos de paginación por cada 3 elementos -->
-          <div class="carousel-dots" id="dots-activos">
-            <!-- Dynamic dots per 3-item section -->
-          </div>
-        </div>
-
-        <hr class="carousel-divider" />
-
-        <!-- CATEGORÃA 2: PROGRAMADOS -->
-        <div class="carousel-group" data-status="programados">
-          <div class="status-badge-container">
-            <span class="status-badge badge-programados">
-              <span class="status-dot yellow"></span>
-              <strong>Programados</strong>
-              <span class="status-count" id="count-programados">0</span>
-            </span>
-          </div>
-
-          <div class="carousel-viewport">
-            <button class="carousel-nav nav-prev" onclick="changeCarouselPage('programados', -1)" aria-label="Anterior">
-              <i data-lucide="chevron-left"></i>
-            </button>
-
-            <div class="carousel-track" id="track-programados">
-              <!-- Event Cards populated via JS -->
-            </div>
-
-            <button class="carousel-nav nav-next" onclick="changeCarouselPage('programados', 1)" aria-label="Siguiente">
-              <i data-lucide="chevron-right"></i>
-            </button>
-          </div>
-
-          <div class="carousel-dots" id="dots-programados">
-            <!-- Dynamic dots per 3-item section -->
-          </div>
-        </div>
-
-        <hr class="carousel-divider" />
-
-        <!-- CATEGORÍA 3: PASADOS -->
-        <div class="carousel-group" data-status="pasados">
-          <div class="status-badge-container">
-            <span class="status-badge badge-pasados">
-              <span class="status-dot red"></span>
-              <strong>Pasados</strong>
-              <span class="status-count" id="count-pasados">0</span>
-            </span>
-          </div>
-
-          <div class="carousel-viewport">
-            <button class="carousel-nav nav-prev" onclick="changeCarouselPage('pasados', -1)" aria-label="Anterior">
-              <i data-lucide="chevron-left"></i>
-            </button>
-
-            <div class="carousel-track" id="track-pasados">
-              <!-- Event Cards populated via JS -->
-            </div>
-
-            <button class="carousel-nav nav-next" onclick="changeCarouselPage('pasados', 1)" aria-label="Siguiente">
-              <i data-lucide="chevron-right"></i>
-            </button>
-          </div>
-
-          <div class="carousel-dots" id="dots-pasados">
-            <!-- Dynamic dots per 3-item section -->
-          </div>
-        </div>
-
-      </section>
-
+    <!-- ====================================================================
+         GRID DE TARJETAS DE PASANTÍAS (3 COLUMNAS)
+         ==================================================================== -->
+    <main id="pasantias-grid" class="pasantias-grid-container">
+      <!-- Se inyecta dinámicamente desde pasantias.js con tarjetas fieles al PDF -->
     </main>
 
-    <!-- RIGHT SLIDE-OVER USER DRAWER -->
-    <div id="drawer-backdrop" class="drawer-backdrop"></div>
-    <aside id="user-drawer" class="user-drawer">
-      <div class="drawer-header">
-        <h3>Perfil de Usuario</h3>
-        <button id="btn-close-drawer" class="btn-close-drawer" aria-label="Cerrar panel">
+  </div>
+
+  <!-- ====================================================================
+       DRAWER LATERAL DE AJUSTES & NOTIFICACIONES (PÁGINA 7 DEL PDF)
+       ==================================================================== -->
+  <div id="uni-drawer-backdrop" class="uni-backdrop"></div>
+  
+  <aside id="uni-drawer-panel" class="uni-drawer-panel" aria-label="Ajustes de Usuario y Notificaciones">
+    <!-- Fila superior: Botón '>' para colapsar hacia la derecha -->
+    <div class="drawer-top-row">
+      <button type="button" id="btn-drawer-collapse" class="btn-drawer-collapse" title="Cerrar panel">
+        <i data-lucide="chevron-right"></i>
+      </button>
+    </div>
+
+    <!-- Sección de Perfil de Usuario -->
+    <div class="drawer-profile-section">
+      <div class="drawer-profile-avatar-circle">
+        <i data-lucide="user"></i>
+      </div>
+      <h3 class="drawer-user-name">Juan Alejandro</h3>
+      <span class="drawer-user-cup">#CUP 8k4B7UP5</span>
+
+      <!-- Botón 'Ajustes' con icono de engranaje -->
+      <a href="/perfil" class="btn-drawer-ajustes" id="btn-drawer-ajustes" title="Ir a Configuración de Perfil">
+        <i data-lucide="settings"></i>
+        <span>Ajustes</span>
+      </a>
+    </div>
+
+    <!-- Sección 'Notificaciones' con tarjeta oscura y acento rojo -->
+    <div class="drawer-notifications-section">
+      <span class="notifications-heading">Notificaciones</span>
+      
+      <div id="drawer-notifications-list">
+        <!-- Notificación fija fiel al mockup de la Página 7 -->
+        <div class="notification-card-item">
+          <div class="notif-avatar-col">
+            <div class="notif-avatar-circle">
+              <i data-lucide="user"></i>
+            </div>
+          </div>
+          <div class="notif-body-col">
+            <h5 class="notif-title">Pasantia #</h5>
+            <p class="notif-text">texto de descripcion....</p>
+            <div class="notif-buttons-row">
+              <button type="button" class="btn-notif-aceptar" onclick="window.pasantiasApp.showToast('Pasantía aceptada correctamente', 'success')">Aceptar</button>
+              <button type="button" class="btn-notif-vermas" onclick="window.pasantiasApp.showToast('Visualizando detalles completos', 'info')">Ver mas</button>
+            </div>
+          </div>
+          <button type="button" class="btn-notif-dismiss" title="Cerrar notificación">
+            <i data-lucide="x"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Botón inferior rojo: Cerrar Sesión -->
+    <div class="drawer-footer-section">
+      <a href="/login" id="btn-drawer-logout" class="btn-drawer-cerrar-sesion">
+        <i data-lucide="power"></i>
+        <span>Cerrar Sesion</span>
+      </a>
+    </div>
+  </aside>
+
+  <!-- ====================================================================
+       MODAL PARA "AGREGAR PASANTIA" (VISTA ADMIN)
+       ==================================================================== -->
+  <div id="modal-agregar-pasantia" class="uni-modal-overlay">
+    <div class="uni-modal-content">
+      <div class="uni-modal-header">
+        <h3>Publicar Nueva Pasantía</h3>
+        <button type="button" id="btn-close-modal" class="btn-close-modal">
           <i data-lucide="x"></i>
         </button>
       </div>
 
-      <div class="drawer-user-profile">
-        <div class="drawer-avatar">
-          <i data-lucide="user"></i>
+      <form id="form-agregar-pasantia">
+        <div class="uni-modal-body">
+          <div class="modal-form-group">
+            <label for="modal-pasantia-titulo">Título de la Pasantía *</label>
+            <input type="text" id="modal-pasantia-titulo" class="modal-form-input" placeholder="Ej: Pasantía en Desarrollo Web" required />
+          </div>
+
+          <div class="modal-form-row">
+            <div class="modal-form-group">
+              <label for="modal-pasantia-tipo">Tipo de Pasantía</label>
+              <select id="modal-pasantia-tipo" class="modal-form-select">
+                <option value="Académica">Académica</option>
+                <option value="Profesional">Profesional</option>
+              </select>
+            </div>
+            <div class="modal-form-group">
+              <label for="modal-pasantia-modalidad">Modalidad</label>
+              <select id="modal-pasantia-modalidad" class="modal-form-select">
+                <option value="Presencial">Presencial</option>
+                <option value="Virtual">Virtual</option>
+                <option value="Híbrida">Híbrida</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="modal-form-row">
+            <div class="modal-form-group">
+              <label for="modal-pasantia-horas">Horas Requeridas</label>
+              <input type="text" id="modal-pasantia-horas" class="modal-form-input" placeholder="Ej: 160H" value="160H" />
+            </div>
+            <div class="modal-form-group">
+              <label for="modal-pasantia-experiencia">Nivel de Experiencia</label>
+              <select id="modal-pasantia-experiencia" class="modal-form-select">
+                <option value="Sin experiencia">Sin experiencia</option>
+                <option value="Prácticas">Prácticas</option>
+                <option value="Junior">Junior</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="modal-form-row">
+            <div class="modal-form-group">
+              <label for="modal-pasantia-sector">Sector / Especialidad</label>
+              <select id="modal-pasantia-sector" class="modal-form-select">
+                <option value="Tecnología">Tecnología / Sistemas</option>
+                <option value="Química">Ingeniería Química</option>
+                <option value="Industrial">Ingeniería Industrial</option>
+                <option value="Civil">Ingeniería Civil</option>
+                <option value="Eléctrica">Ingeniería Eléctrica</option>
+              </select>
+            </div>
+            <div class="modal-form-group">
+              <label for="modal-pasantia-ciudad">Ciudad</label>
+              <select id="modal-pasantia-ciudad" class="modal-form-select">
+                <option value="Managua">Managua</option>
+                <option value="Chinandega">Chinandega</option>
+                <option value="León">León</option>
+                <option value="Estelí">Estelí</option>
+                <option value="Matagalpa">Matagalpa</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="modal-form-group">
+            <label for="modal-pasantia-desc">Descripción Detallada *</label>
+            <textarea id="modal-pasantia-desc" class="modal-form-textarea" rows="3" placeholder="Describe los requisitos y actividades de la pasantía..." required></textarea>
+          </div>
         </div>
-        <div class="drawer-user-details">
-          <h4>Nombre de usuario</h4>
-          <span class="drawer-nup">#CUP 1048293</span>
-          <span class="drawer-area">Responsable x Ã¡rea</span>
-          <span class="drawer-email">usuario.encargado@uni.edu.ni</span>
+
+        <div class="uni-modal-footer">
+          <button type="button" id="btn-cancel-modal" class="btn-modal-cancel">Cancelar</button>
+          <button type="submit" class="btn-modal-submit">Publicar Pasantía</button>
         </div>
-      </div>
-
-      <!-- OPCIONES DE MENU LATERAL -->
-      <div class="drawer-menu">
-        <a href="index.html" class="drawer-menu-item">
-          <i data-lucide="calendar"></i><span>Mis Actividades</span>
-        </a>
-        <a href="javascript:void(0)" class="drawer-menu-item" onclick="handleMenuClick('Configuración')">
-          <i data-lucide="settings"></i>
-          <span>Configuración</span>
-        </a>
-        <div class="menu-divider"></div>
-        <a href="login.html" class="drawer-menu-item item-logout">
-          <i data-lucide="log-out"></i>
-          <span>Cerrar sesión</span>
-        </a>
-      </div>
-
-      <div class="drawer-footer">
-        <p>UNI Sistema de Gestión Universitaria v2.4</p>
-      </div>
-    </aside>
-
-    <!-- TOAST NOTIFICATION CONTAINER -->
-    <div id="toast-container" class="toast-container"></div>
-
+      </form>
+    </div>
   </div>
 
-  <!-- Cargar primero el cliente de API y después la lógica de la app -->
-  <script src="{{ url_for('static', filename='js/api-client.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- Scripts -->
+  <script src="{{ url_for('static', filename='js/pasantias.js') }}"></script>
 </body>
 
 </html>

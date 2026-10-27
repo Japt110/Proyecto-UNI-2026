@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Perfil de Usuario - Universidad Nacional de Ingeniería (UNI)</title>
+
+  <!-- Estilos base y de pasantías -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/variables.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/global.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/pasantias.css') }}">
+
+  <!-- Google Fonts: Inter & Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@500;600;700;800&display=swap"
+    rel="stylesheet">
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+
+<body class="mode-reading">
+  <div class="perfil-page-wrapper">
+
+    <!-- BARRA SUPERIOR CON LOGO UNI Y ACCIONES -->
+    <header class="pasantias-topbar" style="margin-bottom: 12px;">
+      <a href="/" class="topbar-logo-link" title="Universidad Nacional de Ingeniería">
+        <img src="{{ url_for('static', filename='img/uni_logo.png') }}" alt="Logo UNI" class="uni-topbar-logo">
+      </a>
+    </header>
+
+    <!-- TOPBAR ESPECÍFICO DEL PERFIL: REGRESAR Y EDITAR / GUARDAR -->
+    <div class="perfil-topbar">
+      <!-- Botón '< Regresar' (Páginas 8 y 9) -->
+      <a href="/" class="btn-perfil-regresar" title="Regresar al catálogo">
+        <i data-lucide="chevron-left"></i>
+        <span>Regresar</span>
+      </a>
+
+      <!-- Botón 'EDITAR' (Pág 8) o 'GUARDAR' (Pág 9) -->
+      <button type="button" id="btn-perfil-toggle-mode" class="btn-perfil-mode-toggle mode-editar">
+        <i data-lucide="edit-3" id="mode-icon"></i>
+        <span id="mode-text">EDITAR</span>
+      </button>
+    </div>
+
+    <!-- CONTENEDOR CARD GRISÁCEO DEL PERFIL -->
+    <main class="perfil-card-container">
+      
+      <!-- Avatar central grande con botón de lápiz -->
+      <div class="perfil-avatar-wrapper">
+        <div class="perfil-avatar-circle">
+          <i data-lucide="user"></i>
+        </div>
+        <button type="button" class="btn-perfil-avatar-edit" id="btn-avatar-edit" title="Cambiar foto de perfil">
+          <i data-lucide="edit-2"></i>
+        </button>
+      </div>
+
+      <!-- Formulario de campos de estudiante -->
+      <form id="perfil-form" class="perfil-form-grid">
+        
+        <!-- Fila 1: Cédula & Código Único de persona -->
+        <div class="perfil-row-2col">
+          <div class="perfil-field-group">
+            <label for="perfil-cedula">Cedula</label>
+            <input type="text" id="perfil-cedula" class="perfil-input" value="001-158475-5001T" />
+          </div>
+          <div class="perfil-field-group">
+            <label for="perfil-cup">Codigo Unico de persona</label>
+            <input type="text" id="perfil-cup" class="perfil-input" value="8k4B7UP5" readonly />
+          </div>
+        </div>
+
+        <!-- Fila 2: Nombres -->
+        <div class="perfil-field-group">
+          <label for="perfil-nombres">Nombres</label>
+          <input type="text" id="perfil-nombres" class="perfil-input" value="Juan Alejandro" />
+        </div>
+
+        <!-- Fila 3: Apellidos -->
+        <div class="perfil-field-group">
+          <label for="perfil-apellidos">Apellidos</label>
+          <input type="text" id="perfil-apellidos" class="perfil-input" value="Perez Martinez" />
+        </div>
+
+        <!-- Fila 4: Carrera -->
+        <div class="perfil-field-group">
+          <label for="perfil-carrera">Carrera</label>
+          <select id="perfil-carrera" class="perfil-select">
+            <option value="Ing. Quimica" selected>Ing. Quimica</option>
+            <option value="Ing. Sistemas">Ing. Sistemas</option>
+            <option value="Ing. Industrial">Ing. Industrial</option>
+            <option value="Ing. Civil">Ing. Civil</option>
+            <option value="Ing. Electrica">Ing. Electrica</option>
+          </select>
+        </div>
+
+        <!-- Fila 5: Carnet de estudiante -->
+        <div class="perfil-field-group">
+          <label for="perfil-carnet">Carnet de estudiante</label>
+          <input type="text" id="perfil-carnet" class="perfil-input" value="1999 2526T" />
+        </div>
+
+        <!-- Fila 6: Año & Modalidad -->
+        <div class="perfil-row-2col">
+          <div class="perfil-field-group">
+            <label for="perfil-anio">Año</label>
+            <input type="text" id="perfil-anio" class="perfil-input" value="1er año" />
+          </div>
+          <div class="perfil-field-group">
+            <label for="perfil-modalidad">Modalidad</label>
+            <input type="text" id="perfil-modalidad" class="perfil-input" value="Sabatino" />
+          </div>
+        </div>
+
+        <!-- Fila 7: Teléfono & Correo -->
+        <div class="perfil-row-2col">
+          <div class="perfil-field-group">
+            <label for="perfil-telefono">Telefono</label>
+            <input type="text" id="perfil-telefono" class="perfil-input" value="4568 1239" />
+          </div>
+          <div class="perfil-field-group">
+            <label for="perfil-correo">Correo</label>
+            <input type="email" id="perfil-correo" class="perfil-input" value="estudiante@std.uni.edu.ni" />
+          </div>
+        </div>
+
+        <!-- Fila 8: Ciudad & Estado de matrícula -->
+        <div class="perfil-row-2col">
+          <div class="perfil-field-group">
+            <label for="perfil-ciudad">Ciudad</label>
+            <input type="text" id="perfil-ciudad" class="perfil-input" value="Chinandega" />
+          </div>
+          <div class="perfil-field-group">
+            <label for="perfil-estado-matricula">Estado de matricula</label>
+            <select id="perfil-estado-matricula" class="perfil-select">
+              <option value="Matriculado" selected>Matriculado</option>
+              <option value="Pre-matriculado">Pre-matriculado</option>
+              <option value="Inactivo">Inactivo</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Fila 9: Dirección (textarea multilínea) -->
+        <div class="perfil-field-group">
+          <label for="perfil-direccion">Dirección</label>
+          <textarea id="perfil-direccion" class="perfil-textarea" placeholder="Place hoder">De la rotonda Universitaria 2c al lago, Managua.</textarea>
+        </div>
+
+      </form>
+
+      <!-- Botón inferior derecho: 'Eliminar Cuenta' en rojo con icono de power -->
+      <div class="perfil-footer-actions">
+        <button type="button" id="btn-eliminar-cuenta" class="btn-perfil-eliminar-cuenta">
+          <i data-lucide="power"></i>
+          <span>Eliminar Cuenta</span>
+        </button>
+      </div>
+
+    </main>
+
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- Lógica interactiva de cambio de modo Lectura / Edición -->
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      lucide.createIcons();
+
+      const body = document.body;
+      const btnToggle = document.getElementById("btn-perfil-toggle-mode");
+      const modeIcon = document.getElementById("mode-icon");
+      const modeText = document.getElementById("mode-text");
+      const btnEliminar = document.getElementById("btn-eliminar-cuenta");
+      let isEditing = false;
+
+      btnToggle.addEventListener("click", () => {
+        isEditing = !isEditing;
+        if (isEditing) {
+          // Cambiar a Modo Edición (Página 9 del PDF)
+          body.classList.remove("mode-reading");
+          body.classList.add("mode-editing");
+          btnToggle.className = "btn-perfil-mode-toggle mode-guardar";
+          modeText.textContent = "GUARDAR";
+          modeIcon.setAttribute("data-lucide", "save");
+          showToast("Modo de edición activado. Modifica los campos que requieras.", "info");
+        } else {
+          // Guardar y volver a Modo Lectura (Página 8 del PDF)
+          body.classList.remove("mode-editing");
+          body.classList.add("mode-reading");
+          btnToggle.className = "btn-perfil-mode-toggle mode-editar";
+          modeText.textContent = "EDITAR";
+          modeIcon.setAttribute("data-lucide", "edit-3");
+          showToast("Información de perfil guardada exitosamente.", "success");
+        }
+        lucide.createIcons();
+      });
+
+      btnEliminar.addEventListener("click", () => {
+        if (confirm("¿Estás seguro de que deseas solicitar la baja o eliminación de tu cuenta de estudiante?")) {
+          showToast("Solicitud de eliminación de cuenta registrada.", "error");
+        }
+      });
+
+      function showToast(message, type = "info") {
+        let container = document.getElementById("toast-container");
+        if (!container) {
+          container = document.createElement("div");
+          container.id = "toast-container";
+          container.className = "toast-container";
+          document.body.appendChild(container);
+        }
+
+        const toast = document.createElement("div");
+        toast.style.cssText = `
+          background: ${type === 'success' ? '#00C853' : type === 'error' ? '#EF4444' : '#0B1B48'};
+          color: #FFFFFF;
+          padding: 12px 18px;
+          border-radius: 10px;
+          font-size: 13.5px;
+          font-weight: 600;
+          box-shadow: 0 10px 25px rgba(0,0,0,0.25);
+          margin-bottom: 10px;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          animation: fadeInToast 0.25s ease-out;
+          z-index: 10000;
+        `;
+        toast.textContent = message;
+        container.appendChild(toast);
+        setTimeout(() => {
+          toast.style.opacity = "0";
+          toast.style.transition = "all 0.25s ease";
+          setTimeout(() => toast.remove(), 250);
+        }, 3000);
+      }
+    });
+  </script>
+</body>
+
+</html>
