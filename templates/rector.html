@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard Rector - Plataforma de Eventos UNI</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/variables.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/global.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/layout-components.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+  <!-- Google Fonts: Inter & Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@500;600;700;800&display=swap"
+    rel="stylesheet">
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body data-page="rector">
+  <div id="app" class="app-container">
+
+    <!-- HEADER DE LA PLATAFORMA (VISTA RECTOR) -->
+    <header class="main-header">
+      <div class="header-left">
+        <!-- Logo UNI -->
+        <div class="uni-logo-box">
+          <img src="{{ url_for('static', filename='img/uni_logo.png') }}" alt="Logo UNI" class="uni-logo-img">
+        </div>
+        <!-- Nav Links -->
+        <nav class="header-nav-links">
+          <a href="rector.html" class="nav-link-item active">ESTADÍSTICAS</a>
+          <a href="usuarios.html" class="nav-link-item">USUARIOS</a>
+          <a href="index.html" class="nav-link-item">ACTIVIDADES</a>
+        </nav>
+      </div>
+
+      <!-- User Profile trigger -->
+      <div class="header-right" id="user-profile-trigger">
+        <div class="user-info-text">
+          <span class="nup-id">#CUP <strong class="user-name-highlight">Nombre de usuario</strong></span>
+          <span class="user-role-label">Responsable x area</span>
+        </div>
+        <div class="user-avatar-circle" title="Abrir menú de usuario">
+          <i data-lucide="user"></i>
+        </div>
+      </div>
+    </header>
+
+    <!-- MAIN CONTENT: DASHBOARD EXCLUSIVO DE RECTOR -->
+    <main class="main-content">
+
+      <!-- DASHBOARD ESTADÍSTICAS RECTOR -->
+      <section id="dashboard-rector-section" class="dashboard-rector-container">
+
+        <!-- BARRA DE BÚSQUEDA -->
+        <div class="search-bar-container" style="margin-bottom: 16px; margin-top: 20px;">
+          <input type="text" id="rector-search-input" class="search-input" placeholder="Buscar actividad por nombre..."
+            autocomplete="off" />
+          <i data-lucide="search" class="search-icon"></i>
+        </div>
+
+        <!-- BANNER / SELECTOR DE CUR -->
+        <div class="recinto-banner-dropdown-wrap" style="margin-bottom: 12px;">
+          <div class="recinto-banner-dropdown-select">
+            <span class="banner-select-prefix">CUR:</span>
+            <select id="rector-recinto-select" class="rector-select-main">
+              <option value="Todos">Todos los CUR</option>
+              <option value="RUPAP">CUR Pedro Aráuz Palacios (RUPAP)</option>
+              <option value="RUSB">CUR Simón Bolívar (RUSB)</option>
+              <option value="UNI Sede Norte">UNI Sede Norte</option>
+            </select>
+            <i data-lucide="chevron-down" class="banner-select-chevron"></i>
+          </div>
+        </div>
+
+        <!-- FILTROS DE TIEMPO (MES / SEMANA) -->
+        <div class="time-filter-row" style="margin-bottom: 24px;">
+          <div class="time-filter-item">
+            <select id="rector-month-select" class="rector-select-time">
+              <option value="Todos">Mes: Todos</option>
+              <option value="Enero">Enero</option>
+              <option value="Febrero">Febrero</option>
+              <option value="Marzo">Marzo</option>
+              <option value="Abril">Abril</option>
+              <option value="Mayo">Mayo</option>
+              <option value="Junio">Junio</option>
+              <option value="Julio">Julio</option>
+              <option value="Agosto">Agosto</option>
+              <option value="Septiembre">Septiembre</option>
+              <option value="Octubre">Octubre</option>
+              <option value="Noviembre">Noviembre</option>
+              <option value="Diciembre">Diciembre</option>
+            </select>
+            <i data-lucide="chevron-down" class="time-select-chevron"></i>
+          </div>
+          <div class="time-filter-divider"></div>
+          <div class="time-filter-item">
+            <select id="rector-week-select" class="rector-select-time">
+              <option value="Todos">Semana: Todas</option>
+              <option value="Semana 1">Semana 1</option>
+              <option value="Semana 2">Semana 2</option>
+              <option value="Semana 3">Semana 3</option>
+              <option value="Semana 4">Semana 4</option>
+            </select>
+            <i data-lucide="chevron-down" class="time-select-chevron"></i>
+          </div>
+        </div>
+
+        <!-- CARD PRINCIPAL DE ESTADÍSTICAS -->
+        <div class="statistics-card">
+          <div class="statistics-card-header">
+            <h3 class="statistics-title">Estadísticas</h3>
+
+            <!-- ALTERNADOR DE MÉTRICAS VISIBLES -->
+            <div class="metrics-filter-container">
+              <button type="button" id="btn-toggle-metrics-popover" class="btn-metrics-filter">
+                <i data-lucide="sliders-horizontal"></i>
+                <span>Filtrar Métricas</span>
+              </button>
+              <div id="metrics-popover" class="metrics-popover-menu hidden">
+                <div class="popover-header">
+                  <span>Seleccionar gráficos a visualizar</span>
+                </div>
+                <div class="popover-options-list">
+                  <label class="popover-option-item">
+                    <input type="checkbox" class="metric-checkbox" data-metric="formacion" checked />
+                    <span>Nivel de formación</span>
+                  </label>
+                  <label class="popover-option-item">
+                    <input type="checkbox" class="metric-checkbox" data-metric="genero" checked />
+                    <span>Sexo / Género</span>
+                  </label>
+                  <label class="popover-option-item">
+                    <input type="checkbox" class="metric-checkbox" data-metric="area" checked />
+                    <span>Área de conocimiento</span>
+                  </label>
+                  <label class="popover-option-item">
+                    <input type="checkbox" class="metric-checkbox" data-metric="rol" checked />
+                    <span>Rol Institucional</span>
+                  </label>
+                  <label class="popover-option-item">
+                    <input type="checkbox" class="metric-checkbox" data-metric="direccion-academica" checked />
+                    <span>Dirección Académica</span>
+                  </label>
+                  <label class="popover-option-item">
+                    <input type="checkbox" class="metric-checkbox" data-metric="edades" checked />
+                    <span>Edades Presentes</span>
+                  </label>
+                  <label class="popover-option-item">
+                    <input type="checkbox" class="metric-checkbox" data-metric="nacionalidad" checked />
+                    <span>Origen Geográfico</span>
+                  </label>
+                  <label class="popover-option-item">
+                    <input type="checkbox" class="metric-checkbox" data-metric="etnias" checked />
+                    <span>Etnias Presentes</span>
+                  </label>
+                  <label class="popover-option-item">
+                    <input type="checkbox" class="metric-checkbox" data-metric="procedencia" checked />
+                    <span>Procedencia Territorial</span>
+                  </label>
+                  <label class="popover-option-item">
+                    <input type="checkbox" class="metric-checkbox" data-metric="ejes-2026" checked />
+                    <span>Impacto por Ejes 2026</span>
+                  </label>
+                  <label class="popover-option-item">
+                    <input type="checkbox" class="metric-checkbox" data-metric="tipo-persona" checked />
+                    <span>Estudiantes vs Trabajadores</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- BANNER DE MÉTRICA DE EVENTOS (Sólo visible en vista general de recinto) -->
+          <div id="rector-general-events-banner" class="rector-events-banner hidden">
+            <div class="rector-events-metric-card">
+              <div class="metric-card-icon-box">
+                <i data-lucide="calendar-check"></i>
+              </div>
+              <div class="metric-card-content">
+                <span class="metric-card-value" id="rector-event-count">0</span>
+                <span class="metric-card-desc">Eventos totales realizados en este recinto bajo los filtros
+                  seleccionados</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- GRID DE GRÁFICOS DINÁMICO Y ADAPTATIVO -->
+          <div class="rector-charts-grid" id="rector-charts-grid">
+
+            <!-- 1. Nivel de formación profesional -->
+            <div class="rector-chart-card" data-metric-card="formacion">
+              <h4 class="rector-chart-label">Nivel de formación profesional</h4>
+              <div class="rector-chart-canvas-wrap">
+                <canvas id="chart-formacion"></canvas>
+              </div>
+            </div>
+
+            <!-- 2. Sexo / Género -->
+            <div class="rector-chart-card" data-metric-card="genero">
+              <h4 class="rector-chart-label">Sexo / Género</h4>
+              <div class="rector-chart-canvas-wrap">
+                <canvas id="chart-sexo"></canvas>
+              </div>
+            </div>
+
+            <!-- 3. Área del conocimiento -->
+            <div class="rector-chart-card" data-metric-card="area">
+              <h4 class="rector-chart-label">Área del conocimiento asociado a la actividad</h4>
+              <div class="rector-chart-canvas-wrap">
+                <canvas id="chart-area-conocimiento"></canvas>
+              </div>
+            </div>
+
+            <!-- 4. Rol Institucional -->
+            <div class="rector-chart-card" data-metric-card="rol">
+              <h4 class="rector-chart-label">Rol Institucional</h4>
+              <div class="rector-chart-canvas-wrap">
+                <canvas id="chart-rol-institucional"></canvas>
+              </div>
+            </div>
+
+            <!-- 5. Dirección Académica -->
+            <div class="rector-chart-card" data-metric-card="direccion-academica">
+              <h4 class="rector-chart-label">Dirección Académica</h4>
+              <div class="rector-chart-canvas-wrap">
+                <canvas id="chart-direccion-academica"></canvas>
+              </div>
+            </div>
+
+            <!-- 6. Edades Presentes -->
+            <div class="rector-chart-card" data-metric-card="edades">
+              <h4 class="rector-chart-label">Edades Presentes</h4>
+              <div class="rector-chart-canvas-wrap">
+                <canvas id="chart-edades"></canvas>
+              </div>
+            </div>
+
+            <!-- 7. Origen Geográfico -->
+            <div class="rector-chart-card" data-metric-card="nacionalidad">
+              <h4 class="rector-chart-label">Origen Geográfico</h4>
+              <div class="rector-chart-canvas-wrap">
+                <canvas id="chart-nacionalidad"></canvas>
+              </div>
+            </div>
+
+            <!-- 11. Etnias Presentes -->
+            <div class="rector-chart-card" data-metric-card="etnias">
+              <h3 class="stats-chart-label">Eventos por CUR</h3>
+              <div class="rector-chart-canvas-wrap">
+                <canvas id="chart-etnias"></canvas>
+              </div>
+            </div>
+
+            <!-- 12. Procedencia Territorial -->
+            <div class="rector-chart-card" data-metric-card="procedencia">
+              <h4 class="rector-chart-label">Procedencia Territorial</h4>
+              <div class="rector-chart-canvas-wrap">
+                <canvas id="chart-procedencia"></canvas>
+              </div>
+            </div>
+
+            <!-- 13. Impacto por Ejes Estratégicos 2026 -->
+            <div class="rector-chart-card" data-metric-card="ejes-2026">
+              <h4 class="rector-chart-label">Impacto Estrategia Nacional 2026</h4>
+              <div class="rector-chart-canvas-wrap">
+                <canvas id="chart-ejes-2026"></canvas>
+              </div>
+            </div>
+
+            <!-- 14. Composición de Asistentes (Estudiantes vs Trabajadores) -->
+            <div class="rector-chart-card" data-metric-card="tipo-persona">
+              <h4 class="rector-chart-label">Estudiantes vs. Trabajadores</h4>
+              <div class="rector-chart-canvas-wrap">
+                <canvas id="chart-tipo-persona"></canvas>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- RIGHT SLIDE-OVER USER DRAWER -->
+    <div id="drawer-backdrop" class="drawer-backdrop"></div>
+    <aside id="user-drawer" class="user-drawer">
+      <div class="drawer-header">
+        <h3>Perfil de Usuario</h3>
+        <button id="btn-close-drawer" class="btn-close-drawer" aria-label="Cerrar panel">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+
+      <div class="drawer-user-profile">
+        <div class="drawer-avatar">
+          <i data-lucide="user"></i>
+        </div>
+        <div class="drawer-user-details">
+          <h4>Nombre de usuario</h4>
+          <span class="drawer-nup">#CUP 1048293</span>
+          <span class="drawer-area">Rector General</span>
+          <span class="drawer-email">rectoria@uni.edu.ni</span>
+        </div>
+      </div>
+
+      <!-- OPCIONES DE MENU LATERAL -->
+      <div class="drawer-menu">
+        <a href="index.html" class="drawer-menu-item">
+          <i data-lucide="calendar"></i><span>Mis Actividades</span>
+        </a>
+        <a href="javascript:void(0)" class="drawer-menu-item" onclick="handleMenuClick('Configuración')">
+          <i data-lucide="settings"></i>
+          <span>Configuración</span>
+        </a>
+        <div class="menu-divider"></div>
+        <a href="login.html" class="drawer-menu-item item-logout">
+          <i data-lucide="log-out"></i>
+          <span>Cerrar sesión</span>
+        </a>
+      </div>
+
+      <div class="drawer-footer">
+        <p>UNI Sistema de Gestión Universitaria v2.4</p>
+      </div>
+    </aside>
+
+    <!-- TOAST NOTIFICATION CONTAINER -->
+    <div id="toast-container" class="toast-container"></div>
+
+  </div>
+
+  <!-- Cargar primero el cliente de API y después la lógica de la app -->
+  <script src="{{ url_for('static', filename='js/api-client.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+
+</html>

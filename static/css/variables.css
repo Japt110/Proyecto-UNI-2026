@@ -1,0 +1,44 @@
+:root {
+  /* Color Palette matching Screenshots */
+  --color-primary-blue: #2F4C9C;
+  --color-primary-dark: #003087;
+  --color-accent-blue: #3B82F6;
+  --color-accent-blue-hover: #2563EB;
+
+  /* Status Badges */
+  --color-activos-green: #22C55E;
+  --color-programados-yellow: #EAB308;
+  --color-pasados-red: #EF4444;
+
+  /* Donut / Pie Chart Colors */
+  --chart-blue: #4285F4;
+  --chart-purple: #A17CF3;
+  --chart-orange: #F8B179;
+  --chart-yellow: #FFDD67;
+
+  /* Tag Badges */
+  --badge-dactic: #EF4444;
+  --badge-feria: #F59E0B;
+
+  /* Form Page Colors matching screenshot */
+  --form-bg-blue: #003893;
+  --form-green-btn: #00C853;
+  --form-red-btn: #FF1744;
+  --form-input-bg: #F0F2F5;
+
+  /* Neutral Backgrounds */
+  --bg-app: #FFFFFF;
+  --bg-gray-light: #F4F4F6;
+  --bg-gray-card: #EAEAEA;
+  --bg-pill: #FFFFFF;
+  --text-dark: #1F2937;
+  --text-muted: #6B7280;
+
+  /* Borders & Shadows */
+  --radius-card: 24px;
+  --radius-pill: 9999px;
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.05);
+  --shadow-hover: 0 12px 30px -5px rgba(59, 130, 246, 0.35);
+  --font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-heading: 'Outfit', 'Inter', sans-serif;
+}

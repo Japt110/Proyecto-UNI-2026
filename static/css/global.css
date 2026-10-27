@@ -1,0 +1,71 @@
+/* ==========================================================================
+   UNI EVENTS PLATFORM - ESTILOS PRINCIPALES (RECREACIÃ“N FIEL)
+   ========================================================================== */
+
+
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-family);
+  background-color: var(--bg-app);
+  color: var(--text-dark);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  padding-bottom: 60px;
+  overflow-x: hidden;
+}
+
+.app-container {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 20px 24px;
+}
+
+/* ==========================================================================
+   LOGO UNI Y ESTADOS DESHABILITADOS
+   ========================================================================== */
+.uni-logo-img {
+  height: 35px;
+  width: auto;
+  object-fit: contain;
+}
+
+.btn-disabled {
+  opacity: 0.5 !important;
+  cursor: not-allowed !important;
+  pointer-events: none !important;
+}
+
+/* Tooltip Flotante Global Independiente (Garantizado sin Recortes) */
+.custom-floating-tooltip {
+  position: fixed !important;
+  z-index: 999999 !important;
+  width: 230px !important;
+  padding: 9px 13px !important;
+  background: linear-gradient(135deg, #0f172a, #1e293b) !important;
+  color: #f8fafc !important;
+  border: 1.5px solid #38bdf8 !important;
+  border-radius: 8px !important;
+  font-size: 0.78rem !important;
+  font-weight: 500 !important;
+  line-height: 1.4 !important;
+  text-align: center !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7), 0 0 15px rgba(56, 189, 248, 0.3) !important;
+  backdrop-filter: blur(10px) !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  transform: translateY(6px) scale(0.94) !important;
+  transition: opacity 0.18s cubic-bezier(0.16, 1, 0.3, 1), transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.18s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  pointer-events: none !important;
+}
+
+.custom-floating-tooltip.visible {
+  opacity: 1 !important;
+  visibility: visible !important;
+  transform: translateY(0) scale(1) !important;
+}

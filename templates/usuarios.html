@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Usuarios - Plataforma UNI</title>
+  <meta name="description" content="Directorio de usuarios registrados en la plataforma de gestión universitaria UNI.">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/variables.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/global.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/layout-components.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/usuarios.css') }}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@500;600;700;800&display=swap"
+    rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+
+<body data-page="usuarios">
+  <div id="app" class="app-container">
+
+    <!-- HEADER -->
+    <header class="main-header">
+      <div class="header-left">
+        <div class="uni-logo-box">
+          <img src="{{ url_for('static', filename='img/uni_logo.png') }}" alt="Logo UNI" class="uni-logo-img">
+        </div>
+        <!-- Nav Links -->
+        <nav class="header-nav-links">
+          <a href="rector.html" class="nav-link-item">ESTADÍSTICAS</a>
+          <a href="usuarios.html" class="nav-link-item active">USUARIOS</a>
+          <a href="index.html" class="nav-link-item">ACTIVIDADES</a>
+        </nav>
+      </div>
+
+      <!-- User Profile trigger -->
+      <div class="header-right" id="user-profile-trigger">
+        <div class="user-info-text">
+          <span class="nup-id">#CUP <strong class="user-name-highlight">Nombre de usuario</strong></span>
+          <span class="user-role-label">Responsable x area</span>
+        </div>
+        <div class="user-avatar-circle" title="Abrir menú de usuario">
+          <i data-lucide="user"></i>
+        </div>
+      </div>
+    </header>
+
+    <!-- BUSQUEDA Y FILTROS DE USUARIOS -->
+    <section class="filters-section usuarios-filters-section" style="padding: 2%;">
+      <div class="search-bar-container">
+        <input type="text" id="user-search-input" class="search-input" placeholder="Buscar Usuario / #CUP"
+          autocomplete="off" />
+        <i data-lucide="search" class="search-icon"></i>
+      </div>
+
+      <!-- Filter Pills (igual paleta de colores que index.html) -->
+      <div class="filter-pills-row">
+        <div class="filter-pill pill-direccion">
+          <select id="filter-user-direccion" class="filter-select" onchange="filterUsuarios()">
+            <option value="">Direccion Academica</option>
+            <option value="DACTIC">DACTIC</option>
+            <option value="Facultad de Ingeniería">Facultad de Ingeniería</option>
+            <option value="Facultad de Arquitectura">Facultad de Arquitectura</option>
+            <option value="Facultad de Ciencias">Facultad de Ciencias</option>
+          </select>
+          <i data-lucide="chevron-down" class="pill-chevron"></i>
+        </div>
+
+        <div class="filter-pill pill-tipo">
+          <select id="filter-user-tipo" class="filter-select" onchange="filterUsuarios()">
+            <option value="">Tipo de evento</option>
+            <option value="Estudiante">Estudiante</option>
+            <option value="Docente">Docente</option>
+            <option value="Administrativo">Administrativo</option>
+            <option value="Visitante">Visitante</option>
+          </select>
+          <i data-lucide="chevron-down" class="pill-chevron"></i>
+        </div>
+
+        <div class="filter-pill pill-area">
+          <select id="filter-user-area" class="filter-select" onchange="filterUsuarios()">
+            <option value="">Area</option>
+            <option value="DACTIC">DACTIC</option>
+            <option value="Investigación">Investigación y Posgrado</option>
+            <option value="Extensión">Extensión Universitaria</option>
+          </select>
+          <i data-lucide="chevron-down" class="pill-chevron"></i>
+        </div>
+
+        <div class="filter-pill pill-recinto">
+          <select id="filter-user-recinto" class="filter-select" onchange="filterUsuarios()">
+            <option value="">CUR</option>
+            <option value="RUPAP">RUPAP</option>
+            <option value="RUSB">RUSB</option>
+            <option value="UNI Sede Norte">UNI Sede Norte</option>
+          </select>
+          <i data-lucide="chevron-down" class="pill-chevron"></i>
+        </div>
+      </div>
+    </section>
+
+    <!-- DIVISOR GRIS -->
+    <hr class="users-section-divider" />
+
+    <!-- LISTA DE USUARIOS (SCROLLEABLE) -->
+    <main class="main-content">
+      <div class="usuarios-list-container" id="usuarios-list">
+        <!-- Populated by JS -->
+      </div>
+
+      <!-- ESTADO VACÃO (cuando no hay resultados) -->
+      <div class="usuarios-empty-state hidden" id="usuarios-empty">
+        <i data-lucide="users"></i>
+        <p>No se encontraron usuarios con los filtros aplicados.</p>
+      </div>
+    </main>
+
+    <!-- RIGHT SLIDE-OVER USER DRAWER -->
+    <div id="drawer-backdrop" class="drawer-backdrop"></div>
+    <aside id="user-drawer" class="user-drawer">
+      <div class="drawer-header">
+        <h3>Perfil de Usuario</h3>
+        <button id="btn-close-drawer" class="btn-close-drawer" aria-label="Cerrar panel">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+
+      <div class="drawer-user-profile">
+        <div class="drawer-avatar"><i data-lucide="user"></i></div>
+        <div class="drawer-user-details">
+          <h4>Nombre de usuario</h4>
+          <span class="drawer-nup">#CUP 1048293</span>
+          <span class="drawer-area">Responsable x area</span>
+          <span class="drawer-email">usuario@uni.edu.ni</span>
+        </div>
+      </div>
+
+      <div class="drawer-menu">
+        <a href="index.html" class="drawer-menu-item">
+          <i data-lucide="calendar"></i><span>Mis Actividades</span>
+        </a>
+        <a href="javascript:void(0)" class="drawer-menu-item" onclick="handleMenuClick('Configuración')">
+          <i data-lucide="settings"></i>
+          <span>Configuración</span>
+        </a>
+        <div class="menu-divider"></div>
+        <a href="login.html" class="drawer-menu-item item-logout">
+          <i data-lucide="log-out"></i>
+          <span>Cerrar sesión</span>
+        </a>
+      </div>
+
+      <div class="drawer-footer">
+        <p>UNI Sistema de Gestión Universitaria v2.4</p>
+      </div>
+    </aside>
+
+    <div id="toast-container" class="toast-container"></div>
+
+  </div>
+
+  <!-- Cargar primero el cliente de API y después la lógica de la app -->
+  <script src="{{ url_for('static', filename='js/api-client.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+
+</html>

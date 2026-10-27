@@ -1,0 +1,128 @@
+/* ==========================================================================
+   TARJETAS DE USUARIOS
+   ========================================================================== */
+.usuarios-list-container {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  padding: 20px 40px;
+}
+
+.user-card {
+  background-color: #E5E7EB;
+  border-radius: 40px;
+  padding: 12px 24px;
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+  overflow: hidden;
+  max-height: 64px;
+  transition: max-height 0.5s ease-in-out, border-radius 0.4s ease;
+}
+
+.user-card:hover {
+  max-height: 250px;
+  border-radius: 20px;
+}
+
+.user-card-header {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  height: 40px;
+}
+
+.user-card-avatar {
+  background-color: #9CA3AF;
+  color: #fff;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.user-card-name {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  color: #1F2937;
+  font-size: 15px;
+  flex-grow: 1;
+}
+
+.user-card-pills {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-grow: 2;
+}
+
+.user-pill {
+  background-color: #fff;
+  color: #4B5563;
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.btn-editar-usuario {
+  background-color: #fff;
+  color: #1F2937;
+  border: none;
+  padding: 8px 18px;
+  border-radius: 20px;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  flex-shrink: 0;
+}
+
+.btn-editar-usuario:hover {
+  background-color: #F4F4F6;
+}
+
+.user-card-details {
+  padding: 20px 10px 10px 60px;
+  opacity: 0;
+  transition: opacity 0.3s ease 0.1s;
+}
+
+.user-card:hover .user-card-details {
+  opacity: 1;
+}
+
+.user-card-details p {
+  margin: 0 0 8px 0;
+  color: #4B5563;
+  font-size: 14px;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  color: #6B7280;
+  text-align: center;
+}
+
+.empty-state.hidden {
+  display: none !important;
+}
+
+.empty-state i {
+  width: 48px;
+  height: 48px;
+  margin-bottom: 16px;
+  color: #9CA3AF;
+}
+
+.empty-state p {
+  font-size: 16px;
+  font-weight: 500;
+}

@@ -1,0 +1,391 @@
+/* ==========================================================================
+   CREAR ACTIVIDAD - ESTILOS E INTERFACES DE FORMULARIO
+   ========================================================================== */
+
+.encargado-action-container {
+  margin: 24px 0 16px 0;
+}
+
+.btn-create-activity {
+  width: 100%;
+  padding: 16px 24px;
+  background-color: var(--color-primary-dark);
+  color: #FFFFFF;
+  font-family: var(--font-heading);
+  font-size: 24px;
+  font-weight: 700;
+  border: none;
+  border-radius: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  cursor: pointer;
+  text-decoration: none;
+  box-shadow: 0 4px 14px rgba(0, 48, 135, 0.25);
+  transition: all 0.2s ease;
+}
+
+.btn-create-activity:hover {
+  background-color: #002266;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(0, 48, 135, 0.35);
+}
+
+/* --- 1. Botón de Información (i) de Tipo de Actividad --- */
+.label-with-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+/* Insignia Circular del Ícono (i) Informativo con Hover Animado */
+.info-tooltip-badge {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 18px !important;
+  height: 18px !important;
+  margin-left: 6px !important;
+  color: #38bdf8 !important;
+  background: rgba(56, 189, 248, 0.15) !important;
+  border: 1.5px solid rgba(56, 189, 248, 0.6) !important;
+  border-radius: 50% !important;
+  cursor: pointer !important;
+  vertical-align: middle !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  position: relative !important;
+}
+
+.info-tooltip-badge:hover {
+  background: #38bdf8 !important;
+  color: #0f172a !important;
+  border-color: #ffffff !important;
+  box-shadow: 0 0 14px rgba(56, 189, 248, 0.95) !important;
+  transform: scale(1.22) rotate(6deg) !important;
+}
+
+.info-tooltip-badge i,
+.info-tooltip-badge svg {
+  width: 11px !important;
+  height: 11px !important;
+  stroke-width: 2.5 !important;
+  color: inherit !important;
+  pointer-events: none !important;
+  transition: color 0.2s ease !important;
+}
+
+.info-tooltip-badge:hover i,
+.info-tooltip-badge:hover svg {
+  color: #0f172a !important;
+  stroke: #0f172a !important;
+}
+
+/* Tooltip Emergente Flotante Elegante, Menos Ancho y con Leve Animación */
+.info-tooltip-badge::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%) translateY(6px) scale(0.95);
+  background: linear-gradient(135deg, #0f172a, #1e293b);
+  color: #f8fafc;
+  border: 1.5px solid #38bdf8;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 0.78rem;
+  font-weight: 500;
+  line-height: 1.35;
+  white-space: normal;
+  width: 220px;
+  text-align: center;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6), 0 0 15px rgba(56, 189, 248, 0.25);
+  backdrop-filter: blur(8px);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  pointer-events: none;
+  z-index: 99999;
+}
+
+.info-tooltip-badge:hover::after {
+  opacity: 1 !important;
+  visibility: visible !important;
+  transform: translateX(-50%) translateY(0) scale(1) !important;
+}
+
+/* --- 2. Aviso de Fecha Única --- */
+.date-single-notice {
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  border-radius: 8px;
+  color: #fef08a;
+  font-size: 12px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.date-single-notice svg {
+  width: 15px;
+  height: 15px;
+  color: #fbbf24;
+  flex-shrink: 0;
+}
+
+/* --- 3. Horarios Siempre Visibles --- */
+.time-label-prefix {
+  color: #cbd5e1;
+  font-size: 13px;
+  font-weight: 500;
+  margin-right: 4px;
+}
+
+/* --- 4. Sistema de Etiquetas de Lineamientos Estratégicos --- */
+.lineamientos-section-box {
+  margin-top: 20px;
+  padding: 18px;
+  background: rgba(15, 23, 42, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 14px;
+}
+
+.lineamientos-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.lineamientos-badge-count {
+  background: #1e3a8a;
+  color: #93c5fd;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(147, 197, 253, 0.3);
+}
+
+.lineamientos-hint {
+  color: #94a3b8;
+  font-size: 12px;
+  margin: 6px 0 12px 0;
+}
+
+.lineamientos-editor-split-row {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+  margin-top: 12px;
+}
+
+.lineamientos-editor-split-row .left-col {
+  flex: 1.1;
+  min-width: 0;
+}
+
+.lineamientos-editor-split-row .right-col {
+  flex: 0.9;
+  min-width: 0;
+  position: sticky;
+  top: 20px;
+}
+
+@media (max-width: 900px) {
+  .lineamientos-editor-split-row {
+    flex-direction: column;
+  }
+  .lineamientos-editor-split-row .left-col,
+  .lineamientos-editor-split-row .right-col {
+    width: 100%;
+  }
+}
+
+.lineamientos-eje-group {
+  margin-bottom: 16px;
+}
+
+.lineamientos-eje-title {
+  color: #38bdf8;
+  font-size: 0.85rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  text-shadow: 0 0 10px rgba(56, 189, 248, 0.3);
+}
+
+.lineamientos-tags-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.lineamiento-chip {
+  padding: 10px 14px;
+  background: rgba(30, 41, 59, 0.85);
+  color: #f8fafc;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  user-select: none;
+  width: 100%;
+}
+
+.lineamiento-chip span {
+  color: #f8fafc;
+}
+
+.lineamiento-chip:hover {
+  background: rgba(51, 65, 85, 0.95);
+  border-color: #38bdf8;
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.lineamiento-chip.selected {
+  background: linear-gradient(135deg, #0284c7, #0369a1);
+  color: #ffffff;
+  border-color: #38bdf8;
+  box-shadow: 0 3px 12px rgba(56, 189, 248, 0.4);
+  font-weight: 600;
+}
+
+.lineamiento-chip.selected span {
+  color: #ffffff;
+}
+
+.lineamiento-chip .chip-check-icon {
+  width: 16px;
+  height: 16px;
+  color: #94a3b8;
+  opacity: 0.5;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+}
+
+.lineamiento-chip.selected .chip-check-icon {
+  opacity: 1;
+  color: #ffffff;
+}
+
+.lineamientos-justificaciones-box {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.justificacion-card {
+  padding: 10px 14px;
+  background: rgba(30, 41, 59, 0.6);
+  border-left: 3px solid #3b82f6;
+  border-radius: 8px;
+  animation: fadeIn 0.2s ease;
+}
+
+.justificacion-card label {
+  display: block;
+  color: #93c5fd;
+  font-size: 11px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.lineamiento-justificacion-input {
+  width: 100%;
+  padding: 8px 12px;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  color: #FFFFFF;
+  font-size: 12px;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.lineamiento-justificacion-input:focus {
+  border-color: #60a5fa;
+  box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.2);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Inline descriptions for fields */
+.field-desc-inline {
+  font-size: 11.5px;
+  color: rgba(255, 255, 255, 0.65);
+  font-weight: 400;
+  margin-left: 6px;
+  display: inline;
+}
+
+/* Strategic Axes Pills Multi-Select Container */
+.ejes-pills-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+  min-height: 48px;
+  padding: 10px;
+  border-radius: 12px;
+  background-color: rgba(255, 255, 255, 0.03);
+  border: 1px dashed rgba(255, 255, 255, 0.2);
+  align-items: center;
+}
+
+.eje-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  background-color: var(--color-accent-blue);
+  color: #FFFFFF;
+  font-size: 12.5px;
+  font-weight: 600;
+  border-radius: 20px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.btn-remove-pill {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 16px;
+  font-weight: 800;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s ease;
+}
+
+.btn-remove-pill:hover {
+  color: #FF8F8F;
+}
+
+.date-ejes-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
+  align-items: start;
+}

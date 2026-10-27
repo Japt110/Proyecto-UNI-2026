@@ -1,0 +1,25 @@
+# ===============================================================================
+# EVENTOS-UNI - DEPENDENCIAS DE PRODUCCIÓN Y DESARROLLO
+# ===============================================================================
+
+# Framework Web Backend
+Flask==3.0.3
+Flask-Caching==2.3.0
+
+# Base de Datos y ORM (SQLite local + PostgreSQL Supabase / Render)
+Flask-SQLAlchemy==3.1.1
+SQLAlchemy==2.0.31
+psycopg2-binary>=2.9.10
+
+# Seguridad, Criptografía y Hardening OWASP
+Werkzeug==3.0.3
+cryptography==42.0.8
+
+# Variables de Entorno
+python-dotenv==1.0.1
+
+# Sesiones Distribuidas y Caché Clúster
+redis>=5.0.0
+
+# Servidor de Producción WSGI (Render / Docker)
+gunicorn>=22.0.0

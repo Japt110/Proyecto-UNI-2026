@@ -1,0 +1,151 @@
+# ===============================================================================
+# EVENTOS-UNI - ORQUESTACIÓN CLÚSTER DISTRIBUIDO (DOCKER COMPOSE)
+# Simulación integral de la arquitectura de 4 capas:
+# Capa 2: Nginx API Gateway + WAF
+# Capa 3: Clúster de Aplicación Stateless (App Server 1 y 2 + Redis)
+# Capa 4: Clúster de Persistencia PostgreSQL (Primario + Réplica)
+services:
+  # -----------------------------------------------------------------------------
+  # 1. Capa 2: API Gateway & Load Balancer (Nginx)
+  # -----------------------------------------------------------------------------
+  nginx:
+    image: nginx:alpine
+    container_name: eventos-uni-gateway
+    restart: unless-stopped
+    ports:
+      - "${GATEWAY_PORT:-8088}:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./static:/app/static:ro
+      - uploads-data:/app/static/uploads:ro
+    depends_on:
+      - app-1
+      - app-2
+    networks:
+      - perimetro-net
+      - backend-net
+
+  # -----------------------------------------------------------------------------
+  # 2. Capa 3: Nodo de Aplicación Backend 1
+  # -----------------------------------------------------------------------------
+  app-1:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: eventos-uni-app-1
+    restart: unless-stopped
+    environment:
+      - FLASK_ENV=production
+      - PORT=5000
+      - SECRET_KEY=eventos-uni-secret-key-permanente-2026-production-v1
+      - DATABASE_URL=postgresql://postgres:postgres@db-primary:5432/eventos_uni
+      - DATABASE_READ_URL=postgresql://postgres:postgres@db-replica:5432/eventos_uni
+      - REDIS_URL=redis://redis:6379/0
+      - DB_POOL_SIZE=5
+      - DB_MAX_OVERFLOW=10
+    volumes:
+      - uploads-data:/app/static/uploads
+    depends_on:
+      - db-primary
+      - redis
+    networks:
+      - backend-net
+      - db-net
+
+  # -----------------------------------------------------------------------------
+  # 3. Capa 3: Nodo de Aplicación Backend 2
+  # -----------------------------------------------------------------------------
+  app-2:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: eventos-uni-app-2
+    restart: unless-stopped
+    environment:
+      - FLASK_ENV=production
+      - PORT=5000
+      - SECRET_KEY=eventos-uni-secret-key-permanente-2026-production-v1
+      - DATABASE_URL=postgresql://postgres:postgres@db-primary:5432/eventos_uni
+      - DATABASE_READ_URL=postgresql://postgres:postgres@db-replica:5432/eventos_uni
+      - REDIS_URL=redis://redis:6379/0
+      - DB_POOL_SIZE=5
+      - DB_MAX_OVERFLOW=10
+    volumes:
+      - uploads-data:/app/static/uploads
+    depends_on:
+      - db-primary
+      - redis
+    networks:
+      - backend-net
+      - db-net
+
+  # -----------------------------------------------------------------------------
+  # 4. Capa 3: Redis para Sesiones de Usuario y Caché Distribuido
+  # -----------------------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: eventos-uni-redis
+    restart: unless-stopped
+    command: redis-server --save 60 1 --loglevel warning
+    volumes:
+      - redis-data:/data
+    networks:
+      - backend-net
+
+  # -----------------------------------------------------------------------------
+  # 5. Capa 4: PostgreSQL 16 Primario (Write Master / ACID)
+  # -----------------------------------------------------------------------------
+  db-primary:
+    image: postgres:16-alpine
+    container_name: eventos-uni-db-primary
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: eventos_uni
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg-primary-data:/var/lib/postgresql/data
+      - ./scripts/schema_postgresql.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
+    networks:
+      - db-net
+
+  # -----------------------------------------------------------------------------
+  # 6. Capa 4: PostgreSQL 16 Réplica (Read Replica para Lecturas Masivas)
+  # -----------------------------------------------------------------------------
+  db-replica:
+    image: postgres:16-alpine
+    container_name: eventos-uni-db-replica
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: eventos_uni
+    ports:
+      - "5433:5432"
+    volumes:
+      - pg-replica-data:/var/lib/postgresql/data
+      - ./scripts/schema_postgresql.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
+    networks:
+      - db-net
+
+# -------------------------------------------------------------------------------
+# Redes Aisladas por Capa (Arquitectura de Defensa en Profundidad)
+# -------------------------------------------------------------------------------
+networks:
+  perimetro-net:
+    driver: bridge
+  backend-net:
+    driver: bridge
+  db-net:
+    driver: bridge
+
+# -------------------------------------------------------------------------------
+# Volúmenes Persistentes
+# -------------------------------------------------------------------------------
+volumes:
+  pg-primary-data:
+  pg-replica-data:
+  redis-data:
+  uploads-data:

@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mis Actividades - Plataforma de Eventos UNI (Encargado)</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/variables.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/global.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/layout-components.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/crear-actividad.css') }}">
+  <!-- Google Fonts: Inter & Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@500;600;700;800&display=swap"
+    rel="stylesheet">
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+
+<body data-page="encargado">
+  <div id="app" class="app-container">
+
+    <!-- HEADER DE LA PLATAFORMA (VISTA ENCARGADO) -->
+    <header class="main-header">
+      <div class="header-left">
+        <!-- Logo UNI -->
+        <div class="uni-logo-box">
+          <img src="{{ url_for('static', filename='img/uni_logo.png') }}" alt="Logo UNI" class="uni-logo-img">
+        </div>
+        <!-- Sub-navigation links -->
+        <nav class="header-nav-links">
+          <a href="rector.html" class="nav-link-item">ESTADÍSTICAS</a>
+          <a href="usuarios.html" class="nav-link-item">USUARIOS</a>
+          <a href="index.html" class="nav-link-item active">ACTIVIDADES</a>
+        </nav>
+      </div>
+
+      <!-- User Profile trigger -->
+      <div class="header-right" id="user-profile-trigger">
+        <div class="user-info-text">
+          <span class="nup-id">#CUP <strong class="user-name-highlight">Nombre de usuario</strong></span>
+          <span class="user-role-label">Responsable x area</span>
+        </div>
+        <div class="user-avatar-circle" title="Abrir menú de usuario">
+          <i data-lucide="user"></i>
+        </div>
+      </div>
+    </header>
+
+    <!-- BARRA DE ACCIÓN "CREAR ACTIVIDAD" (REDIRIGE A crear-actividad.html) -->
+    <div id="encargado-action-bar" class="encargado-action-container">
+      <a href="crear-actividad.html" class="btn-create-activity">
+        <span>Crear Actividad</span>
+      </a>
+    </div>
+
+    <!-- SECCIÓN DE BÚSQUEDA Y FILTROS -->
+    <section class="filters-section">
+      <!-- Search Input Bar -->
+      <div class="search-bar-container">
+        <input type="text" id="search-input" class="search-input" placeholder="Buscar actividad" autocomplete="off" />
+        <i data-lucide="search" class="search-icon"></i>
+      </div>
+
+      <!-- Filter Buttons Row -->
+      <div class="filter-pills-row">
+        <div class="filter-pill pill-direccion">
+          <select id="filter-direccion" class="filter-select">
+            <option value="">Dirección Académica</option>
+            <option value="ingenieria">Facultad de Ingeniería</option>
+            <option value="arquitectura">Facultad de Arquitectura</option>
+            <option value="ciencias">Facultad de Ciencias</option>
+          </select>
+          <i data-lucide="chevron-down" class="pill-chevron"></i>
+        </div>
+
+        <div class="filter-pill pill-tipo">
+          <select id="filter-tipo" class="filter-select">
+            <option value="">Tipo de evento</option>
+            <option value="feria">Feria Científica</option>
+            <option value="conferencia">Conferencia Magistral</option>
+            <option value="taller">Taller Práctico</option>
+            <option value="simposio">Simposio</option>
+          </select>
+          <i data-lucide="chevron-down" class="pill-chevron"></i>
+        </div>
+
+        <div class="filter-pill pill-area">
+          <select id="filter-area" class="filter-select">
+            <option value="">Área</option>
+            <option value="dactic">DACTIC</option>
+            <option value="investigacion">Investigación y Posgrado</option>
+            <option value="extension">Extensión Universitaria</option>
+          </select>
+          <i data-lucide="chevron-down" class="pill-chevron"></i>
+        </div>
+
+        <div class="filter-pill pill-recinto">
+          <select id="filter-recinto" class="filter-select">
+            <option value="">Todos los CUR</option>
+            <option value="CUR Pedro Aráuz Palacios (RUPAP)">CUR Pedro Aráuz Palacios (RUPAP)</option>
+            <option value="CUR Simón Bolívar (RUSB)">CUR Simón Bolívar (RUSB)</option>
+            <option value="uni-norte">UNI Sede Norte</option>
+          </select>
+          <i data-lucide="chevron-down" class="pill-chevron"></i>
+        </div>
+
+        <div class="filter-pill pill-fecha">
+          <select id="filter-fecha" class="filter-select">
+            <option value="">Fecha</option>
+            <option value="hoy">Hoy</option>
+            <option value="semana">Esta semana</option>
+            <option value="mes">Este mes</option>
+          </select>
+          <i data-lucide="chevron-down" class="pill-chevron"></i>
+          <input type="date" title="Seleccionar fecha" style="position: absolute; left: 0; top: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; z-index: 10;" onchange="
+            const select = document.getElementById('filter-fecha');
+            select.options[0].text = this.value ? this.value : 'Fecha';
+            select.value = '';
+            select.dispatchEvent(new Event('change'));
+          " />
+        </div>
+      </div>
+    </section>
+
+    <!-- MAIN CONTENT: SOLAMENTE EVENTOS EN VISTA ENCARGADO -->
+    <main class="main-content">
+
+      <!-- CARROUSELES DE EVENTOS -->
+      <section class="events-carousel-section">
+
+        <!-- CATEGORÍA 1: ACTIVOS -->
+        <div class="carousel-group" data-status="activos">
+          <div class="status-badge-container">
+            <span class="status-badge badge-activos">
+              <span class="status-dot green"></span>
+              <strong>Activos</strong>
+              <span class="status-count" id="count-activos">0</span>
+            </span>
+          </div>
+
+          <div class="carousel-viewport">
+            <button class="carousel-nav nav-prev" onclick="changeCarouselPage('activos', -1)" aria-label="Anterior">
+              <i data-lucide="chevron-left"></i>
+            </button>
+
+            <div class="carousel-track" id="track-activos">
+              <!-- Event Cards populated via JS -->
+            </div>
+
+            <button class="carousel-nav nav-next" onclick="changeCarouselPage('activos', 1)" aria-label="Siguiente">
+              <i data-lucide="chevron-right"></i>
+            </button>
+          </div>
+
+          <!-- Puntos de paginación por cada 3 elementos -->
+          <div class="carousel-dots" id="dots-activos">
+            <!-- Dynamic dots per 3-item section -->
+          </div>
+        </div>
+
+        <hr class="carousel-divider" />
+
+        <!-- CATEGORÃA 2: PROGRAMADOS -->
+        <div class="carousel-group" data-status="programados">
+          <div class="status-badge-container">
+            <span class="status-badge badge-programados">
+              <span class="status-dot yellow"></span>
+              <strong>Programados</strong>
+              <span class="status-count" id="count-programados">0</span>
+            </span>
+          </div>
+
+          <div class="carousel-viewport">
+            <button class="carousel-nav nav-prev" onclick="changeCarouselPage('programados', -1)" aria-label="Anterior">
+              <i data-lucide="chevron-left"></i>
+            </button>
+
+            <div class="carousel-track" id="track-programados">
+              <!-- Event Cards populated via JS -->
+            </div>
+
+            <button class="carousel-nav nav-next" onclick="changeCarouselPage('programados', 1)" aria-label="Siguiente">
+              <i data-lucide="chevron-right"></i>
+            </button>
+          </div>
+
+          <div class="carousel-dots" id="dots-programados">
+            <!-- Dynamic dots per 3-item section -->
+          </div>
+        </div>
+
+        <hr class="carousel-divider" />
+
+        <!-- CATEGORÍA 3: PASADOS -->
+        <div class="carousel-group" data-status="pasados">
+          <div class="status-badge-container">
+            <span class="status-badge badge-pasados">
+              <span class="status-dot red"></span>
+              <strong>Pasados</strong>
+              <span class="status-count" id="count-pasados">0</span>
+            </span>
+          </div>
+
+          <div class="carousel-viewport">
+            <button class="carousel-nav nav-prev" onclick="changeCarouselPage('pasados', -1)" aria-label="Anterior">
+              <i data-lucide="chevron-left"></i>
+            </button>
+
+            <div class="carousel-track" id="track-pasados">
+              <!-- Event Cards populated via JS -->
+            </div>
+
+            <button class="carousel-nav nav-next" onclick="changeCarouselPage('pasados', 1)" aria-label="Siguiente">
+              <i data-lucide="chevron-right"></i>
+            </button>
+          </div>
+
+          <div class="carousel-dots" id="dots-pasados">
+            <!-- Dynamic dots per 3-item section -->
+          </div>
+        </div>
+
+      </section>
+
+    </main>
+
+    <!-- RIGHT SLIDE-OVER USER DRAWER -->
+    <div id="drawer-backdrop" class="drawer-backdrop"></div>
+    <aside id="user-drawer" class="user-drawer">
+      <div class="drawer-header">
+        <h3>Perfil de Usuario</h3>
+        <button id="btn-close-drawer" class="btn-close-drawer" aria-label="Cerrar panel">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+
+      <div class="drawer-user-profile">
+        <div class="drawer-avatar">
+          <i data-lucide="user"></i>
+        </div>
+        <div class="drawer-user-details">
+          <h4>Nombre de usuario</h4>
+          <span class="drawer-nup">#CUP 1048293</span>
+          <span class="drawer-area">Responsable x Ã¡rea</span>
+          <span class="drawer-email">usuario.encargado@uni.edu.ni</span>
+        </div>
+      </div>
+
+      <!-- OPCIONES DE MENU LATERAL -->
+      <div class="drawer-menu">
+        <a href="index.html" class="drawer-menu-item">
+          <i data-lucide="calendar"></i><span>Mis Actividades</span>
+        </a>
+        <a href="javascript:void(0)" class="drawer-menu-item" onclick="handleMenuClick('Configuración')">
+          <i data-lucide="settings"></i>
+          <span>Configuración</span>
+        </a>
+        <div class="menu-divider"></div>
+        <a href="login.html" class="drawer-menu-item item-logout">
+          <i data-lucide="log-out"></i>
+          <span>Cerrar sesión</span>
+        </a>
+      </div>
+
+      <div class="drawer-footer">
+        <p>UNI Sistema de Gestión Universitaria v2.4</p>
+      </div>
+    </aside>
+
+    <!-- TOAST NOTIFICATION CONTAINER -->
+    <div id="toast-container" class="toast-container"></div>
+
+  </div>
+
+  <!-- Cargar primero el cliente de API y después la lógica de la app -->
+  <script src="{{ url_for('static', filename='js/api-client.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+
+</html>

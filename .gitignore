@@ -1,0 +1,38 @@
+# Entornos virtuales y Python
+venv/
+env/
+ENV/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Base de datos local (SQLite / Instancias locales)
+*.db
+*.sqlite
+*.sqlite3
+instance/
+app_local.db
+
+# Configuración sensible y claves de entorno
+.env
+.env.local
+.env.*.local
+
+# Archivos de depuración y logs de servidor
+*.log
+*.tmp
+
+# Configuraciones de IDE y editores
+.vscode/
+.idea/
+.DS_Store
+
+# Carpeta de carga de imágenes (debug)
+static/uploads/
+
+# Carpeta de documentación
+files/
+
+# Carpeta de scripts de base de datos
+scripts/

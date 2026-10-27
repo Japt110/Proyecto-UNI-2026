@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Asistencia - Plataforma UNI</title>
+  <meta name="description" content="Módulo de asistencia de la Plataforma UNI">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/variables.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/global.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/layout-components.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/asistencia.css') }}">
+  <!-- Google Fonts: Inter & Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@500;600;700;800&display=swap"
+    rel="stylesheet">
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+
+<body data-page="asistencia">
+  <div class="app-container">
+
+    <!-- HEADER DE LA PLATAFORMA -->
+    <header class="main-header">
+      <div class="header-left">
+        <div class="uni-logo-box">
+          <img src="{{ url_for('static', filename='img/uni_logo.png') }}" alt="Logo UNI" class="uni-logo-img">
+        </div>
+        <nav class="header-nav-links">
+          <a href="rector.html" class="nav-link-item">ESTADÍSTICAS</a>
+          <a href="usuarios.html" class="nav-link-item">USUARIOS</a>
+          <a href="index.html" class="nav-link-item">ACTIVIDADES</a>
+        </nav>
+      </div>
+      <div class="header-right" id="user-profile-trigger">
+        <div class="user-info-text">
+          <span class="nup-id">#CUP <strong class="user-name-highlight">Nombre de usuario</strong></span>
+          <span class="user-role-label">Responsable x área</span>
+        </div>
+        <div class="user-avatar-circle" title="Abrir menú de usuario">
+          <i data-lucide="user"></i>
+        </div>
+      </div>
+    </header>
+
+    <!-- PORTADA HERO -->
+    <div class="asistencia-hero">
+      <img src="https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=1200&q=80"
+        alt="Proyectos Científicos" class="asistencia-hero-bg">
+      <div class="asistencia-hero-overlay">
+        <h1 class="asistencia-hero-title">Proyectos<br>Científicos</h1>
+      </div>
+    </div>
+
+    <!-- BARRA AZUL REGRESAR -->
+    <div class="asistencia-blue-bar">
+      <a href="javascript:history.back()" class="btn-regresar">
+        <i data-lucide="chevron-left"></i>
+        Regresar
+      </a>
+    </div>
+
+    <!-- BARRA OSCURA DE ASISTENCIA -->
+    <div class="asistencia-dark-bar">
+      <div class="asistencia-dark-info">
+        <h2 id="asistencia-dark-title">ASISTENCIA</h2>
+        <span id="badge-asistencia-status" class="badge-status badge-abierta">● Asistencia Abierta</span>
+      </div>
+      <div class="asistencia-switch-container">
+        <button id="btn-toggle-asistencia" class="btn-asistencia-switch btn-cerrar-asistencia">
+          <i data-lucide="lock"></i>
+          <span id="txt-toggle-asistencia">Cerrar asistencias</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- CUERPO AZUL -->
+    <div class="asistencia-blue-body">
+
+      <!-- BARRA DE ESCÁNER Y BÚSQUEDA INTEGRADA CON FILTROS (3nStar Sc050) -->
+      <div id="escaner-bar-container" class="escaner-bar-container">
+        <div class="escaner-input-wrapper">
+          <i data-lucide="barcode" class="escaner-icon" title="Escáner 3nStar Sc050"></i>
+          <input type="text" id="escaner-input" placeholder="Escanee cédula/carné (ej: 2011002051002S, 20220326U) o busque por Nombre/CUP/Cédula..." autocomplete="off">
+          
+          <select id="filter-carrera-select" class="escaner-filter-select" title="Filtrar por Carrera">
+            <option value="">Todas las carreras</option>
+            <option value="Ingeniería Mecánica">Ing. Mecánica</option>
+            <option value="Ingeniería de Sistemas">Ing. Sistemas</option>
+            <option value="Ingeniería Industrial">Ing. Industrial</option>
+            <option value="Arquitectura">Arquitectura</option>
+          </select>
+
+          <select id="filter-grupo-select" class="escaner-filter-select" title="Filtrar por Grupo">
+            <option value="">Todos los grupos</option>
+            <option value="1M1-ME">1M1-ME</option>
+            <option value="4M1-CO">4M1-CO</option>
+            <option value="1M1-SO">1M1-SO</option>
+          </select>
+        </div>
+
+        <!-- FILA DE FEEDBACK A LA IZQUIERDA Y BOTÓN PERSONA NUEVA ALINEADO A LA DERECHA -->
+        <div class="escaner-bar-footer">
+          <div id="escaner-feedback" class="escaner-feedback">💡 Listo para recibir lecturas del escáner 3nStar Sc050 o búsqueda automática.</div>
+
+          <button id="btn-abrir-estudiante-nuevo" class="btn-modo-pill btn-guardar-verde" style="padding: 7px 18px; font-size: 13px; border-radius: 20px;">
+            + Persona Nueva
+            <i data-lucide="user-plus"></i>
+          </button>
+        </div>
+
+        <!-- CONTENEDOR DE RESULTADOS DE BÚSQUEDA FILTRADA -->
+        <div id="manual-search-results" class="manual-search-results" style="display: none;"></div>
+      </div>
+
+      <!-- FORMULARIO PERSONA NUEVA (DESLIZANTE) -->
+      <div id="form-estudiante-nuevo-container" class="modo-manual-container" style="background-color: #0b2247;">
+        <button id="btn-cerrar-nuevo-estudiante" class="btn-close-rojo" title="Cerrar">
+          <i data-lucide="x"></i>
+        </button>
+        <h3 class="form-manual-header">📝 Registrar Persona Nueva en el Padrón (5FN)</h3>
+
+        <div class="form-manual-grid">
+          <!-- Tipo de Persona -->
+          <div class="form-manual-group form-manual-col-2">
+            <label>Tipo de Persona (*):</label>
+            <select id="nuevo-tipo-persona" onchange="toggleFormPersonaFields()">
+              <option value="Estudiante">Estudiante</option>
+              <option value="Trabajador">Trabajador / Docente / Personal</option>
+            </select>
+          </div>
+
+          <div class="form-manual-group form-manual-col-2">
+            <label>#CUP:</label>
+            <input type="text" id="nuevo-nup" placeholder="CUP-2026-101" maxlength="20">
+          </div>
+          <div class="form-manual-group form-manual-col-2">
+            <label>Cédula de Identidad:</label>
+            <input type="text" id="nuevo-cedula" placeholder="000-000000-0000X" maxlength="16">
+          </div>
+
+          <div class="form-manual-group form-manual-col-2">
+            <label>Nombre y Apellidos Completos (*):</label>
+            <input type="text" id="nuevo-nombre" placeholder="Nombre completo de la persona">
+          </div>
+
+          <div class="form-manual-group">
+            <label>Género:</label>
+            <select id="nuevo-sexo">
+              <option value="Masculino">Masculino</option>
+              <option value="Femenino">Femenino</option>
+            </select>
+          </div>
+
+          <!-- Campos geográficos nuevos -->
+          <div class="form-manual-group form-manual-col-2">
+            <label>Ciudad de Residencia:</label>
+            <select id="nuevo-ciudad-residencia">
+              <option value="">Seleccione ciudad...</option>
+            </select>
+          </div>
+
+          <div class="form-manual-group form-manual-col-2">
+            <label>Ciudad de Procedencia:</label>
+            <select id="nuevo-ciudad-procedencia">
+              <option value="">Seleccione ciudad...</option>
+            </select>
+          </div>
+
+          <!-- Sección exclusiva para Estudiantes -->
+          <div id="seccion-campos-estudiante" style="display: contents;">
+            <div class="form-manual-group">
+              <label>Carné Estudiantil:</label>
+              <input type="text" id="nuevo-carnet" placeholder="0000-0000X" maxlength="10">
+            </div>
+            <div class="form-manual-group form-manual-col-2">
+              <label>Programa Académico / Carrera:</label>
+              <select id="nuevo-carrera">
+                <option value="Ingeniería de Sistemas">Ingeniería de Sistemas</option>
+                <option value="Ingeniería Mecánica">Ingeniería Mecánica</option>
+                <option value="Ingeniería Industrial">Ingeniería Industrial</option>
+                <option value="Ingeniería Agrícola">Ingeniería Agrícola</option>
+                <option value="Ingeniería Civil">Ingeniería Civil</option>
+                <option value="Arquitectura">Arquitectura</option>
+              </select>
+            </div>
+            <div class="form-manual-group">
+              <label>Año Académico:</label>
+              <select id="nuevo-ano">
+                <option value="1º Año">1º Año</option>
+                <option value="2º Año">2º Año</option>
+                <option value="3º Año">3º Año</option>
+                <option value="4º Año">4º Año</option>
+                <option value="5º Año">5º Año</option>
+              </select>
+            </div>
+            <div class="form-manual-group">
+              <label>Grupo:</label>
+              <input type="text" id="nuevo-grupo" placeholder="ATN-XXX-XXX" maxlength="11">
+            </div>
+            <div class="form-manual-group form-manual-col-2">
+              <label>Turno:</label>
+              <select id="nuevo-turno">
+                <option value="Diurno">Diurno</option>
+                <option value="Nocturno">Nocturno</option>
+                <option value="Sabatino">Sabatino</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Sección exclusiva para Trabajadores -->
+          <div id="seccion-campos-trabajador" style="display: none;">
+            <div class="form-manual-group">
+              <label>Código de Trabajador:</label>
+              <input type="text" id="nuevo-codigo-trabajador" placeholder="EMP-2026-001">
+            </div>
+            <div class="form-manual-group form-manual-col-2">
+              <label>Cargo / Rol Institucional:</label>
+              <input type="text" id="nuevo-cargo" placeholder="Docente Titular / Investigador">
+            </div>
+            <div class="form-manual-group form-manual-col-2">
+              <label>Tipo de Contrato:</label>
+              <select id="nuevo-tipo-contrato">
+                <option value="Tiempo Completo">Tiempo Completo</option>
+                <option value="Medio Tiempo">Medio Tiempo</option>
+                <option value="Por Horas">Por Horas</option>
+              </select>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="form-manual-actions">
+          <button id="btn-guardar-estudiante-nuevo" class="btn-guardar-verde">
+            Guardar e Ingresar Asistencia
+            <i data-lucide="save"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- TABLA DE ASISTENCIA (26 COLUMNAS) -->
+      <div class="asistencia-table-header">
+        <div style="display: flex; align-items: center; gap: 15px;">
+          <h3>Asistencia de la Actividad</h3>
+          <button id="btn-eliminar-asistencia-seleccion" class="btn-eliminar-seleccion" style="display: none;">
+            <i data-lucide="trash-2"></i> Eliminar Selección (<span id="count-asistencia-seleccion">0</span>)
+          </button>
+        </div>
+        <div class="asistentes-count">Asistentes: 00</div>
+      </div>
+
+      <div class="table-wrapper">
+        <div class="table-container">
+          <table class="asistencia-table">
+            <thead>
+              <tr>
+                <th>#CUP</th>
+                <th>Nombre y Apellidos</th>
+                <th>Sexo</th>
+                <th>Edad</th>
+                <th>Dimensión Nacionalidad</th>
+                <th>País de procedencia</th>
+                <th>Etnia</th>
+                <th>Departamento procedencia</th>
+                <th>Municipio procedencia</th>
+                <th>Departamento residencia</th>
+                <th>Municipio residencia</th>
+                <th>Tipo de ingreso</th>
+                <th>Sede</th>
+                <th>Departamento de sede</th>
+                <th>Municipio de sede</th>
+                <th>Programa especial</th>
+                <th>Departamento UNICAM</th>
+                <th>Municipio UNICAM</th>
+                <th>Nivel de formación</th>
+                <th>Nombre de carrera</th>
+                <th>Área</th>
+                <th>Duración de carrera</th>
+                <th>Año Académico</th>
+                <th>Régimen (semestral)</th>
+                <th>Modalidad</th>
+                <th>Turno</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Filas dinámicas -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- RIGHT SLIDE-OVER USER DRAWER -->
+    <div id="drawer-backdrop" class="drawer-backdrop"></div>
+    <aside id="user-drawer" class="user-drawer">
+      <div class="drawer-header">
+        <h3>Perfil de Usuario</h3>
+        <button id="btn-close-drawer" class="btn-close-drawer" aria-label="Cerrar panel">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+
+      <div class="drawer-user-profile">
+        <div class="drawer-avatar">
+          <i data-lucide="user"></i>
+        </div>
+        <div class="drawer-user-details">
+          <h4 class="drawer-user-name">Nombre de usuario</h4>
+          <span class="drawer-nup">#CUP 1048293</span>
+          <span class="drawer-user-role">Responsable x área</span>
+          <span class="drawer-email">usuario.encargado@uni.edu.ni</span>
+        </div>
+      </div>
+
+      <div class="drawer-section">
+        <label class="drawer-section-title">Cambiar Vista por Rol</label>
+        <div class="role-selector-toggle">
+          <a href="rector.html" class="role-toggle-btn">
+            <i data-lucide="crown"></i>
+            <span>Rector</span>
+          </a>
+          <a href="index.html" class="role-toggle-btn active">
+            <i data-lucide="clipboard-list"></i>
+            <span>Encargado</span>
+          </a>
+        </div>
+      </div>
+
+      <div class="drawer-menu">
+        <a href="javascript:void(0)" class="drawer-menu-item" onclick="handleMenuClick('Configuración')">
+          <i data-lucide="settings"></i>
+          <span>Configuración</span>
+        </a>
+        <a href="rector.html" class="drawer-menu-item">
+          <i data-lucide="pie-chart"></i>
+          <span>Dashboard Rector</span>
+        </a>
+        <a href="index.html" class="drawer-menu-item">
+          <i data-lucide="calendar"></i>
+          <span>Mis Actividades</span>
+        </a>
+
+        <div class="menu-divider"></div>
+
+        <a href="login.html" class="drawer-menu-item item-logout">
+          <i data-lucide="log-out"></i>
+          <span>Cerrar sesión</span>
+        </a>
+      </div>
+    </aside>
+
+    <!-- TOAST NOTIFICATION CONTAINER -->
+    <div id="toast-container" class="toast-container"></div>
+
+  </div>
+
+  <script src="{{ url_for('static', filename='js/api-client.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+
+</html>

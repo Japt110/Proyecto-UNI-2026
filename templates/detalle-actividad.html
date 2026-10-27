@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Detalles del Evento - Plataforma UNI</title>
+  <meta name="description"
+    content="VisualizaciÃ³n y ediciÃ³n de detalles de una actividad universitaria UNI con ESTADÍSTICAS de asistencia.">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/variables.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/global.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/layout-components.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/detalle.css') }}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@500;600;700;800&display=swap"
+    rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body class="bg-form-page" data-page="detalle">
+  <div class="app-container form-page-container">
+
+    <!-- HEADER -->
+    <header class="main-header header-form-page">
+      <div class="header-left">
+        <div class="uni-logo-box">
+          <img src="{{ url_for('static', filename='img/uni_logo.png') }}" alt="Logo UNI" class="uni-logo-img">
+        </div>
+        <nav class="header-nav-links">
+          <a href="rector.html" class="nav-link-item">ESTADÍSTICAS</a>
+          <a href="usuarios.html" class="nav-link-item">USUARIOS</a>
+          <a href="index.html" class="nav-link-item active">ACTIVIDADES</a>
+        </nav>
+      </div>
+      <div class="header-right" id="user-profile-trigger">
+        <div class="user-info-text">
+          <span class="nup-id">#CUP <strong class="user-name-highlight">Nombre de usuario</strong></span>
+          <span class="user-role-label">Responsable x area</span>
+        </div>
+        <div class="user-avatar-circle" title="Abrir menú de usuario">
+          <i data-lucide="user"></i>
+        </div>
+      </div>
+    </header>
+
+    <div class="top-back-bar">
+      <a href="index.html" class="btn-back">
+        <i data-lucide="chevron-left"></i>
+        <span>Regresar</span>
+      </a>
+    </div>
+
+    <!-- PORTADA HERO (imagen de fondo con tÃ­tulo del evento superpuesto) -->
+    <div class="detail-hero-banner" id="detail-hero-banner">
+      <img id="detail-hero-img"
+        src="https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=1200&q=80"
+        alt="Portada del evento" class="detail-hero-bg-img" />
+      <!-- Overlay oscuro con gradiente + titulo -->
+      <div class="detail-hero-overlay">
+        <h1 id="detail-hero-title" class="detail-hero-title">Proyectos Cientificos</h1>
+      </div>
+      <!-- Botón para cambiar portada (solo visible en modo edición) -->
+      <label for="detail-cover-input" class="btn-change-cover hidden" id="btn-change-cover" title="Cambiar portada">
+        <i data-lucide="image-plus"></i>
+        <span>Cambiar portada</span>
+      </label>
+      <input type="file" id="detail-cover-input" accept="image/*" class="hidden-file-input"
+        onchange="previewDetailCover(event)" />
+    </div>
+
+    <!-- BARRA NEGRA DE ACCIONES -->
+    <div class="black-action-bar">
+      <div class="black-bar-actions">
+        <!-- Editar (visible por defecto, se oculta si evento es pasado o no es el rol correcto) -->
+        <button type="button" id="btn-edit-mode" class="btn-edit-orange" onclick="enterEditMode()">
+          <span>Editar</span>
+          <i data-lucide="edit-3"></i>
+        </button>
+        <!-- Deshacer cambios (oculto por defecto, visible solo si hay cambios en modo edición) -->
+        <button type="button" id="btn-undo-detail" class="btn-undo-yellow detail-hidden" onclick="undoDetailEdits()">
+          <span>Deshacer cambios</span>
+          <i data-lucide="rotate-ccw"></i>
+        </button>
+        <!-- Guardar (oculto hasta editar) -->
+        <button type="button" id="btn-save-detail" class="btn-save-green detail-hidden" onclick="saveDetailChanges()">
+          <span>Guardar</span>
+          <i data-lucide="save"></i>
+        </button>
+        <!-- Eliminar (oculto hasta editar, solo visible para Rector en eventos programados) -->
+        <button type="button" id="btn-delete-event" class="btn-delete-danger detail-hidden" onclick="confirmDeleteEvent()">
+          <span>Eliminar</span>
+          <i data-lucide="trash-2"></i>
+        </button>
+        <!-- Cancelar (siempre visible; antes de editar regresa a index, durante edición revierte) -->
+        <button type="button" id="btn-cancel-detail" class="btn-cancel-red" onclick="cancelDetailEdits()">
+          <span>Cancelar</span>
+          <i data-lucide="x"></i>
+        </button>
+        <!-- Finalizar Evento (visible solo si estado es ACTIVO) -->
+        <button type="button" id="btn-finalize-event" class="btn-edit-orange detail-hidden" style="background-color: #f97316;" onclick="finalizeActivity(detailEventId)">
+          <span>Finalizar evento</span>
+          <i data-lucide="check-circle"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- CUERPO AZUL DEL FORMULARIO DE DETALLES -->
+    <div class="blue-form-body detail-form-body" id="detail-form-body">
+
+      <!-- Nombre del evento -->
+      <div class="form-field-group">
+        <input type="text" id="detail-title" class="form-input-pill full-width detail-readonly" readonly
+          placeholder="Nombre del evento" />
+      </div>
+
+      <!-- Fecha + Creado Por -->
+      <div class="detail-meta-row">
+        <div class="detail-meta-left">
+          <div class="detail-icon-field-row">
+            <div class="white-icon-box"><i data-lucide="calendar"></i></div>
+            <div class="detail-date-time-wrap">
+              <!-- Fecha Inicio -->
+              <input type="date" id="detail-date-start" class="form-input-pill width-auto detail-readonly" readonly />
+              <!-- Botón agregar fecha cierre -->
+              <button type="button" id="detail-btn-add-end-date" class="btn-toggle-end-field detail-hidden"
+                onclick="showDetailEndDate()">
+                <i data-lucide="plus"></i>
+                <span>Agregar fecha de cierre</span>
+              </button>
+              <!-- Fecha Cierre -->
+              <div id="detail-end-date-container" class="end-input-container hidden">
+                <span class="range-separator">hasta</span>
+                <input type="date" id="detail-date-end" class="form-input-pill width-auto detail-readonly" readonly />
+                <button type="button" id="detail-btn-remove-end-date" class="btn-remove-end-field detail-hidden" onclick="hideDetailEndDate()"
+                  title="Quitar fecha de cierre">
+                  <i data-lucide="x"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Hora -->
+      <div class="detail-meta-row">
+        <div class="detail-meta-left">
+          <div class="detail-icon-field-row">
+            <div class="white-icon-box"><i data-lucide="clock"></i></div>
+            <div class="detail-date-time-wrap">
+              <input type="time" id="detail-time-start" class="form-input-pill width-auto detail-readonly" readonly />
+              <button type="button" id="detail-btn-add-end-time" class="btn-toggle-end-field detail-hidden"
+                onclick="showDetailEndTime()">
+                <i data-lucide="plus"></i>
+                <span>Agregar hora de cierre</span>
+              </button>
+              <div id="detail-end-time-container" class="end-input-container hidden">
+                <span class="range-separator">hasta</span>
+                <input type="time" id="detail-time-end" class="form-input-pill width-auto detail-readonly" readonly />
+                <button type="button" id="detail-btn-remove-end-time" class="btn-remove-end-field detail-hidden" onclick="hideDetailEndTime()"
+                  title="Quitar hora de cierre">
+                  <i data-lucide="x"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Ubicación (Combobox único junto al ícono) -->
+      <div class="detail-meta-row">
+        <div class="detail-icon-field-row">
+          <div class="white-icon-box"><i data-lucide="map-pin"></i></div>
+          <div class="select-wrapper detail-select-wrap" style="flex:1;">
+            <select id="detail-lugar" class="form-select-pill detail-readonly" disabled style="width:100%;">
+              <option value="">Seleccione el lugar / espacio...</option>
+            </select>
+            <i data-lucide="chevron-down" class="select-chevron"></i>
+          </div>
+        </div>
+      </div>
+
+      <hr class="blue-form-divider" />
+
+      <!-- DETALLES (4 CAMPOS) -->
+      <div class="details-section-block">
+        <h3 class="section-subtitle-white">Detalles</h3>
+        <div class="detail-label-row">
+          <span class="detail-col-label" style="display: inline-flex; align-items: center; gap: 6px;">
+            Tipo de actividad
+            <span class="info-tooltip-badge" id="btn-detail-tipo-info" onmouseenter="showCustomTipoTooltip(event, 'detail-type')" onmouseleave="hideCustomTipoTooltip()">
+              <i data-lucide="info"></i>
+            </span>
+          </span>
+          <span class="detail-col-label">Direccion Academica</span>
+          <span class="detail-col-label">Area Responsable:</span>
+          <span class="detail-col-label">CUR:</span>
+        </div>
+        <div class="detail-4col-row">
+          <!-- Tipo de Actividad -->
+          <div>
+            <div class="select-wrapper detail-select-wrap">
+              <select id="detail-type" class="form-select-pill detail-readonly" disabled onchange="updateDetailTipoDescripcionUI()">
+                <option value="Feria Cientifica">Feria Cientifica</option>
+                <option value="Conferencia Magistral">Conferencia Magistral</option>
+                <option value="Taller Práctico">Taller Práctico</option>
+                <option value="Simposio">Simposio</option>
+              </select>
+              <i data-lucide="chevron-down" class="select-chevron"></i>
+            </div>
+          </div>
+          <!-- Dirección Academica -->
+          <div class="select-wrapper detail-select-wrap">
+            <select id="detail-direccion" class="form-select-pill detail-readonly" disabled>
+              <option value="DACTIC">DACTIC</option>
+              <option value="Facultad de Ingeniería">Facultad de Ingeniería</option>
+              <option value="Facultad de Arquitectura">Facultad de Arquitectura</option>
+              <option value="Facultad de Ciencias">Facultad de Ciencias</option>
+            </select>
+            <i data-lucide="chevron-down" class="select-chevron"></i>
+          </div>
+          <!-- Área Responsable -->
+          <div class="select-wrapper detail-select-wrap">
+            <select id="detail-area" class="form-select-pill detail-readonly" disabled>
+              <option value="DACTIC">DACTIC</option>
+              <option value="Dirección de Redacción">Dirección de Redacción</option>
+              <option value="Investigación y Posgrado">Investigación y Posgrado</option>
+              <option value="Extensión Universitaria">Extensión Universitaria</option>
+            </select>
+            <i data-lucide="chevron-down" class="select-chevron"></i>
+          </div>
+          <!-- Recinto (Sede) -->
+          <div class="select-wrapper detail-select-wrap">
+            <select id="detail-recinto" class="form-select-pill detail-readonly" disabled>
+              <option value="RUPAP">RUPAP</option>
+              <option value="RUSB">RUSB</option>
+              <option value="UNI Sede Norte">UNI Sede Norte</option>
+            </select>
+            <i data-lucide="chevron-down" class="select-chevron"></i>
+          </div>
+        </div>
+      </div>
+      <!-- PROPOSITO -->
+      <div class="form-field-group">
+        <label class="blue-form-label">Propósito</label>
+        <textarea id="form-purpose" class="form-textarea-pill detail-readonly" rows="3" readonly
+          placeholder="Ingresa el propósito del evento..."></textarea>
+      </div>
+      <!-- DESCRIPCIÓN -->
+      <div class="form-field-group">
+        <h3 class="section-subtitle-white">Descripcion</h3>
+        <textarea id="detail-desc" class="form-textarea-pill detail-readonly" rows="4" readonly
+          placeholder="Descripción del evento..."></textarea>
+      </div>
+
+      <!-- LINEAMIENTOS ESTRATÉGICOS (ESTRATEGIA NACIONAL 2026) -->
+      <div id="detail-lineamientos-card" class="detail-lineamientos-card">
+        <div class="lineamientos-card-header">
+          <h3 class="section-subtitle-white" style="margin: 0;">Lineamientos Estratégicos (Estrategia Nacional 2026)</h3>
+          <span class="lineamientos-badge-count">Máx 4 lineamientos</span>
+        </div>
+        
+        <!-- MODO LECTURA: Lista de lineamientos asociados -->
+        <div id="detail-lineamientos-readonly-container" class="detail-lineamientos-list">
+          <p class="text-muted-italic" style="color: #94a3b8; font-style: italic;">Cargando lineamientos estratégicos...</p>
+        </div>
+
+        <!-- MODO EDICIÓN: Selector a la izquierda, Panel de Redacción a la derecha (Lado a lado) -->
+        <div id="detail-lineamientos-editor-container" class="detail-lineamientos-editor hidden" style="display: none;">
+          <div class="lineamientos-editor-split-row">
+            <div id="detail-lineamientos-tag-system" class="lineamientos-section-box left-col">
+              <p class="text-muted-italic" style="color: #94a3b8; font-style: italic;">Cargando selector de lineamientos...</p>
+            </div>
+            <div id="detail-lineamientos-justificaciones-container" class="lineamientos-justificaciones-box right-col"></div>
+          </div>
+        </div>
+      </div>
+
+      <hr class="blue-form-divider" />
+
+      <!-- SISTEMA DE ASISTENCIA -->
+      <div class="asistencia-bar-button" onclick="handleAsistenciaClick()">
+        <div class="asistencia-bar-content">
+          <span class="asistencia-label">Sistema de Asistencia</span>
+          <i data-lucide="file-text" class="asistencia-icon"></i>
+        </div>
+        <i data-lucide="chevron-right" class="asistencia-chevron"></i>
+      </div>
+
+      <!-- TARJETA DE ESTADÍSTICAS -->
+      <div class="event-stats-card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+          <h3 class="event-stats-card-title" style="margin: 0;">ESTADÍSTICAS DEL EVENTO</h3>
+          <div id="badge-total-asistentes-container" style="background: rgba(2, 132, 199, 0.2); border: 1px solid #38bdf8; padding: 8px 18px; border-radius: 20px; color: #f0f9ff; font-weight: 700; font-size: 15px; display: flex; align-items: center; gap: 8px;">
+            <i data-lucide="users"></i> Total Asistentes: <span id="stat-total-asistentes">0</span>
+          </div>
+        </div>
+
+        <!-- Gráficas principales: Rol Institucional / Género / Carreras -->
+        <div class="stats-main-charts-grid">
+
+          <div class="stats-chart-box">
+            <div class="stats-chart-canvas-wrap">
+              <canvas id="chart-rol-institucional"></canvas>
+            </div>
+            <p class="stats-chart-label">Rol Institucional</p>
+          </div>
+
+          <div class="stats-chart-box">
+            <div class="stats-chart-canvas-wrap">
+              <canvas id="chart-genero"></canvas>
+            </div>
+            <p class="stats-chart-label">Género</p>
+          </div>
+
+          <div class="stats-chart-box">
+            <div class="stats-chart-canvas-wrap">
+              <canvas id="chart-carreras"></canvas>
+            </div>
+            <p class="stats-chart-label">Asistencia por Carrera</p>
+          </div>
+
+        </div>
+
+        <!-- SECCIÓN DE ESTADÍSTICAS ACADÉMICAS Y GEOGRÁFICAS -->
+        <div class="stats-demographics-section">
+          <h4 class="stats-demo-title">Desglose Geográfico y Académico</h4>
+
+          <div class="stats-demo-grid" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;">
+
+            <!-- Grupos Representados -->
+            <div class="demo-stat-card">
+              <div class="demo-stat-header">
+                <i data-lucide="layers"></i>
+                <span>Asistencia por Grupos</span>
+              </div>
+              <div class="demo-stat-chart-wrap">
+                <canvas id="chart-grupos"></canvas>
+              </div>
+            </div>
+
+            <!-- Año Académico -->
+            <div class="demo-stat-card">
+              <div class="demo-stat-header">
+                <i data-lucide="graduation-cap"></i>
+                <span>Año Académico</span>
+              </div>
+              <div class="demo-stat-chart-wrap">
+                <canvas id="chart-anos-academicos"></canvas>
+              </div>
+            </div>
+
+            <!-- Procedencia Geográfica -->
+            <div class="demo-stat-card">
+              <div class="demo-stat-header">
+                <i data-lucide="map"></i>
+                <span>Procedencia Territorial</span>
+              </div>
+              <div class="demo-stat-chart-wrap">
+                <canvas id="chart-geografia-evento"></canvas>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- BOTÓN EXPORTACIÓN Y ASISTENCIAS -->
+      <div class="detail-export-row">
+        <button type="button" id="btn-finalizar-evento" class="btn-finalizar-pill" style="display: none;" onclick="finalizeActivity(detailEventId)">
+          <span>Finalizar Actividad</span>
+          <i data-lucide="power-off"></i>
+        </button>
+        <button type="button" id="btn-ver-asistencias" class="btn-exportacion-pill detail-hidden" style="background-color: #3b82f6;" onclick="handleAsistenciaClick()">
+          <span style="color:white;">Ver asistencias</span>
+          <i data-lucide="users" style="color:white;"></i>
+        </button>
+        <button type="button" id="btn-export-data" class="btn-exportacion-pill" onclick="showToast('Exportando datos del evento...')">
+          <span>Exportacion</span>
+          <i data-lucide="file-check"></i>
+        </button>
+      </div>
+
+    </div><!-- /.blue-form-body -->
+
+    <!-- DRAWER PERFIL -->
+    <div id="drawer-backdrop" class="drawer-backdrop"></div>
+    <aside id="user-drawer" class="user-drawer">
+      <div class="drawer-header">
+        <h3>Perfil de Usuario</h3>
+        <button id="btn-close-drawer" class="btn-close-drawer" aria-label="Cerrar panel">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+      <div class="drawer-user-profile">
+        <div class="drawer-avatar"><i data-lucide="user"></i></div>
+        <div class="drawer-user-details">
+          <h4>Nombre de usuario</h4>
+          <span class="drawer-nup">#CUP 1048293</span>
+          <span class="drawer-area">Responsable x Área</span>
+          <span class="drawer-email">usuario.encargado@uni.edu.ni</span>
+        </div>
+      </div>
+
+      <div class="drawer-menu">
+        <a href="index.html" class="drawer-menu-item">
+          <i data-lucide="calendar"></i><span>Mis Actividades</span>
+        </a>
+        <a href="javascript:void(0)" class="drawer-menu-item" onclick="handleMenuClick('Configuración')">
+          <i data-lucide="settings"></i>
+          <span>Configuración</span>
+        </a>
+        <div class="menu-divider"></div>
+        <a href="login.html" class="drawer-menu-item item-logout">
+          <i data-lucide="log-out"></i>
+          <span>Cerrar sesión</span>
+        </a>
+      </div>
+    </aside>
+
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- MODAL DE CONFIRMACIÓN DE ELIMINACIÓN -->
+    <div id="modal-delete-overlay" class="modal-overlay detail-hidden" role="dialog" aria-modal="true"
+         aria-labelledby="modal-delete-title">
+      <div class="modal-card">
+        <div class="modal-icon-wrap modal-icon-danger">
+          <i data-lucide="alert-triangle"></i>
+        </div>
+        <h3 id="modal-delete-title" class="modal-title">¿Eliminar actividad?</h3>
+        <p class="modal-body-text">
+          Esta acción es <strong>permanente e irreversible</strong>. La actividad y toda su
+          configuración serán eliminadas definitivamente del sistema.
+        </p>
+        <div class="modal-actions">
+          <button type="button" class="modal-btn modal-btn-secondary" onclick="closeDeleteModal()">
+            Cancelar
+          </button>
+          <button type="button" id="modal-confirm-delete" class="modal-btn modal-btn-danger" onclick="executeDeleteEvent()">
+            Sí, eliminar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL DE CONFIRMACIÓN DE CANCELACIÓN DE EVENTO -->
+    <div id="modal-cancel-overlay" class="modal-overlay detail-hidden" role="dialog" aria-modal="true"
+         aria-labelledby="modal-cancel-title">
+      <div class="modal-card">
+        <div class="modal-icon-wrap modal-icon-danger" style="color: #ef4444; background-color: #fee2e2;">
+          <i data-lucide="x-circle"></i>
+        </div>
+        <h3 id="modal-cancel-title" class="modal-title">¿Cancelar este evento?</h3>
+        <p class="modal-body-text">
+          Esta acción marcará el evento como <strong>cancelado</strong> y lo moverá al historial de eventos pasados. 
+          ¿Desea proceder?
+        </p>
+        <div class="modal-actions">
+          <button type="button" class="modal-btn modal-btn-secondary" onclick="closeCancelModal()">
+            No, mantener evento
+          </button>
+          <button type="button" id="modal-confirm-cancel" class="modal-btn modal-btn-danger" style="background-color: #ef4444; color: white; border-color: #ef4444;" onclick="executeCancelEvent()">
+            Sí, cancelar evento
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /.app-container -->
+
+  <!-- Cargar primero el cliente de API y después la lógica de la app -->
+  <script src="{{ url_for('static', filename='js/api-client.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+
+</html>

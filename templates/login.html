@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - Sistema Académico UNI</title>
+
+  <!-- Google Fonts: Raleway -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    /* ========================================================= */
+    /* || [MODULO VISUAL]: VARIABLES GLOBALES Y RESET           || */
+    /* ========================================================= */
+    :root {
+      --color-primary: #033E8C;
+      --color-primary-hover: #022a5e;
+      --color-white: #FEFFFE;
+      --color-gray-text: #6B7280;
+      --color-gray-dark: #374151;
+      --color-border: #D1D5DB;
+      --color-bg-input: #F3F4F6;
+      --color-overlay: rgba(3, 62, 140, 0.4);
+      --font-main: 'Raleway', sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font-main);
+      height: 100vh;
+      width: 100vw;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* ========================================================= */
+    /* || [MODULO VISUAL]: FONDO Y CAPA SUPERPUESTA             || */
+    /* ========================================================= */
+    .login-background {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image: url('static/img/estudiantes.jpg');
+      background-size: cover;
+      background-position: center;
+      z-index: -2;
+    }
+
+    .login-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: var(--color-overlay);
+      backdrop-filter: blur(10px);
+      z-index: -1;
+    }
+
+    /* ========================================================= */
+    /* || [MODULO VISUAL]: TARJETA DE LOGIN CENTRAL             || */
+    /* ========================================================= */
+    .login-card {
+      background-color: var(--color-white);
+      border-radius: 16px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+      width: 100%;
+      max-width: 420px;
+      padding: 40px 32px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ========================================================= */
+    /* || [MODULO VISUAL]: ENCABEZADO Y LOGO                    || */
+    /* ========================================================= */
+    .logo-container {
+      background-color: var(--color-primary);
+      width: 56px;
+      height: 56px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+      color: var(--color-white);
+    }
+
+    .logo-container i {
+      width: 28px;
+      height: 28px;
+    }
+
+    .login-title {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--color-gray-dark);
+      margin-bottom: 4px;
+      text-align: center;
+    }
+
+    .login-subtitle {
+      font-size: 14px;
+      color: var(--color-gray-text);
+      font-weight: 500;
+      margin-bottom: 32px;
+      text-align: center;
+    }
+
+    /* ========================================================= */
+    /* || [MODULO VISUAL]: FORMULARIO E INPUTS                  || */
+    /* ========================================================= */
+    .login-form {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .input-label {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--color-gray-dark);
+      letter-spacing: 0.5px;
+    }
+
+    .input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .input-icon-left {
+      position: absolute;
+      left: 14px;
+      color: var(--color-gray-text);
+      width: 20px;
+      height: 20px;
+    }
+
+    .input-field {
+      width: 100%;
+      padding: 12px 14px 12px 42px;
+      border: 1px solid var(--color-border);
+      border-radius: 8px;
+      background-color: var(--color-bg-input);
+      font-family: var(--font-main);
+      font-size: 14px;
+      color: var(--color-gray-dark);
+      transition: border-color 0.2s, background-color 0.2s;
+    }
+
+    .input-field:focus {
+      outline: none;
+      border-color: var(--color-primary);
+      background-color: var(--color-white);
+    }
+
+    .input-field::placeholder {
+      color: #9CA3AF;
+    }
+
+    .input-icon-right {
+      position: absolute;
+      right: 14px;
+      color: var(--color-gray-text);
+      cursor: pointer;
+      width: 20px;
+      height: 20px;
+      transition: color 0.2s;
+    }
+
+    .input-icon-right:hover {
+      color: var(--color-primary);
+    }
+
+    /* ========================================================= */
+    /* || [MÃ“DULO VISUAL]: BOTÃ“N PRINCIPAL                      || */
+    /* ========================================================= */
+    .btn-submit {
+      margin-top: 8px;
+      width: 100%;
+      background-color: var(--color-primary);
+      color: var(--color-white);
+      border: none;
+      padding: 14px;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 700;
+      font-family: var(--font-main);
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      transition: background-color 0.2s;
+    }
+
+    .btn-submit:hover {
+      background-color: var(--color-primary-hover);
+    }
+
+    /* ========================================================= */
+    /* || [MÃ“DULO VISUAL]: ENLACES Y FOOTER                     || */
+    /* ========================================================= */
+    .login-links {
+      margin-top: 24px;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .link-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--color-gray-dark);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 600;
+      transition: color 0.2s;
+    }
+
+    .link-item i {
+      width: 16px;
+      height: 16px;
+      color: var(--color-gray-text);
+    }
+
+    .link-item:hover {
+      color: var(--color-primary);
+    }
+
+    .link-item:hover i {
+      color: var(--color-primary);
+    }
+
+    .login-footer {
+      margin-top: 32px;
+      font-size: 11px;
+      color: var(--color-gray-text);
+      text-align: center;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- ========================================================= -->
+  <!-- || [MÃ“DULO VISUAL]: FONDO SUPERPUESTO (OVERLAY)        || -->
+  <!-- ========================================================= -->
+  <div class="login-background"></div>
+  <div class="login-overlay"></div>
+
+  <!-- ========================================================= -->
+  <!-- || [MÃ“DULO VISUAL]: TARJETA DE LOGIN CENTRAL           || -->
+  <!-- ========================================================= -->
+  <div class="login-card">
+
+    <!-- ========================================================= -->
+    <!-- || [MÃ“DULO VISUAL]: LOGO Y TÃTULOS                     || -->
+    <!-- ========================================================= -->
+    <div class="logo-container">
+      <i data-lucide="graduation-cap"></i>
+    </div>
+    <h1 class="login-title">Sistema Académico</h1>
+    <h2 class="login-subtitle">Universidad Nacional de Ingeniería</h2>
+
+    <!-- ========================================================= -->
+    <!-- || [MÃ“DULO VISUAL]: FORMULARIO PRINCIPAL               || -->
+    <!-- ========================================================= -->
+    <form class="login-form" id="loginForm">
+
+      <!-- INPUT: CÃ“DIGO DE PERSONA -->
+      <div class="input-group">
+        <label class="input-label" for="userCode">CÓDIGO DE PERSONA</label>
+        <div class="input-wrapper">
+          <i data-lucide="user" class="input-icon-left"></i>
+          <input type="text" id="userCode" class="input-field" placeholder="Ej. 2021-12345" autocomplete="off" required>
+        </div>
+      </div>
+
+      <!-- INPUT: CONTRASEÃ‘A -->
+      <div class="input-group">
+        <label class="input-label" for="userPassword">CONTRASEÑA</label>
+        <div class="input-wrapper">
+          <i data-lucide="lock" class="input-icon-left"></i>
+          <input type="password" id="userPassword" class="input-field" placeholder="Ingresa tu contraseÃ±a" required>
+          <i data-lucide="eye" class="input-icon-right" id="togglePassword" title="Mostrar contraseÃ±a"></i>
+        </div>
+      </div>
+
+      <!-- ========================================================= -->
+      <!-- || [MODULO VISUAL]: BOTON DE ACCION                    || -->
+      <!-- ========================================================= -->
+      <button type="submit" class="btn-submit">
+        Iniciar sesión
+        <i data-lucide="chevron-right" style="width: 18px; height: 18px;"></i>
+      </button>
+
+    </form>
+
+    <!-- ========================================================= -->
+    <!-- || [MÃ“DULO VISUAL]: ENLACES INFERIORES                 || -->
+    <!-- ========================================================= -->
+    <div class="login-links">
+      <a href="#" class="link-item">
+        <i data-lucide="mail"></i>
+        Recuperar contraseña por correo
+      </a>
+      <a href="#" class="link-item">
+        <i data-lucide="refresh-cw"></i>
+        Necesita ayuda?
+      </a>
+    </div>
+
+    <!-- ========================================================= -->
+    <!-- || [MODULO VISUAL]: FOOTER DE LA TARJETA               || -->
+    <!-- ========================================================= -->
+    <div class="login-footer">
+      © 2025 UNI · Dirección de Informática
+    </div>
+
+  </div>
+
+  <!-- ========================================================= -->
+  <!-- || [MODULO VISUAL]: SCRIPT FUNCIONAL (VANILLA JS)      || -->
+  <!-- ========================================================= -->
+  <script>
+    // Inicializar iconos de Lucide
+    lucide.createIcons();
+
+    // LÃ³gica para alternar la visibilidad de la contraseÃ±a
+    const togglePasswordBtn = document.getElementById('togglePassword');
+    const passwordInput = document.getElementById('userPassword');
+
+    togglePasswordBtn.addEventListener('click', function () {
+      const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+      passwordInput.setAttribute('type', type);
+
+      // Cambiar el icono visualmente (Eye / Eye-Off)
+      if (type === 'password') {
+        this.setAttribute('data-lucide', 'eye');
+      } else {
+        this.setAttribute('data-lucide', 'eye-off');
+      }
+
+      // Renderizar el nuevo icono y preservar las clases/IDs
+      lucide.createIcons();
+    });
+
+    // Lógica de inicio de sesión conectada a la API REST
+    document.getElementById('loginForm').addEventListener('submit', async function (e) {
+      e.preventDefault();
+      const code = document.getElementById('userCode').value.trim();
+      const pass = document.getElementById('userPassword').value;
+
+      if (!code || !pass) return;
+
+      const submitBtn = this.querySelector('.btn-submit');
+      const originalText = submitBtn.innerHTML;
+      submitBtn.innerHTML = 'Verificando...';
+      submitBtn.disabled = true;
+
+      const res = await API.login(code, pass);
+
+      if (res.success) {
+        // Redirigir según rol de usuario
+        if (res.user && res.user.role === 'Rector') {
+          window.location.href = '/rector';
+        } else {
+          window.location.href = '/';
+        }
+      } else {
+        alert(res.message || 'Error de autenticación. Verifique sus credenciales.');
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+      }
+    });
+  </script>
+
+  <!-- Cargar primero el cliente de API y después la lógica de la app -->
+  <script src="{{ url_for('static', filename='js/api-client.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+
+</html>

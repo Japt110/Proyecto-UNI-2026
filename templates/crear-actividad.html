@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Crear Actividad - Plataforma de Eventos UNI</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/variables.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/global.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/layout-components.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/crear-actividad.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/detalle.css') }}">
+  <!-- Google Fonts: Inter & Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@500;600;700;800&display=swap"
+    rel="stylesheet">
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+
+<body class="bg-form-page" data-page="crear">
+  <div class="app-container form-page-container">
+
+    <!-- HEADER DE LA PLATAFORMA -->
+    <header class="main-header header-form-page">
+      <div class="header-left">
+        <!-- Logo UNI -->
+        <div class="uni-logo-box">
+          <img src="{{ url_for('static', filename='img/uni_logo.png') }}" alt="Logo UNI" class="uni-logo-img">
+        </div>
+        <!-- Sub-navigation links -->
+        <nav class="header-nav-links">
+          <a href="rector.html" class="nav-link-item">ESTADÍSTICAS</a>
+          <a href="usuarios.html" class="nav-link-item">USUARIOS</a>
+          <a href="index.html" class="nav-link-item active">ACTIVIDADES</a>
+        </nav>
+      </div>
+
+      <!-- User Profile -->
+      <div class="header-right" id="user-profile-trigger">
+        <div class="user-info-text">
+          <span class="nup-id">#CUP <strong class="user-name-highlight">Nombre de usuario</strong></span>
+          <span class="user-role-label">Responsable x área</span>
+        </div>
+        <div class="user-avatar-circle" title="Abrir menú de usuario">
+          <i data-lucide="user"></i>
+        </div>
+      </div>
+    </header>
+
+    <!-- BOTÓN REGRESAR -->
+    <div class="top-back-bar">
+      <a href="index.html" class="btn-back">
+        <i data-lucide="chevron-left"></i>
+        <span>Regresar</span>
+      </a>
+    </div>
+
+    <!-- FORMULARIO PRINCIPAL -->
+    <form id="form-crear-actividad" onsubmit="saveActivityAndRedirect(event)">
+
+      <!-- CONTENEDOR DE PORTADA -->
+      <div class="cover-upload-box" id="cover-upload-box">
+        <input type="file" id="cover-input" accept="image/*" class="hidden-file-input"
+          onchange="previewCoverImage(event)" />
+        <label for="cover-input" class="cover-upload-label">
+          <div class="cover-icon-wrapper" id="cover-icon-wrapper">
+            <i data-lucide="image-plus" class="cover-icon"></i>
+            <span class="cover-text">Agregar portada</span>
+          </div>
+          <img id="cover-preview-img" class="cover-preview-img hidden" alt="Vista previa de portada" />
+        </label>
+      </div>
+
+      <!-- BARRA NEGRA DE ACCION (GUARDAR / CANCELAR) -->
+      <div class="black-action-bar">
+        <div class="black-bar-actions">
+          <button type="submit" class="btn-save-green">
+            <span>Guardar</span>
+            <i data-lucide="save"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- CUERPO AZUL DEL FORMULARIO -->
+      <div class="blue-form-body">
+
+        <!-- Nombre del evento -->
+        <div class="form-field-group">
+          <label class="blue-form-label">Nombre del evento <span class="field-desc-inline">— El título público de la
+              actividad académica (máx. 150 caracteres).</span></label>
+          <input type="text" id="form-title" class="form-input-pill full-width" placeholder="Nombre del evento"
+            required />
+        </div>
+
+        <!-- 1. Tipo de actividad (con ícono (i) e info box flotante) -->
+        <div class="form-field-group width-medium">
+          <div class="label-with-info" style="display: inline-flex; align-items: center; gap: 6px;">
+            <label class="blue-form-label" style="margin-bottom: 0;">Tipo de actividad <span class="field-desc-inline">—
+                Categoría o formato metodológico del evento (taller, simposio, feria, etc.).</span></label>
+            <span class="info-tooltip-badge" id="btn-tipo-info" onmouseenter="showCustomTipoTooltip(event, 'form-type')"
+              onmouseleave="hideCustomTipoTooltip()">
+              <i data-lucide="info"></i>
+            </span>
+          </div>
+          <div class="select-wrapper" style="margin-top: 6px;">
+            <select id="form-type" class="form-select-pill" onchange="updateTipoDescripcionUI()">
+              <option value="Feria Científica">Feria Científica</option>
+              <option value="Conferencia Magistral">Conferencia Magistral</option>
+              <option value="Taller Práctico">Taller Práctico</option>
+              <option value="Simposio">Simposio</option>
+            </select>
+            <i data-lucide="chevron-down" class="select-chevron"></i>
+          </div>
+        </div>
+
+        <!-- Area Responsable (Área del conocimiento) -->
+        <div class="form-field-group">
+          <label class="blue-form-label">Área Responsable: <span class="field-desc-inline">— Área del conocimiento
+              asociado a la actividad.</span></label>
+          <div class="select-wrapper">
+            <select id="form-area" class="form-select-pill">
+              <option value="">Cargando áreas...</option>
+            </select>
+            <i data-lucide="chevron-down" class="select-chevron"></i>
+          </div>
+        </div>
+
+        <!-- Propósito -->
+        <div class="form-field-group">
+          <label class="blue-form-label">Propósito <span class="field-desc-inline">— Objetivo o finalidad estratégica de
+              la realización de esta actividad.</span></label>
+          <textarea id="form-purpose" class="form-textarea-pill" rows="3"
+            placeholder="Ingresa el propósito del evento..."></textarea>
+        </div>
+
+        <!-- Descripción -->
+        <div class="form-field-group">
+          <label class="blue-form-label">Descripción <span class="field-desc-inline">— Detalle completo y agenda
+              resumida de las temáticas a abordar.</span></label>
+          <textarea id="form-desc" class="form-textarea-pill" rows="5"
+            placeholder="Descripción detallada de la actividad..." required></textarea>
+        </div>
+
+        <!-- Row: CUR + Lugar (Comboboxes) -->
+        <div class="form-row-2col">
+          <div class="form-field-group">
+            <label class="blue-form-label">CUR:</label>
+            <div class="select-wrapper">
+              <select id="form-recinto" class="form-select-pill">
+                <option value="RUSB">CUR Simón Bolívar (RUSB)</option>
+                <option value="RUPAP">CUR Pedro Aráuz Palacios (RUPAP)</option>
+                <option value="UNI-NORTE">UNI Sede Norte</option>
+              </select>
+              <i data-lucide="chevron-down" class="select-chevron"></i>
+            </div>
+          </div>
+
+          <div class="form-field-group">
+            <label class="blue-form-label">Lugar: <span class="field-desc-inline">— Espacio físico o auditorio
+                específico asignado.</span></label>
+            <div class="select-wrapper">
+              <select id="form-lugar" class="form-select-pill">
+                <option value="">Seleccione el lugar / espacio...</option>
+              </select>
+              <i data-lucide="chevron-down" class="select-chevron"></i>
+            </div>
+          </div>
+        </div>
+
+        <!-- ROW: FECHA/HORA + EJES ESTRATEGICOS -->
+        <div class="date-ejes-row">
+          <!-- Columna Izquierda: Fecha y Horario -->
+          <div class="form-column" style="display: flex; flex-direction: column; gap: 20px;">
+            <!-- FECHA -->
+            <div class="form-field-group icon-field-wrap">
+              <label class="blue-form-label">Fecha del evento: <span class="field-desc-inline">— agregar una fecha
+                  significa que este tendra 1 dia de duracion.</span></label>
+              <div class="field-with-icon-row">
+                <div class="blue-icon-box">
+                  <i data-lucide="calendar"></i>
+                </div>
+                <div class="date-time-inputs-wrapper">
+                  <input type="date" id="form-date-start" class="form-input-pill width-auto" required
+                    onchange="handleDateStartChange()" />
+
+                  <!-- Botón Agregar Fecha Cierre -->
+                  <button type="button" id="btn-add-end-date" class="btn-toggle-end-field hidden"
+                    onclick="showEndDateInput()">
+                    <i data-lucide="plus"></i>
+                    <span>agregar fecha adicional</span>
+                  </button>
+
+                  <!-- Input Fecha Cierre -->
+                  <div id="end-date-container" class="end-input-container hidden">
+                    <span class="range-separator">hasta</span>
+                    <input type="date" id="form-date-end" class="form-input-pill width-auto"
+                      onchange="handleDateEndChange()" />
+                    <button type="button" class="btn-remove-end-field" onclick="hideEndDateInput()"
+                      title="Quitar fecha de cierre">
+                      <i data-lucide="x"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <!-- Mensaje de aviso cuando solo se ingresa fecha de inicio -->
+              <div id="date-single-notice" class="date-single-notice">
+                <i data-lucide="info"></i>
+                <span>Si es una sola fecha, se tomará como fecha de inicio y de finalización del evento.</span>
+              </div>
+            </div>
+
+            <!-- HORARIO -->
+            <div class="form-field-group icon-field-wrap">
+              <label class="blue-form-label">Horario del evento (Hora de Inicio y Finalización): <span
+                  class="field-desc-inline">— Intervalo de tiempo.</span></label>
+              <div class="field-with-icon-row">
+                <div class="blue-icon-box">
+                  <i data-lucide="clock"></i>
+                </div>
+                <div class="date-time-inputs-wrapper">
+                  <span class="time-label-prefix">Desde:</span>
+                  <input type="time" id="form-time-start" class="form-input-pill width-auto" value="08:00" required />
+                  <span class="range-separator">hasta:</span>
+                  <input type="time" id="form-time-end" class="form-input-pill width-auto" value="16:00" required />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Columna Derecha: Ejes Estratégicos -->
+          <div class="form-field-group">
+            <div class="lineamientos-header-row">
+              <label class="blue-form-label">Ejes estratégicos de la actividad <span class="field-desc-inline">—
+                  Seleccione hasta 4 ejes (mínimo 1).</span></label>
+              <span class="lineamientos-badge-count" id="lineamientos-badge-count">0 / 4 seleccionados</span>
+            </div>
+            <div class="select-wrapper" style="margin-top: 10px;">
+              <select id="form-lineamientos-select" class="form-select-pill"
+                onchange="handleAddLineamientoFromSelect()">
+                <option value="">Cargando lineamientos...</option>
+              </select>
+              <i data-lucide="chevron-down" class="select-chevron"></i>
+            </div>
+            <div id="lineamientos-tags-container" class="ejes-pills-container">
+              <!-- Las pills seleccionadas se colocarán aquí -->
+            </div>
+          </div>
+        </div> <!-- PANEL DE JUSTIFICACIONES (Abajo, ancho completo) -->
+        <div id="lineamientos-justificaciones-box" class="form-field-group lineamientos-section-box hidden"
+          style="margin-top: 24px; display: none;">
+          <div id="lineamientos-justificaciones-container" class="lineamientos-justificaciones-box">
+            <!-- Justificaciones para los lineamientos seleccionados -->
+          </div>
+        </div>
+
+        <!-- BOTÓN DE GUARDAR AL FINAL DEL FORMULARIO -->
+        <div style="display: flex; justify-content: flex-end; margin-top: 32px; padding-bottom: 24px;">
+          <button type="submit" class="btn-save-green"
+            style="padding: 14px 32px; font-size: 16px; border-radius: 12px; display: flex; align-items: center; gap: 8px;">
+            <span>Guardar Actividad</span>
+            <i data-lucide="save"></i>
+          </button>
+        </div>
+
+      </div>
+
+    </form>
+    <!-- RIGHT SLIDE-OVER USER DRAWER -->
+    <div id="drawer-backdrop" class="drawer-backdrop"></div>
+    <aside id="user-drawer" class="user-drawer">
+      <div class="drawer-header">
+        <h3>Perfil de Usuario</h3>
+        <button id="btn-close-drawer" class="btn-close-drawer" aria-label="Cerrar panel">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+
+      <div class="drawer-user-profile">
+        <div class="drawer-avatar">
+          <i data-lucide="user"></i>
+        </div>
+        <div class="drawer-user-details">
+          <h4>Nombre de usuario</h4>
+          <span class="drawer-nup">#CUP 1048293</span>
+          <span class="drawer-area">Responsable x área</span>
+          <span class="drawer-email">usuario.encargado@uni.edu.ni</span>
+        </div>
+      </div>
+
+      <div class="drawer-section">
+        <label class="drawer-section-title">Cambiar Vista por Rol</label>
+        <div class="role-selector-toggle">
+          <a href="rector.html" class="role-toggle-btn">
+            <i data-lucide="crown"></i>
+            <span>Rector</span>
+          </a>
+          <a href="index.html" class="role-toggle-btn active">
+            <i data-lucide="clipboard-list"></i>
+            <span>Encargado</span>
+          </a>
+        </div>
+      </div>
+
+      <div class="drawer-menu">
+        <a href="javascript:void(0)" class="drawer-menu-item" onclick="handleMenuClick('Configuración')">
+          <i data-lucide="settings"></i>
+          <span>Configuración</span>
+        </a>
+        <a href="rector.html" class="drawer-menu-item">
+          <i data-lucide="pie-chart"></i>
+          <span>Dashboard Rector</span>
+        </a>
+        <a href="index.html" class="drawer-menu-item">
+          <i data-lucide="calendar"></i>
+          <span>Mis Actividades</span>
+        </a>
+
+        <div class="menu-divider"></div>
+
+        <a href="login.html" class="drawer-menu-item item-logout">
+          <i data-lucide="log-out"></i>
+          <span>Cerrar sesión</span>
+        </a>
+      </div>
+    </aside>
+
+    <!-- TOAST NOTIFICATION CONTAINER -->
+    <div id="toast-container" class="toast-container"></div>
+
+  </div>
+
+  <!-- Cargar primero el cliente de API y después la lógica de la app -->
+  <script src="{{ url_for('static', filename='js/api-client.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+
+</html>
