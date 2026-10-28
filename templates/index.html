@@ -37,15 +37,18 @@
         <img src="{{ url_for('static', filename='img/uni_logo.png') }}" alt="Logo UNI" class="uni-topbar-logo">
       </a>
 
-      <!-- Conmutador de Rol (Admin / Usuario) y Avatar de Usuario a la derecha -->
+      <!-- Indicador de rol activo + Notificaciones + Avatar de usuario -->
       <div class="topbar-actions-group">
-        <!-- Switch visual para alternar y evaluar Vista Admin vs Vista Usuario -->
-        <div class="role-toggle-pill" title="Alternar entre Vista Admin y Vista Usuario">
-          <button type="button" id="role-toggle-admin" class="role-toggle-btn active">Vista Admin</button>
-          <button type="button" id="role-toggle-usuario" class="role-toggle-btn">Vista Usuario</button>
-        </div>
+        <!-- Badge que muestra el rol del usuario logueado (no es un toggle manual) -->
+        <div id="role-indicator-badge" class="role-indicator-badge" title="Rol de usuario actual"></div>
 
-        <!-- Avatar circular del PDF (Abre el Drawer de Ajustes y Notificaciones - Pág 7) -->
+        <!-- Botón de Notificaciones con Badge de contador -->
+        <button type="button" id="btn-notif-trigger" class="topbar-notif-btn" title="Notificaciones del sistema">
+          <i data-lucide="bell"></i>
+          <span id="notif-badge-count" class="topbar-notif-badge">0</span>
+        </button>
+
+        <!-- Avatar circular — Abre el Drawer de Ajustes -->
         <button type="button" id="btn-profile-trigger" class="topbar-profile-avatar-btn" title="Abrir Ajustes y Perfil">
           <i data-lucide="user"></i>
         </button>
@@ -142,11 +145,25 @@
     </section>
 
     <!-- ====================================================================
-         INDICADOR DE ESTADO "ACTIVO" (PÁGINAS 3, 5, 6 DEL PDF)
+         BARRA DE PESTAÑAS: ACTIVAS / HISTORIAL (PRIVADO ADMIN)
          ==================================================================== -->
-    <div class="pasantias-status-indicator">
-      <span class="status-dot-green"></span>
-      <span class="status-text-label">Activo</span>
+    <div class="pasantias-tabs-bar">
+      <div class="pasantias-tabs-nav">
+        <button type="button" class="pasantias-tab-btn active" id="tab-btn-activas" data-tab="activo">
+          <span class="status-dot-green"></span>
+          <span>Activas</span>
+          <span class="tab-count-badge" id="count-activas">0</span>
+        </button>
+        <button type="button" class="pasantias-tab-btn tab-admin-only" id="tab-btn-historial" data-tab="historial">
+          <i data-lucide="archive"></i>
+          <span>Historial</span>
+          <span class="tab-private-badge"><i data-lucide="lock"></i> Admin</span>
+          <span class="tab-count-badge" id="count-historial">0</span>
+        </button>
+      </div>
+      <div id="tab-context-info" class="tab-context-info">
+        <span id="tab-subtitle-text">Pasantías vigentes disponibles para postulación</span>
+      </div>
     </div>
 
     <!-- ====================================================================
@@ -184,32 +201,32 @@
         <i data-lucide="settings"></i>
         <span>Ajustes</span>
       </a>
+
+      <!-- Selector de tipo de vista (reemplaza el toggle superior) -->
+      <div class="drawer-role-selector">
+        <span class="drawer-role-label">Tipo de vista</span>
+        <div class="drawer-role-buttons">
+          <button type="button" class="drawer-role-btn" data-set-role="admin">
+            <i data-lucide="shield"></i>
+            Administrador
+          </button>
+          <button type="button" class="drawer-role-btn" data-set-role="usuario">
+            <i data-lucide="user"></i>
+            Usuario
+          </button>
+        </div>
+      </div>
     </div>
 
     <!-- Sección 'Notificaciones' con tarjeta oscura y acento rojo -->
     <div class="drawer-notifications-section">
-      <span class="notifications-heading">Notificaciones</span>
+      <div class="notifications-header-row">
+        <span class="notifications-heading">Notificaciones</span>
+        <button type="button" id="btn-clear-all-notifs" class="btn-clear-notifs-link" title="Limpiar notificaciones">Limpiar</button>
+      </div>
       
       <div id="drawer-notifications-list">
-        <!-- Notificación fija fiel al mockup de la Página 7 -->
-        <div class="notification-card-item">
-          <div class="notif-avatar-col">
-            <div class="notif-avatar-circle">
-              <i data-lucide="user"></i>
-            </div>
-          </div>
-          <div class="notif-body-col">
-            <h5 class="notif-title">Pasantia #</h5>
-            <p class="notif-text">texto de descripcion....</p>
-            <div class="notif-buttons-row">
-              <button type="button" class="btn-notif-aceptar" onclick="window.pasantiasApp.showToast('Pasantía aceptada correctamente', 'success')">Aceptar</button>
-              <button type="button" class="btn-notif-vermas" onclick="window.pasantiasApp.showToast('Visualizando detalles completos', 'info')">Ver mas</button>
-            </div>
-          </div>
-          <button type="button" class="btn-notif-dismiss" title="Cerrar notificación">
-            <i data-lucide="x"></i>
-          </button>
-        </div>
+        <!-- Renderizado dinámico desde pasantias.js -->
       </div>
     </div>
 
@@ -308,6 +325,196 @@
           <button type="submit" class="btn-modal-submit">Publicar Pasantía</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- ====================================================================
+       MODAL: POSTULARSE A PASANTÍA CON CV (VISTA USUARIO)
+       ==================================================================== -->
+  <div id="modal-solicitar-pasantia" class="uni-modal-overlay">
+    <div class="uni-modal-content modal-solicitud-custom">
+      <div class="uni-modal-header">
+        <div>
+          <h3 id="solicitud-modal-title">Formulario de Postulación</h3>
+          <p id="solicitud-pasantia-subtitle" class="modal-header-subtitle">Pasantía seleccionada</p>
+        </div>
+        <button type="button" id="btn-close-solicitud-modal" class="btn-close-modal">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+
+      <form id="form-solicitar-pasantia">
+        <input type="hidden" id="solicitud-pasantia-id" />
+        <div class="uni-modal-body">
+          <div class="modal-form-group">
+            <label for="solicitud-nombre">Nombre Completo *</label>
+            <input type="text" id="solicitud-nombre" class="modal-form-input" placeholder="Ej: Juan Alejandro Pérez" required />
+          </div>
+
+          <div class="modal-form-row">
+            <div class="modal-form-group">
+              <label for="solicitud-email">Correo Electrónico Institucional *</label>
+              <input type="email" id="solicitud-email" class="modal-form-input" placeholder="estudiante@uni.edu.ni" required />
+            </div>
+            <div class="modal-form-group">
+              <label for="solicitud-telefono">Teléfono / WhatsApp *</label>
+              <input type="tel" id="solicitud-telefono" class="modal-form-input" placeholder="+505 8888-0000" required />
+            </div>
+          </div>
+
+          <div class="modal-form-group">
+            <label for="solicitud-carrera">Carrera / Año Académico</label>
+            <input type="text" id="solicitud-carrera" class="modal-form-input" placeholder="Ej: Ing. en Computación - 4to Año" />
+          </div>
+
+          <!-- Zona de Carga de CV (Cualquier formato) -->
+          <div class="modal-form-group">
+            <label class="cv-label-heading">
+              <span>Adjuntar Currículum Vitae (CV) *</span>
+              <span class="cv-format-badge">Cualquier formato permitido</span>
+            </label>
+            
+            <div class="cv-dropzone" id="cv-dropzone">
+              <input type="file" id="solicitud-cv-file" class="cv-file-input" />
+              <div class="cv-dropzone-content" id="cv-dropzone-prompt">
+                <div class="cv-icon-bubble">
+                  <i data-lucide="upload-cloud"></i>
+                </div>
+                <p class="cv-dropzone-text">
+                  <strong>Haz clic para examinar</strong> o arrastra tu archivo aquí
+                </p>
+                <p class="cv-dropzone-hint">
+                  PDF, Word (DOCX/DOC), imagen, archivo comprimido o cualquier formato conveniente
+                </p>
+              </div>
+
+              <!-- Vista previa del archivo seleccionado -->
+              <div class="cv-selected-preview" id="cv-selected-preview" style="display: none;">
+                <div class="cv-file-info">
+                  <div class="cv-file-icon">
+                    <i data-lucide="file-text" id="cv-preview-icon"></i>
+                  </div>
+                  <div class="cv-file-details">
+                    <span class="cv-file-name" id="cv-preview-name">cv_juan_perez.pdf</span>
+                    <span class="cv-file-size" id="cv-preview-size">1.2 MB</span>
+                  </div>
+                </div>
+                <button type="button" id="btn-remove-cv" class="btn-remove-cv" title="Quitar archivo">
+                  <i data-lucide="trash-2"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="modal-form-group">
+            <label for="solicitud-mensaje">Carta de Presentación o Mensaje (Opcional)</label>
+            <textarea id="solicitud-mensaje" class="modal-form-textarea" rows="2" placeholder="Describe brevemente tu motivación para esta pasantía..."></textarea>
+          </div>
+        </div>
+
+        <div class="uni-modal-footer">
+          <button type="button" id="btn-cancel-solicitud" class="btn-modal-cancel">Cancelar</button>
+          <button type="submit" class="btn-modal-submit btn-enviar-postulacion">
+            <i data-lucide="send"></i>
+            <span>Enviar Solicitud</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ====================================================================
+       MODAL: PANEL DE CANDIDATOS (VISTA ADMIN) - ACEPTAR/RECHAZAR & EXPORTAR
+       ==================================================================== -->
+  <div id="modal-candidatos-admin" class="uni-modal-overlay">
+    <div class="uni-modal-content modal-candidatos-custom">
+      <div class="uni-modal-header">
+        <div>
+          <div class="modal-header-top-tag">
+            <span class="admin-shield-tag"><i data-lucide="shield-check"></i> Panel de Administración</span>
+            <span id="candidatos-pasantia-status-badge" class="badge-status-pasantia">Activa</span>
+          </div>
+          <h3 id="candidatos-modal-title">Postulantes: Pasantía</h3>
+          <p id="candidatos-modal-company" class="modal-header-subtitle">Empresa / Departamento</p>
+        </div>
+        <button type="button" id="btn-close-candidatos-modal" class="btn-close-modal">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+
+      <!-- Barra de estadísticas de candidatos -->
+      <div class="candidatos-stats-bar">
+        <div class="stat-pill-box stat-total">
+          <span class="stat-label">Total Postulantes</span>
+          <span class="stat-value" id="stat-count-total">0</span>
+        </div>
+        <div class="stat-pill-box stat-pendientes">
+          <span class="stat-label">Pendientes</span>
+          <span class="stat-value" id="stat-count-pendientes">0</span>
+        </div>
+        <div class="stat-pill-box stat-aceptados">
+          <span class="stat-label">Aceptados</span>
+          <span class="stat-value" id="stat-count-aceptados">0</span>
+        </div>
+        <div class="stat-pill-box stat-rechazados">
+          <span class="stat-label">Rechazados</span>
+          <span class="stat-value" id="stat-count-rechazados">0</span>
+        </div>
+      </div>
+
+      <!-- Barra de acciones y filtros dentro del modal -->
+      <div class="candidatos-filter-bar">
+        <div class="candidatos-search-wrapper">
+          <i data-lucide="search"></i>
+          <input type="text" id="candidatos-search-input" placeholder="Buscar por nombre, correo..." />
+        </div>
+        <div class="candidatos-state-filters">
+          <button type="button" class="btn-cand-filter active" data-filter="todos">Todos</button>
+          <button type="button" class="btn-cand-filter" data-filter="pendiente">Pendientes</button>
+          <button type="button" class="btn-cand-filter" data-filter="aceptado">Aceptados</button>
+          <button type="button" class="btn-cand-filter" data-filter="rechazado">Rechazados</button>
+        </div>
+        <button type="button" id="btn-exportar-csv" class="btn-exportar-csv-action" title="Descargar datos en formato CSV para Excel">
+          <i data-lucide="download"></i>
+          <span>Exportar Postulantes (CSV)</span>
+        </button>
+      </div>
+
+      <!-- Contenedor scrolleable con la tabla de postulantes -->
+      <div class="candidatos-table-wrapper">
+        <table class="candidatos-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Postulante</th>
+              <th>Contacto</th>
+              <th>Fecha</th>
+              <th>Currículum Vitae</th>
+              <th>Estado</th>
+              <th style="text-align: center;">Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="candidatos-table-tbody">
+            <!-- Filas inyectadas dinámicamente -->
+          </tbody>
+        </table>
+        <div id="candidatos-empty-state" class="candidatos-empty-state" style="display: none;">
+          <i data-lucide="users-2"></i>
+          <h4>No hay postulantes registrados</h4>
+          <p>Los estudiantes que envíen su solicitud aparecerán aquí para su revisión y exportación.</p>
+        </div>
+      </div>
+
+      <div class="uni-modal-footer candidatos-modal-footer">
+        <span class="candidatos-footer-info" id="candidatos-footer-info">Mostrando 0 candidatos</span>
+        <div class="candidatos-footer-buttons">
+          <button type="button" id="btn-candidatos-modal-close" class="btn-modal-cancel">Cerrar</button>
+          <button type="button" id="btn-exportar-csv-footer" class="btn-exportar-csv-action">
+            <i data-lucide="file-spreadsheet"></i>
+            <span>Exportar CSV</span>
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 

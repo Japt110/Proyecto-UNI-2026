@@ -72,33 +72,79 @@ body.drawer-opened .pasantias-page-wrapper {
   gap: 16px;
 }
 
-/* Switch de demostración de Roles: Admin vs Usuario */
-.role-toggle-pill {
+/* Badge de rol en el topbar — indicador de sólo lectura del usuario actual */
+.role-indicator-badge {
   display: inline-flex;
-  background: #EEF2F7;
-  padding: 4px;
+  align-items: center;
+  padding: 6px 16px;
   border-radius: var(--uni-radius-pill);
-  border: 1px solid var(--uni-blue-border-light);
-  gap: 4px;
-}
-
-.role-toggle-btn {
-  border: none;
-  background: transparent;
-  padding: 6px 14px;
   font-family: 'Inter', sans-serif;
   font-size: 12px;
-  font-weight: 600;
-  color: #475569;
-  border-radius: var(--uni-radius-pill);
-  cursor: pointer;
-  transition: all 0.2s ease;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  pointer-events: none; /* no es un botón, solo informativo */
+  transition: background 0.2s ease;
 }
 
-.role-toggle-btn.active {
+.role-indicator-badge.role-admin {
   background: var(--uni-blue-deep);
   color: #FFFFFF;
-  box-shadow: 0 2px 6px rgba(11, 27, 72, 0.25);
+  box-shadow: 0 2px 8px rgba(11, 27, 72, 0.3);
+}
+
+.role-indicator-badge.role-usuario {
+  background: #EEF2F7;
+  color: #334155;
+  border: 1.5px solid var(--uni-blue-border-light);
+}
+
+/* Botón de Notificaciones en el topbar con contador */
+.topbar-notif-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #FFFFFF;
+  color: var(--uni-blue-deep);
+  border: 1.5px solid var(--uni-blue-border-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.topbar-notif-btn:hover {
+  background: #F1F5F9;
+  border-color: var(--uni-blue-border);
+  transform: translateY(-1px);
+}
+
+.topbar-notif-btn i,
+.topbar-notif-btn svg {
+  width: 22px;
+  height: 22px;
+}
+
+.topbar-notif-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: #EF4444;
+  color: #FFFFFF;
+  font-family: 'Inter', sans-serif;
+  font-size: 10.5px;
+  font-weight: 800;
+  min-width: 19px;
+  height: 19px;
+  border-radius: 99px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  border: 2px solid #FFFFFF;
+  box-shadow: 0 2px 5px rgba(239, 68, 68, 0.4);
 }
 
 /* Avatar de perfil redondo del PDF */
@@ -329,29 +375,142 @@ body.drawer-opened .pasantias-page-wrapper {
 }
 
 /* ==========================================================================
-   INDICADOR DE ESTADO "ACTIVO"
+   BARRA DE PESTAÑAS: ACTIVAS VS HISTORIAL (PRIVADO ADMIN)
    ========================================================================== */
-.pasantias-status-indicator {
+.pasantias-tabs-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 22px;
+}
+
+.pasantias-tabs-nav {
   display: flex;
   align-items: center;
+  gap: 12px;
+  border-bottom: 1.5px solid #E2E8F0;
+  padding-bottom: 8px;
+}
+
+.pasantias-tab-btn {
+  background: transparent;
+  border: none;
+  font-family: 'Inter', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: #64748B;
+  display: inline-flex;
+  align-items: center;
   gap: 8px;
-  margin-bottom: 20px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.pasantias-tab-btn:hover {
+  color: var(--uni-blue-deep);
+  background: #F8FAFC;
+}
+
+.pasantias-tab-btn.active {
+  color: var(--uni-blue-deep);
+  background: #EFF6FF;
+}
+
+.pasantias-tab-btn.active::after {
+  content: '';
+  position: absolute;
+  bottom: -9.5px;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--uni-blue-deep);
+  border-radius: 99px;
+}
+
+.tab-count-badge {
+  background: #E2E8F0;
+  color: #334155;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 99px;
+  line-height: 1;
+}
+
+.pasantias-tab-btn.active .tab-count-badge {
+  background: var(--uni-blue-deep);
+  color: #FFFFFF;
+}
+
+.tab-private-badge {
+  background: #FEF3C7;
+  color: #92400E;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.tab-private-badge i,
+.tab-private-badge svg {
+  width: 10px;
+  height: 10px;
+}
+
+.tab-context-info {
+  font-size: 13px;
+  color: #64748B;
+  font-weight: 500;
+  margin-left: 4px;
 }
 
 .status-dot-green {
-  width: 11px;
-  height: 11px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
   background-color: var(--uni-green-active);
-  box-shadow: 0 0 8px rgba(0, 200, 83, 0.5);
+  box-shadow: 0 0 8px rgba(0, 200, 83, 0.6);
   display: inline-block;
 }
 
-.status-text-label {
-  font-family: 'Inter', sans-serif;
-  font-size: 17px;
+/* Empty state para el grid */
+.pasantias-empty-grid {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 60px 20px;
+  background: #F8FAFC;
+  border: 2px dashed #CBD5E1;
+  border-radius: 16px;
+  margin: 10px 0;
+}
+
+.pasantias-empty-grid .empty-grid-icon {
+  width: 52px;
+  height: 52px;
+  margin: 0 auto 12px;
+  display: block;
+  color: #94A3B8;
+}
+
+.pasantias-empty-grid h4 {
+  font-size: 16.5px;
   font-weight: 700;
-  color: #0F172A;
+  color: #1E293B;
+  margin-bottom: 6px;
+}
+
+.pasantias-empty-grid p {
+  font-size: 13.5px;
+  color: #64748B;
+  margin: 0;
 }
 
 /* ==========================================================================
@@ -361,6 +520,7 @@ body.drawer-opened .pasantias-page-wrapper {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 22px;
+  align-items: start; /* Cada tarjeta solo ocupa su propio alto — previene que el grid estire las cards vecinas */
 }
 
 @media (max-width: 960px) {
@@ -375,22 +535,26 @@ body.drawer-opened .pasantias-page-wrapper {
   }
 }
 
-/* Tarjeta de Pasantía */
+/* ==========================================================================
+   TARJETA DE PASANTÍA — HOVER EXPANDE, SOLO LA TARJETA ACTIVA MUESTRA DETALLES
+   ========================================================================== */
 .pasantia-card {
   border-radius: var(--uni-radius-card);
   overflow: hidden;
   box-shadow: 0 6px 16px rgba(11, 27, 72, 0.08);
   display: flex;
   flex-direction: column;
-  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  transition: transform 0.28s ease, box-shadow 0.28s ease;
   cursor: pointer;
   position: relative;
-  border: 1px solid transparent;
+  border: 1.5px solid transparent;
 }
 
 .pasantia-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 28px rgba(11, 27, 72, 0.16);
+  transform: translateY(-6px);
+  box-shadow: 0 18px 38px rgba(11, 27, 72, 0.22);
+  border-color: #38BDF8;
+  z-index: 10;
 }
 
 .pasantia-card-banner {
@@ -399,6 +563,12 @@ body.drawer-opened .pasantias-page-wrapper {
   object-fit: cover;
   display: block;
   background-color: #CBD5E1;
+  transition: height 0.28s ease;
+}
+
+/* Al hacer hover, reducir la imagen para dar espacio al detalle */
+.pasantia-card:hover .pasantia-card-banner {
+  height: 90px;
 }
 
 .pasantia-card-body {
@@ -408,6 +578,72 @@ body.drawer-opened .pasantias-page-wrapper {
   display: flex;
   flex-direction: column;
   flex: 1;
+  min-height: 130px;
+  transition: min-height 0.28s ease;
+}
+
+/* Estado colapsado (visible por defecto, oculto en hover) */
+.pasantia-card-collapsed {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  transition: opacity 0.2s ease;
+}
+
+.pasantia-card:hover .pasantia-card-collapsed {
+  display: none;
+}
+
+/* Estado expandido (oculto por defecto, visible en hover) */
+.pasantia-card-expanded {
+  display: none;
+  flex-direction: column;
+  flex: 1;
+}
+
+.pasantia-card:hover .pasantia-card-expanded {
+  display: flex;
+}
+
+/* Zona scrolleable dentro de la tarjeta expandida */
+.pasantia-expanded-scroll {
+  flex: 1;
+  overflow-y: auto;
+  max-height: 160px;
+  margin: 8px 0 12px 0;
+  padding-right: 4px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.3) transparent;
+}
+
+.pasantia-expanded-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+
+.pasantia-expanded-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.pasantia-expanded-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.35);
+  border-radius: 99px;
+}
+
+.pasantia-empresa {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #93C5FD;
+  margin: 4px 0 8px 0;
+}
+
+.pasantia-empresa i,
+.pasantia-empresa svg {
+  width: 13px;
+  height: 13px;
+  color: #93C5FD;
 }
 
 .pasantia-card-title {
@@ -425,6 +661,27 @@ body.drawer-opened .pasantias-page-wrapper {
   margin-bottom: 4px;
 }
 
+/* Preview de descripción (2 líneas, colapsado) */
+.pasantia-card-desc-preview {
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.88);
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Descripción completa (expandida, dentro del scroll) */
+.pasantia-card-desc-full {
+  font-size: 12px;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.88);
+  margin: 0 0 4px 0;
+}
+
+/* Alias de compatibilidad */
 .pasantia-card-desc-text {
   font-size: 12.5px;
   line-height: 1.45;
@@ -436,32 +693,12 @@ body.drawer-opened .pasantias-page-wrapper {
   overflow: hidden;
 }
 
-/* ==========================================================================
-   TARJETA EXPANDIDA / DETALLE INTERACTIVO (PÁGINA 6 - VISTA USUARIO)
-   ========================================================================== */
-.pasantia-card.is-expanded {
-  grid-column: span 1;
-  box-shadow: 0 16px 36px rgba(11, 27, 72, 0.25);
-  border-color: #38BDF8;
-}
-
-/* Si la pantalla es ancha, permitir que ocupe ancho destacado */
-@media (min-width: 960px) {
-  .pasantia-card.is-expanded {
-    grid-column: 1 / 2;
-  }
-}
-
-.pasantia-card.is-expanded .pasantia-card-body {
-  padding-bottom: 20px;
-}
-
 /* Fila de Badges / Pastillas en la tarjeta expandida */
 .pasantia-badges-row {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin: 10px 0 14px 0;
+  margin: 8px 0 10px 0;
 }
 
 .pasantia-badge {
@@ -481,12 +718,66 @@ body.drawer-opened .pasantias-page-wrapper {
   color: #FFFFFF;
 }
 
-/* Fila de Botones: GUARDAR y SOLICITAR */
+.pasantia-badge.badge-virtual {
+  background: #7C3AED;
+  color: #FFFFFF;
+}
+
+.pasantia-badge.badge-hibrida {
+  background: #0891B2;
+  color: #FFFFFF;
+}
+
+/* Fila de Botones: GUARDAR / SOLICITAR / TERMINAR */
 .pasantia-actions-row {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-top: 18px;
+  gap: 10px;
+  margin-top: 12px;
+  flex-shrink: 0;
+}
+
+.pasantia-card-banner-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.card-status-overlay-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(4px);
+  color: #F87171;
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 99px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid rgba(248, 113, 113, 0.4);
+}
+
+.card-status-overlay-badge i,
+.card-status-overlay-badge svg {
+  width: 12px;
+  height: 12px;
+}
+
+.pasantia-card-finalizada {
+  opacity: 0.95;
+  filter: saturate(0.9);
+}
+
+/* Fila de Botones: GUARDAR / SOLICITAR / TERMINAR / CANDIDATOS */
+.pasantia-actions-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  flex-shrink: 0;
 }
 
 .btn-pasantia-guardar {
@@ -495,19 +786,41 @@ body.drawer-opened .pasantias-page-wrapper {
   color: #FFFFFF;
   border: 1.5px solid rgba(255, 255, 255, 0.7);
   font-family: 'Inter', sans-serif;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
-  letter-spacing: 0.8px;
+  letter-spacing: 0.6px;
   text-transform: uppercase;
-  padding: 8px 14px;
+  padding: 7px 10px;
   border-radius: var(--uni-radius-btn);
   cursor: pointer;
   transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+
+.btn-pasantia-guardar i,
+.btn-pasantia-guardar svg {
+  width: 13px;
+  height: 13px;
 }
 
 .btn-pasantia-guardar:hover {
-  background: #14285D;
+  background: #FFFFFF;
+  color: var(--uni-blue-deep);
   border-color: #FFFFFF;
+}
+
+.btn-pasantia-guardar.is-guardada {
+  background: #FEF3C7;
+  color: #92400E;
+  border-color: #FCD34D;
+}
+
+.btn-pasantia-guardar.is-guardada:hover {
+  background: #FDE68A;
+  color: #78350F;
 }
 
 .btn-pasantia-solicitar {
@@ -516,21 +829,123 @@ body.drawer-opened .pasantias-page-wrapper {
   color: #FFFFFF;
   border: none;
   font-family: 'Inter', sans-serif;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
-  letter-spacing: 0.8px;
+  letter-spacing: 0.6px;
   text-transform: uppercase;
-  padding: 8px 14px;
+  padding: 7px 10px;
   border-radius: var(--uni-radius-btn);
   cursor: pointer;
   box-shadow: 0 4px 10px rgba(0, 200, 83, 0.3);
   transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
 }
 
-.btn-pasantia-solicitar:hover {
+.btn-pasantia-solicitar:hover:not(:disabled) {
   background: #00B34A;
   transform: translateY(-1px);
   box-shadow: 0 6px 14px rgba(0, 200, 83, 0.4);
+}
+
+.btn-pasantia-solicitar.btn-ya-postulado {
+  background: rgba(255, 255, 255, 0.2);
+  color: #A7F3D0;
+  border: 1px solid rgba(167, 243, 208, 0.5);
+  box-shadow: none;
+  cursor: default;
+}
+
+.btn-pasantia-solicitar i,
+.btn-pasantia-solicitar svg {
+  width: 13px;
+  height: 13px;
+}
+
+/* Botón CANDIDATOS (Admin) */
+.btn-pasantia-candidatos {
+  flex: 1.2;
+  background: #1E40AF;
+  color: #FFFFFF;
+  border: 1.5px solid rgba(255, 255, 255, 0.75);
+  font-family: 'Inter', sans-serif;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  padding: 7px 10px;
+  border-radius: var(--uni-radius-btn);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 10px rgba(30, 64, 175, 0.3);
+}
+
+.btn-pasantia-candidatos:hover {
+  background: #2563EB;
+  border-color: #FFFFFF;
+  transform: translateY(-1px);
+}
+
+.btn-pasantia-candidatos i,
+.btn-pasantia-candidatos svg {
+  width: 13px;
+  height: 13px;
+}
+
+/* Botón TERMINAR (Admin) — finaliza el período de inscripción */
+.btn-pasantia-terminar {
+  flex: 1;
+  background: #B91C1C;
+  color: #FFFFFF;
+  border: 1.5px solid rgba(255, 255, 255, 0.6);
+  font-family: 'Inter', sans-serif;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  padding: 7px 8px;
+  border-radius: var(--uni-radius-btn);
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(185, 28, 28, 0.35);
+  transition: all 0.2s ease;
+}
+
+.btn-pasantia-terminar:hover {
+  background: #991B1B;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(185, 28, 28, 0.45);
+}
+
+/* Botón REABRIR (Admin en Historial) */
+.btn-pasantia-reabrir {
+  flex: 1;
+  background: #0284C7;
+  color: #FFFFFF;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  font-family: 'Inter', sans-serif;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  padding: 7px 8px;
+  border-radius: var(--uni-radius-btn);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  transition: all 0.2s ease;
+}
+
+.btn-pasantia-reabrir:hover {
+  background: #0369A1;
+  transform: translateY(-1px);
 }
 
 /* ==========================================================================
@@ -854,6 +1269,62 @@ body.drawer-opened .pasantias-page-wrapper {
 .btn-drawer-cerrar-sesion svg {
   width: 20px;
   height: 20px;
+}
+
+/* Selector de tipo de vista dentro del Drawer */
+.drawer-role-selector {
+  margin-top: 14px;
+}
+
+.drawer-role-label {
+  display: block;
+  font-family: 'Inter', sans-serif;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #64748B;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.drawer-role-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.drawer-role-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: var(--uni-drawer-btn);
+  border: 2px solid transparent;
+  border-radius: 10px;
+  padding: 9px 12px;
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.drawer-role-btn i,
+.drawer-role-btn svg {
+  width: 15px;
+  height: 15px;
+}
+
+.drawer-role-btn:hover {
+  background: var(--uni-drawer-btn-hover);
+}
+
+.drawer-role-btn.role-btn-active {
+  background: var(--uni-blue-deep);
+  color: #FFFFFF;
+  border-color: transparent;
+  box-shadow: 0 3px 10px rgba(11, 27, 72, 0.3);
 }
 
 /* ==========================================================================
@@ -1266,4 +1737,753 @@ body.drawer-opened .pasantias-page-wrapper {
   background: #D32F2F;
   transform: translateY(-1px);
 }
+
+/* ==========================================================================
+   MODAL DE POSTULACIÓN CON CARGA DE CV (CUALQUIER FORMATO)
+   ========================================================================== */
+.modal-solicitud-custom {
+  max-width: 580px;
+  width: 92vw;
+}
+
+.modal-header-subtitle {
+  font-size: 13px;
+  color: #64748B;
+  margin: 3px 0 0 0;
+  font-weight: 500;
+}
+
+.cv-label-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #1E293B;
+}
+
+.cv-format-badge {
+  background: #EFF6FF;
+  color: #1D4ED8;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 99px;
+  border: 1px solid #BFDBFE;
+}
+
+.cv-dropzone {
+  border: 2px dashed #CBD5E1;
+  background: #F8FAFC;
+  border-radius: 12px;
+  padding: 18px 16px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.cv-dropzone:hover,
+.cv-dropzone.drag-over {
+  border-color: #2563EB;
+  background: #EFF6FF;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+}
+
+.cv-file-input {
+  display: none;
+}
+
+.cv-dropzone-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.cv-icon-bubble {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #DBEAFE;
+  color: #1D4ED8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cv-icon-bubble i,
+.cv-icon-bubble svg {
+  width: 24px;
+  height: 24px;
+}
+
+.cv-dropzone-text {
+  font-size: 13px;
+  color: #334155;
+  margin: 0;
+}
+
+.cv-dropzone-hint {
+  font-size: 11px;
+  color: #64748B;
+  margin: 0;
+}
+
+.cv-selected-preview {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #FFFFFF;
+  border: 1.5px solid #CBD5E1;
+  border-radius: 10px;
+  padding: 10px 14px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+.cv-file-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.cv-file-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: #EFF6FF;
+  color: #2563EB;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.cv-file-icon i,
+.cv-file-icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.cv-file-details {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  text-align: left;
+}
+
+.cv-file-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: #0F172A;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 320px;
+}
+
+.cv-file-size {
+  font-size: 11px;
+  color: #64748B;
+}
+
+.btn-remove-cv {
+  background: #FEE2E2;
+  color: #DC2626;
+  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.btn-remove-cv:hover {
+  background: #DC2626;
+  color: #FFFFFF;
+}
+
+.btn-remove-cv i,
+.btn-remove-cv svg {
+  width: 16px;
+  height: 16px;
+}
+
+.btn-enviar-postulacion {
+  background: var(--uni-green-active);
+  color: #FFFFFF;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 4px 12px rgba(0, 200, 83, 0.35);
+}
+
+.btn-enviar-postulacion:hover {
+  background: #00B34A;
+}
+
+/* ==========================================================================
+   MODAL PANEL DE CANDIDATOS (VISTA ADMIN) - ACEPTAR/RECHAZAR & EXPORTAR
+   ========================================================================== */
+.modal-candidatos-custom {
+  max-width: 960px;
+  width: 92vw;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-header-top-tag {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.admin-shield-tag {
+  background: #DBEAFE;
+  color: #1E40AF;
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  text-transform: uppercase;
+}
+
+.admin-shield-tag i,
+.admin-shield-tag svg {
+  width: 12px;
+  height: 12px;
+}
+
+.badge-status-pasantia {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+
+.badge-status-pasantia.status-activa {
+  background: #DCFCE7;
+  color: #15803D;
+}
+
+.badge-status-pasantia.status-historial {
+  background: #FEF3C7;
+  color: #92400E;
+}
+
+/* Barra de estadísticas */
+.candidatos-stats-bar {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+@media (max-width: 680px) {
+  .candidatos-stats-bar {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.stat-pill-box {
+  border-radius: 12px;
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.stat-pill-box.stat-total {
+  background: #F1F5F9;
+  border: 1px solid #E2E8F0;
+}
+.stat-pill-box.stat-total .stat-value { color: #0F172A; }
+
+.stat-pill-box.stat-pendientes {
+  background: #FEF3C7;
+  border: 1px solid #FDE68A;
+}
+.stat-pill-box.stat-pendientes .stat-value { color: #B45309; }
+
+.stat-pill-box.stat-aceptados {
+  background: #DCFCE7;
+  border: 1px solid #BBF7D0;
+}
+.stat-pill-box.stat-aceptados .stat-value { color: #15803D; }
+
+.stat-pill-box.stat-rechazados {
+  background: #FEE2E2;
+  border: 1px solid #FECACA;
+}
+.stat-pill-box.stat-rechazados .stat-value { color: #B91C1C; }
+
+.stat-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: #64748B;
+}
+
+.stat-value {
+  font-family: 'Outfit', 'Inter', sans-serif;
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+/* Barra de filtros y exportar */
+.candidatos-filter-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.candidatos-search-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #FFFFFF;
+  border: 1.5px solid #CBD5E1;
+  border-radius: 8px;
+  padding: 6px 12px;
+  flex: 1;
+  min-width: 200px;
+}
+
+.candidatos-search-wrapper i,
+.candidatos-search-wrapper svg {
+  width: 15px;
+  height: 15px;
+  color: #94A3B8;
+}
+
+.candidatos-search-wrapper input {
+  border: none;
+  outline: none;
+  font-size: 12.5px;
+  color: #0F172A;
+  width: 100%;
+}
+
+.candidatos-state-filters {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-cand-filter {
+  background: #F8FAFC;
+  border: 1px solid #CBD5E1;
+  color: #475569;
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 5px 12px;
+  border-radius: 99px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.btn-cand-filter:hover {
+  background: #E2E8F0;
+  color: #0F172A;
+}
+
+.btn-cand-filter.active {
+  background: var(--uni-blue-deep);
+  color: #FFFFFF;
+  border-color: var(--uni-blue-deep);
+}
+
+.btn-exportar-csv-action {
+  background: #047857;
+  color: #FFFFFF;
+  border: none;
+  font-family: 'Inter', sans-serif;
+  font-size: 12.5px;
+  font-weight: 700;
+  padding: 8px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 6px rgba(4, 120, 87, 0.25);
+}
+
+.btn-exportar-csv-action:hover {
+  background: #065F46;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(4, 120, 87, 0.35);
+}
+
+.btn-exportar-csv-action i,
+.btn-exportar-csv-action svg {
+  width: 15px;
+  height: 15px;
+}
+
+/* Tabla de postulantes */
+.candidatos-table-wrapper {
+  flex: 1;
+  overflow-y: auto;
+  border: 1.5px solid #E2E8F0;
+  border-radius: 12px;
+  background: #FFFFFF;
+  max-height: 380px;
+  scrollbar-width: thin;
+}
+
+.candidatos-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: 'Inter', sans-serif;
+  font-size: 12.5px;
+}
+
+.candidatos-table th {
+  position: sticky;
+  top: 0;
+  background: #F8FAFC;
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 700;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  border-bottom: 1.5px solid #E2E8F0;
+  z-index: 2;
+}
+
+.candidatos-table td {
+  padding: 10px 14px;
+  border-bottom: 1px solid #F1F5F9;
+  vertical-align: middle;
+}
+
+.candidatos-table tbody tr:hover td {
+  background: #F8FAFC;
+}
+
+.td-index {
+  color: #94A3B8;
+  font-weight: 600;
+  width: 30px;
+}
+
+.cand-cell-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cand-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #2563EB;
+  color: #FFFFFF;
+  font-weight: 700;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.cand-user-meta {
+  display: flex;
+  flex-direction: column;
+}
+
+.cand-name {
+  font-weight: 700;
+  color: #0F172A;
+  font-size: 13px;
+}
+
+.cand-carrera {
+  font-size: 11px;
+  color: #64748B;
+}
+
+.cand-email {
+  display: block;
+  font-weight: 500;
+  color: #1E293B;
+}
+
+.cand-tel {
+  display: block;
+  font-size: 11px;
+  color: #64748B;
+}
+
+.td-fecha {
+  color: #64748B;
+  white-space: nowrap;
+}
+
+.btn-descargar-cv {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #EFF6FF;
+  color: #1D4ED8;
+  padding: 5px 10px;
+  border-radius: 6px;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 11.5px;
+  transition: all 0.18s ease;
+  border: 1px solid #BFDBFE;
+}
+
+.btn-descargar-cv:hover {
+  background: #DBEAFE;
+  color: #1E40AF;
+}
+
+.btn-descargar-cv.is-placeholder {
+  background: #F1F5F9;
+  color: #475569;
+  border-color: #CBD5E1;
+}
+
+.btn-descargar-cv i,
+.btn-descargar-cv svg {
+  width: 14px;
+  height: 14px;
+}
+
+.cv-table-size {
+  font-size: 10px;
+  color: #64748B;
+}
+
+.badge-cand-estado {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 99px;
+  white-space: nowrap;
+}
+
+.badge-cand-estado i,
+.badge-cand-estado svg {
+  width: 13px;
+  height: 13px;
+}
+
+.badge-cand-estado.cand-pendiente {
+  background: #FEF3C7;
+  color: #92400E;
+}
+
+.badge-cand-estado.cand-aceptado {
+  background: #DCFCE7;
+  color: #15803D;
+}
+
+.badge-cand-estado.cand-rechazado {
+  background: #FEE2E2;
+  color: #B91C1C;
+}
+
+.cand-actions-btn-group {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.btn-cand-action {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.18s ease;
+}
+
+.btn-cand-action i,
+.btn-cand-action svg {
+  width: 16px;
+  height: 16px;
+}
+
+.btn-cand-accept {
+  background: #DCFCE7;
+  color: #15803D;
+}
+
+.btn-cand-accept:hover,
+.btn-cand-accept.is-selected {
+  background: #16A34A;
+  color: #FFFFFF;
+  box-shadow: 0 2px 6px rgba(22, 163, 74, 0.4);
+}
+
+.btn-cand-reject {
+  background: #FEE2E2;
+  color: #B91C1C;
+}
+
+.btn-cand-reject:hover,
+.btn-cand-reject.is-selected {
+  background: #DC2626;
+  color: #FFFFFF;
+  box-shadow: 0 2px 6px rgba(220, 38, 38, 0.4);
+}
+
+.candidatos-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 50px 20px;
+  text-align: center;
+}
+
+.candidatos-empty-state i,
+.candidatos-empty-state svg {
+  width: 48px;
+  height: 48px;
+  color: #94A3B8;
+  margin-bottom: 10px;
+}
+
+.candidatos-empty-state h4 {
+  font-size: 15px;
+  font-weight: 700;
+  color: #1E293B;
+  margin: 0 0 4px 0;
+}
+
+.candidatos-empty-state p {
+  font-size: 12.5px;
+  color: #64748B;
+  margin: 0;
+}
+
+.candidatos-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid #E2E8F0;
+}
+
+.candidatos-footer-info {
+  font-size: 12.5px;
+  color: #64748B;
+  font-weight: 500;
+}
+
+.candidatos-footer-buttons {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* ==========================================================================
+   DRAWER NOTIFICACIONES DINÁMICAS
+   ========================================================================== */
+.notifications-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.btn-clear-notifs-link {
+  background: transparent;
+  border: none;
+  color: #2563EB;
+  font-family: 'Inter', sans-serif;
+  font-size: 11.5px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 2px 6px;
+}
+
+.btn-clear-notifs-link:hover {
+  text-decoration: underline;
+}
+
+.notif-time-badge {
+  font-size: 10.5px;
+  color: #94A3B8;
+  font-weight: 500;
+}
+
+.btn-notif-vermas {
+  background: #334155;
+  color: #FFFFFF;
+  border: none;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-notif-vermas:hover {
+  background: #475569;
+}
+
+.empty-notifs-box {
+  text-align: center;
+  padding: 30px 10px;
+  color: #64748B;
+}
+
+.empty-notifs-box i,
+.empty-notifs-box svg {
+  width: 32px;
+  height: 32px;
+  margin-bottom: 6px;
+  opacity: 0.6;
+}
+
+.empty-notifs-box p {
+  font-size: 12.5px;
+  margin: 0;
+}
+
+.pasantia-card-highlight {
+  animation: pulseCardHighlight 1.2s ease-in-out 2;
+}
+
+@keyframes pulseCardHighlight {
+  0% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.7); }
+  50% { box-shadow: 0 0 0 10px rgba(37, 99, 235, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0); }
+}
+
 
