@@ -25,10 +25,9 @@ function setStoredToken(token) {
 }
 
 function clearStoredToken() {
-  try {
-    sessionStorage.removeItem('uni_session_token');
-    localStorage.removeItem('uni_session_token');
-  } catch (_) {}
+  // Un almacén bloqueado no debe impedir la limpieza del otro.
+  try { sessionStorage.removeItem('uni_session_token'); } catch (_) {}
+  try { localStorage.removeItem('uni_session_token'); } catch (_) {}
 }
 
 /**
@@ -498,22 +497,31 @@ const API = {
    * @returns {Promise<Object>} Resultado del cierre de sesión.
    */
   async logout() {
+    let response;
     try {
-      await fetchWithAuth(`${API_BASE}/auth/logout`, { method: 'POST' });
-    } catch (_) {}
+      response = await fetchWithAuth(`${API_BASE}/auth/logout`, {
+        method: 'POST', credentials: 'same-origin', cache: 'no-store'
+      });
+    } catch (_) {
+      throw new Error('No se pudo contactar al servidor para cerrar la sesión. Inténtalo de nuevo.');
+    }
+    if (!response.ok) {
+      throw new Error('El servidor no pudo confirmar el cierre de sesión. Inténtalo de nuevo.');
+    }
     clearStoredToken();
     ClientCache.invalidateAll();
+    try { localStorage.removeItem('uni_current_view_role'); } catch (_) {}
     const path = (typeof window !== 'undefined' && window.location.pathname) ? window.location.pathname.toLowerCase() : "";
     const isLoginPage = path.endsWith("/login") || path.endsWith("/login.html") || path.endsWith("login.html");
     if (!isLoginPage) {
-      window.location.replace("login.html");
+      window.location.replace("/login");
     }
     return { success: true, message: 'Sesión cerrada correctamente' };
   },
 
   /**
    * Obtiene la información del usuario autenticado en la sesión actual.
-   * Valida el token de sesión almacenado (HMAC con 8 horas de duración).
+   * El servidor valida la firma y comprueba que la sesión no esté revocada.
    * Redirige inmediatamente a login.html si la sesión no es válida.
    * @returns {Promise<Object|null>} Objeto de usuario o null si no está autenticado.
    */
@@ -521,7 +529,7 @@ const API = {
     const token = getStoredToken();
     const tokenPayload = _parseSessionToken(token);
 
-    if (!tokenPayload || !tokenPayload.uid) {
+    if (!tokenPayload || !tokenPayload.uid || !tokenPayload.sid) {
       clearStoredToken();
       ClientCache.invalidateAll();
       const path = (typeof window !== 'undefined' && window.location.pathname) ? window.location.pathname.toLowerCase() : "";
@@ -533,7 +541,7 @@ const API = {
     }
 
     try {
-      const response = await fetchWithAuth(`${API_BASE}/auth/me`);
+      const response = await fetchWithAuth(`${API_BASE}/auth/me`, { cache: 'no-store' });
       if (response.status === 401 || response.status === 403 || response.status === 404) {
         clearStoredToken();
         ClientCache.invalidateAll();
@@ -544,6 +552,7 @@ const API = {
         }
         return null;
       }
+      if (!response.ok) return null;
       const data = await response.json();
       if (data && data.success && data.user) {
         if (data.session_token) setStoredToken(data.session_token);
@@ -551,11 +560,8 @@ const API = {
       }
     } catch (_) {}
 
-    return {
-      id: tokenPayload.uid,
-      email: tokenPayload.email,
-      role: tokenPayload.role
-    };
+    // No considerar autenticado al usuario basándose solo en datos locales.
+    return null;
   },
 
   /* ========================================================================

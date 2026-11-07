@@ -32,7 +32,7 @@
       </a>
     </header>
 
-    <!-- TOPBAR ESPECÍFICO DEL PERFIL: REGRESAR Y EDITAR / GUARDAR -->
+    <!-- Navegación del perfil -->
     <div class="perfil-topbar">
       <!-- Botón '< Regresar' (Páginas 8 y 9) -->
       <a href="/" class="btn-perfil-regresar" title="Regresar al catálogo">
@@ -40,126 +40,165 @@
         <span>Regresar</span>
       </a>
 
-      <!-- Botón 'EDITAR' (Pág 8) o 'GUARDAR' (Pág 9) -->
-      <button type="button" id="btn-perfil-toggle-mode" class="btn-perfil-mode-toggle mode-editar">
-        <i data-lucide="edit-3" id="mode-icon"></i>
-        <span id="mode-text">EDITAR</span>
+      <!-- Identificación de la vista -->
+      <button type="button" id="perfil-editar" class="btn-perfil-mode-toggle mode-editar" aria-controls="perfil-form">
+        <i data-lucide="pencil" aria-hidden="true"></i><span>Editar perfil</span>
       </button>
     </div>
 
     <!-- CONTENEDOR CARD GRISÁCEO DEL PERFIL -->
     <main class="perfil-card-container">
-      
-      <!-- Avatar central grande con botón de lápiz -->
+
+      <!-- Avatar del perfil -->
       <div class="perfil-avatar-wrapper">
         <div class="perfil-avatar-circle">
           <i data-lucide="user"></i>
         </div>
-        <button type="button" class="btn-perfil-avatar-edit" id="btn-avatar-edit" title="Cambiar foto de perfil">
-          <i data-lucide="edit-2"></i>
+        <button type="button" id="perfil-cambiar-foto" class="btn-perfil-avatar-edit" aria-label="Cambiar foto de perfil" title="Cambiar foto de perfil">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m16 3 5 5-12 12-6 1 1-6Z M14 5l5 5"/></svg>
         </button>
+        <input id="perfil-foto" type="file" accept="image/jpeg,image/png,image/webp" hidden>
+      </div>
+      <small id="perfil-foto-status" class="perfil-field-help" role="status" hidden></small>
+
+      {% macro text_field(id, label, value, type='text', hint='', min=none, max=none, editable=true) -%}
+      <div class="perfil-field-group">
+        <label for="{{ id }}">{{ label }}</label>
+        <input id="{{ id }}" class="perfil-input" type="{{ type }}" value="{{ value if value is not none else '' }}" readonly{% if editable %} data-profile-editable{% endif %} placeholder="Pendiente"{% if hint %} aria-describedby="{{ id }}-help"{% endif %}{% if min is not none %} min="{{ min }}"{% endif %}{% if max is not none %} max="{{ max }}"{% endif %}>
+        {% if hint %}<small id="{{ id }}-help" class="perfil-field-help">{{ hint }}</small>{% endif %}
+      </div>
+      {%- endmacro %}
+      {% macro choice_field(id, label, value, options, hint='', editable=true) -%}
+      <div class="perfil-field-group">
+        <label for="{{ id }}">{{ label }}</label>
+        <select id="{{ id }}" class="perfil-select" disabled{% if editable %} data-profile-editable{% endif %}{% if hint or not options %} aria-describedby="{{ id }}-help"{% endif %}>
+          <option value=""{% if value is none or value == '' %} selected{% endif %}>Pendiente</option>
+          {% for key, text in options %}
+          <option value="{{ key }}"{% if value == key %} selected{% endif %}>{{ text }}</option>
+          {% endfor %}
+        </select>
+        {% if hint or not options %}<small id="{{ id }}-help" class="perfil-field-help">{{ hint if hint else 'Catálogo pendiente de configurar.' }}</small>{% endif %}
+      </div>
+      {%- endmacro %}
+
+      {% macro catalog_field(id, label, value, options, hint='') -%}
+      {% set selected = namespace(label='') %}
+      {% for key, text in options %}{% if key == value %}{% set selected.label = text %}{% endif %}{% endfor %}
+      <div class="perfil-field-group">
+        <label for="{{ id }}">{{ label }}</label>
+        <input id="{{ id }}" class="perfil-input" type="text" value="{{ selected.label }}" list="{{ id }}-options" readonly data-profile-editable placeholder="Escribe o selecciona" maxlength="200"{% if hint %} aria-describedby="{{ id }}-help"{% endif %}>
+        <datalist id="{{ id }}-options">
+          {% for key, text in options %}<option value="{{ text }}"></option>{% endfor %}
+        </datalist>
+        {% if hint %}<small id="{{ id }}-help" class="perfil-field-help">{{ hint }}</small>{% endif %}
+      </div>
+      {%- endmacro %}
+
+      <div class="perfil-view-tabs" role="tablist" aria-label="Secciones del perfil">
+        <button type="button" id="perfil-tab-personal" class="perfil-view-tab" role="tab" aria-selected="true" aria-controls="perfil-form">Información personal</button>
+        <button type="button" id="perfil-tab-carrera" class="perfil-view-tab" role="tab" aria-selected="false" aria-controls="perfil-documentos" tabindex="-1">Carrera personal</button>
       </div>
 
-      <!-- Formulario de campos de estudiante -->
-      <form id="perfil-form" class="perfil-form-grid">
-        
-        <!-- Fila 1: Cédula & Código Único de persona -->
-        <div class="perfil-row-2col">
-          <div class="perfil-field-group">
-            <label for="perfil-cedula">Cedula</label>
-            <input type="text" id="perfil-cedula" class="perfil-input" value="001-158475-5001T" />
+      <form id="perfil-form" class="perfil-form-grid" role="tabpanel" aria-labelledby="perfil-tab-personal" tabindex="0">
+        <section class="perfil-section" aria-label="Datos personales">
+          <div class="perfil-section-fields">
+            <div class="perfil-row-2col">
+              {{ text_field('perfil-cedula', 'Cédula', profile.cedula) }}
+              {{ text_field('perfil-cup', 'Código único de persona', profile.cup, hint='Identificador de la cuenta.', editable=false) }}
+              {{ text_field('perfil-nombres', 'Nombres', profile.nombre) }}
+              {{ text_field('perfil-apellidos', 'Apellidos', profile.apellido) }}
+              {{ choice_field('perfil-sexo', 'Sexo', profile.sexo, [('Femenino','Femenino'),('Masculino','Masculino'),('Otro','Otro')]) }}
+              {{ text_field('perfil-nacimiento', 'Fecha de nacimiento', profile.fecha_nacimiento, 'date') }}
+              {{ text_field('perfil-edad', 'Edad', profile.edad, 'number', 'Se calcula a partir de la cédula.', 0, editable=false) }}
+              {{ choice_field('perfil-nacionalidad', 'Condición de nacionalidad', profile.dimension_nacional, [('Natural','Natural'),('Nacionalizado','Nacionalizado'),('Residente','Residente'),('No Residente','No residente')]) }}
+              {{ catalog_field('perfil-pais', 'País de origen', profile.id_pais_origen, catalogs.paises) }}
+              {{ catalog_field('perfil-etnia', 'Etnia', profile.id_etnia, catalogs.etnias) }}
+              {{ choice_field('perfil-estado-civil', 'Estado civil', profile.estado_civil, [('Soltero','Soltero/a'),('Casado','Casado/a'),('Union de Hecho','Unión de hecho'),('Divorciado','Divorciado/a'),('Viudo','Viudo/a')]) }}
+              {{ text_field('perfil-hijos', 'Número de hijos', profile.hijos, 'number', min=0) }}
+            </div>
           </div>
-          <div class="perfil-field-group">
-            <label for="perfil-cup">Codigo Unico de persona</label>
-            <input type="text" id="perfil-cup" class="perfil-input" value="8k4B7UP5" readonly />
+        </section>
+        <section class="perfil-section" aria-labelledby="perfil-section-contacto">
+          <h2 class="perfil-section-title" id="perfil-section-contacto">Métodos de contacto</h2>
+          <div class="perfil-section-fields">
+            <div class="perfil-row-2col">
+              {{ text_field('perfil-correo', 'Correo electrónico', profile.email, 'email') }}
+              {{ text_field('perfil-telefono', 'Teléfono', profile.telefono, 'tel') }}
+              {{ choice_field('perfil-tipo-telefono', 'Tipo de teléfono', profile.tipo_telefono, [('Movil','Móvil'),('Fijo','Fijo'),('Whatsapp','WhatsApp')]) }}
+              {{ choice_field('perfil-telefono-principal', 'Teléfono principal', profile.telefono_principal, [(true,'Sí'),(false,'No')]) }}
+            </div>
+            <p class="perfil-field-help">Se muestra el teléfono principal o, si no hay uno definido, el primer teléfono registrado.</p>
+            <div class="perfil-row-2col">
+              {{ choice_field('perfil-departamento', 'Departamento', profile.id_departamento, catalogs.departamentos) }}
+              {{ catalog_field('perfil-municipio', 'Municipio', profile.id_municipio, catalogs.municipios, 'Escribe el municipio o selecciona una sugerencia del departamento.') }}
+              {{ text_field('perfil-comunidad', 'Comunidad o barrio', profile.comunidad) }}
+              {{ choice_field('perfil-zona', 'Zona', profile.zona, [('Urbano','Urbana'),('Rural','Rural')]) }}
+            </div>
+            <div class="perfil-field-group">
+              <label for="perfil-direccion">Dirección domiciliar</label>
+              <textarea readonly data-profile-editable id="perfil-direccion" class="perfil-textarea" placeholder="Pendiente">{{ profile.direccion }}</textarea>
+            </div>
+            {{ choice_field('perfil-direccion-principal', 'Dirección principal', profile.direccion_principal, [(true,'Sí'),(false,'No')], 'Se muestra la dirección principal o, si no hay una definida, la primera dirección registrada.') }}
           </div>
-        </div>
-
-        <!-- Fila 2: Nombres -->
-        <div class="perfil-field-group">
-          <label for="perfil-nombres">Nombres</label>
-          <input type="text" id="perfil-nombres" class="perfil-input" value="Juan Alejandro" />
-        </div>
-
-        <!-- Fila 3: Apellidos -->
-        <div class="perfil-field-group">
-          <label for="perfil-apellidos">Apellidos</label>
-          <input type="text" id="perfil-apellidos" class="perfil-input" value="Perez Martinez" />
-        </div>
-
-        <!-- Fila 4: Carrera -->
-        <div class="perfil-field-group">
-          <label for="perfil-carrera">Carrera</label>
-          <select id="perfil-carrera" class="perfil-select">
-            <option value="Ing. Quimica" selected>Ing. Quimica</option>
-            <option value="Ing. Sistemas">Ing. Sistemas</option>
-            <option value="Ing. Industrial">Ing. Industrial</option>
-            <option value="Ing. Civil">Ing. Civil</option>
-            <option value="Ing. Electrica">Ing. Electrica</option>
-          </select>
-        </div>
-
-        <!-- Fila 5: Carnet de estudiante -->
-        <div class="perfil-field-group">
-          <label for="perfil-carnet">Carnet de estudiante</label>
-          <input type="text" id="perfil-carnet" class="perfil-input" value="1999 2526T" />
-        </div>
-
-        <!-- Fila 6: Año & Modalidad -->
-        <div class="perfil-row-2col">
-          <div class="perfil-field-group">
-            <label for="perfil-anio">Año</label>
-            <input type="text" id="perfil-anio" class="perfil-input" value="1er año" />
+        </section>
+        <section class="perfil-section" aria-labelledby="perfil-section-educacion">
+          <h2 class="perfil-section-title" id="perfil-section-educacion">Educación</h2>
+          <div class="perfil-section-fields">
+            {{ choice_field('perfil-carrera', 'Carrera', profile.id_carrera, catalogs.carreras) }}
+            <p class="perfil-field-help">Educación previa: se muestra el registro más reciente.</p>
+            {{ catalog_field('perfil-centro-educativo', 'Centro educativo de procedencia', profile.id_centro_educativo, catalogs.centros_educativos) }}
+            <div class="perfil-row-2col">
+              {{ text_field('perfil-educacion-tecnica', 'Educación técnica', profile.educacion_tecnica) }}
+              {{ text_field('perfil-titulo', 'Título obtenido', profile.titulo_obtenido) }}
+              {{ text_field('perfil-graduacion', 'Año de graduación', profile.anio_graduacion, 'number', min=1950) }}
+            </div>
           </div>
-          <div class="perfil-field-group">
-            <label for="perfil-modalidad">Modalidad</label>
-            <input type="text" id="perfil-modalidad" class="perfil-input" value="Sabatino" />
+        </section>
+        <section class="perfil-section" aria-labelledby="perfil-section-matricula">
+          <h2 class="perfil-section-title" id="perfil-section-matricula">Matrícula</h2>
+          <div class="perfil-section-fields">
+            <div class="perfil-row-2col">
+              {{ text_field('perfil-periodo', 'Período académico', profile.periodo_academico) }}
+              {{ text_field('perfil-anio', 'Año académico', profile.anio, 'number', min=1, max=10) }}
+              {{ choice_field('perfil-modalidad', 'Modalidad', profile.modalidad, [('Presencial','Presencial'),('Virtual','Virtual'),('Mixta','Mixta')]) }}
+              {{ choice_field('perfil-turno', 'Turno', profile.turno, [('Matutino','Matutino'),('Vespertino','Vespertino'),('Nocturno','Nocturno'),('Sabatino','Sabatino'),('Dominical','Dominical')]) }}
+              {{ text_field('perfil-grupo', 'Grupo', profile.grupo_clase) }}
+              {{ catalog_field('perfil-beca', 'Beca', profile.id_beca, catalogs.becas) }}
+            </div>
+            {{ choice_field('perfil-estado-matricula', 'Estado de matrícula', profile.estado_matricula, [('Activa','Activa'),('Retirada','Retirada'),('Suspendida','Suspendida'),('Finalizada','Finalizada')]) }}
           </div>
-        </div>
-
-        <!-- Fila 7: Teléfono & Correo -->
-        <div class="perfil-row-2col">
-          <div class="perfil-field-group">
-            <label for="perfil-telefono">Telefono</label>
-            <input type="text" id="perfil-telefono" class="perfil-input" value="4568 1239" />
-          </div>
-          <div class="perfil-field-group">
-            <label for="perfil-correo">Correo</label>
-            <input type="email" id="perfil-correo" class="perfil-input" value="estudiante@std.uni.edu.ni" />
-          </div>
-        </div>
-
-        <!-- Fila 8: Ciudad & Estado de matrícula -->
-        <div class="perfil-row-2col">
-          <div class="perfil-field-group">
-            <label for="perfil-ciudad">Ciudad</label>
-            <input type="text" id="perfil-ciudad" class="perfil-input" value="Chinandega" />
-          </div>
-          <div class="perfil-field-group">
-            <label for="perfil-estado-matricula">Estado de matricula</label>
-            <select id="perfil-estado-matricula" class="perfil-select">
-              <option value="Matriculado" selected>Matriculado</option>
-              <option value="Pre-matriculado">Pre-matriculado</option>
-              <option value="Inactivo">Inactivo</option>
-            </select>
-          </div>
-        </div>
-
-        <!-- Fila 9: Dirección (textarea multilínea) -->
-        <div class="perfil-field-group">
-          <label for="perfil-direccion">Dirección</label>
-          <textarea id="perfil-direccion" class="perfil-textarea" placeholder="Place hoder">De la rotonda Universitaria 2c al lago, Managua.</textarea>
-        </div>
-
+        </section>
       </form>
 
-      <!-- Botón inferior derecho: 'Eliminar Cuenta' en rojo con icono de power -->
-      <div class="perfil-footer-actions">
-        <button type="button" id="btn-eliminar-cuenta" class="btn-perfil-eliminar-cuenta">
-          <i data-lucide="power"></i>
-          <span>Eliminar Cuenta</span>
-        </button>
-      </div>
+      <section id="perfil-documentos" class="perfil-document-panel" role="tabpanel" aria-labelledby="perfil-tab-carrera" tabindex="0" hidden>
+        <p class="perfil-document-intro">Organiza los documentos que puedes necesitar al postularte a una pasantía o empleo. Todos son opcionales.</p>
+        <p id="perfil-documentos-formatos" class="perfil-field-help">PDF, DOC, DOCX, JPG, PNG o WebP. Hasta 10 MB por archivo y 10 archivos por categoría.</p>
+        <div class="perfil-row-2col perfil-document-grid">
+          {% for key, title, description in [
+            ('curriculos', 'Currículos', 'Versiones de tu currículum u hoja de vida.'),
+            ('titulos', 'Títulos y diplomas', 'Títulos académicos, diplomas y acreditaciones.'),
+            ('certificaciones', 'Cursos y certificaciones', 'Certificados de formación, idiomas o habilidades técnicas.'),
+            ('academicos', 'Constancias académicas', 'Constancias de estudios, egreso e historial de calificaciones.'),
+            ('laborales', 'Constancias laborales', 'Comprobantes de experiencia laboral o pasantías.'),
+            ('recomendaciones', 'Cartas de recomendación', 'Referencias académicas o profesionales.'),
+            ('policial', 'Récord policial', 'Certificados de antecedentes solicitados por el empleador.'),
+            ('otros', 'Otros documentos', 'Documentos adicionales relacionados con tu postulación.')
+          ] %}
+          <section class="perfil-document-card" data-document-category="{{ key }}" aria-labelledby="documentos-{{ key }}-title">
+            <h2 id="documentos-{{ key }}-title" class="perfil-document-title">{{ title }}</h2>
+            <p id="documentos-{{ key }}-description" class="perfil-field-help">{{ description }}</p>
+            <input id="documentos-{{ key }}" type="file" multiple accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.webp" aria-label="{{ title }}" hidden>
+            <button type="button" class="perfil-document-add" aria-label="Agregar archivos: {{ title }}" aria-controls="documentos-{{ key }}-list" aria-describedby="documentos-{{ key }}-description perfil-documentos-formatos">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 16V4m-5 5 5-5 5 5M4 16v4h16v-4"/></svg>
+              Agregar archivos
+            </button>
+            <p class="perfil-document-count perfil-field-help" role="status">Sin archivos seleccionados.</p>
+            <ul id="documentos-{{ key }}-list" class="perfil-document-list" aria-label="Archivos de {{ title }}" hidden></ul>
+            <p class="perfil-document-error" role="alert" hidden></p>
+          </section>
+          {% endfor %}
+        </div>
+      </section>
 
     </main>
 
@@ -168,81 +207,10 @@
   <!-- Toast Notification Container -->
   <div id="toast-container" class="toast-container"></div>
 
-  <!-- Lógica interactiva de cambio de modo Lectura / Edición -->
-  <script>
-    document.addEventListener("DOMContentLoaded", () => {
-      lucide.createIcons();
-
-      const body = document.body;
-      const btnToggle = document.getElementById("btn-perfil-toggle-mode");
-      const modeIcon = document.getElementById("mode-icon");
-      const modeText = document.getElementById("mode-text");
-      const btnEliminar = document.getElementById("btn-eliminar-cuenta");
-      let isEditing = false;
-
-      btnToggle.addEventListener("click", () => {
-        isEditing = !isEditing;
-        if (isEditing) {
-          // Cambiar a Modo Edición (Página 9 del PDF)
-          body.classList.remove("mode-reading");
-          body.classList.add("mode-editing");
-          btnToggle.className = "btn-perfil-mode-toggle mode-guardar";
-          modeText.textContent = "GUARDAR";
-          modeIcon.setAttribute("data-lucide", "save");
-          showToast("Modo de edición activado. Modifica los campos que requieras.", "info");
-        } else {
-          // Guardar y volver a Modo Lectura (Página 8 del PDF)
-          body.classList.remove("mode-editing");
-          body.classList.add("mode-reading");
-          btnToggle.className = "btn-perfil-mode-toggle mode-editar";
-          modeText.textContent = "EDITAR";
-          modeIcon.setAttribute("data-lucide", "edit-3");
-          showToast("Información de perfil guardada exitosamente.", "success");
-        }
-        lucide.createIcons();
-      });
-
-      btnEliminar.addEventListener("click", () => {
-        if (confirm("¿Estás seguro de que deseas solicitar la baja o eliminación de tu cuenta de estudiante?")) {
-          showToast("Solicitud de eliminación de cuenta registrada.", "error");
-        }
-      });
-
-      function showToast(message, type = "info") {
-        let container = document.getElementById("toast-container");
-        if (!container) {
-          container = document.createElement("div");
-          container.id = "toast-container";
-          container.className = "toast-container";
-          document.body.appendChild(container);
-        }
-
-        const toast = document.createElement("div");
-        toast.style.cssText = `
-          background: ${type === 'success' ? '#00C853' : type === 'error' ? '#EF4444' : '#0B1B48'};
-          color: #FFFFFF;
-          padding: 12px 18px;
-          border-radius: 10px;
-          font-size: 13.5px;
-          font-weight: 600;
-          box-shadow: 0 10px 25px rgba(0,0,0,0.25);
-          margin-bottom: 10px;
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          animation: fadeInToast 0.25s ease-out;
-          z-index: 10000;
-        `;
-        toast.textContent = message;
-        container.appendChild(toast);
-        setTimeout(() => {
-          toast.style.opacity = "0";
-          toast.style.transition = "all 0.25s ease";
-          setTimeout(() => toast.remove(), 250);
-        }, 3000);
-      }
-    });
-  </script>
+  <script id="perfil-municipios-data" type="application/json">{{ catalogs.municipios_por_departamento | tojson }}</script>
+  <script src="{{ url_for('static', filename='js/profile-edit.js') }}" type="module"></script>
+  <script src="{{ url_for('static', filename='js/profile-documents.js') }}" defer></script>
+  <script>document.addEventListener("DOMContentLoaded", () => { if (window.lucide) lucide.createIcons(); });</script>
 </body>
 
 </html>

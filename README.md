@@ -1,3 +1,13 @@
+# Plataforma de pasantías UNI
+
+El modelo vigente es el socioacadémico de 30 tablas, con correo en usuarios y sin carné. Las migraciones son explícitas y el servidor no recrea la base al arrancar.
+
+Consulta [la documentación del modelo y de migración](docs/modelo-actualizado.md) y [las pruebas](tests/README.md) antes de iniciar esta versión sobre una base existente.
+
+La documentación que sigue describe la arquitectura anterior de eventos y sincronización; sus modelos y endpoints ya no se registran en la aplicación actual.
+
+---
+
 # Plataforma de Gestión de Eventos y Asistencia Universitaria (Eventos-UNI)
 
 Sistema web integral desarrollado para la **Universidad Nacional de Ingeniería (UNI)** destinado al registro, administración, toma de asistencia y análisis estadístico en tiempo real de actividades académicas e institucionales.

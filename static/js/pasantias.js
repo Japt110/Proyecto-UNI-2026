@@ -132,6 +132,8 @@ class PasantiasApp {
     this.notificaciones = this.loadNotificaciones();
     this.guardadas = this.loadGuardadas(); // Set de IDs de pasantías favoritas
 
+    this.accountRole = document.body.dataset.accountRole;
+    this.canAdminister = ['Administrador', 'Coordinador'].includes(this.accountRole);
     this.currentRole = this.getInitialRole(); // 'admin' | 'usuario'
     this.currentTab = 'activo'; // 'activo' | 'historial'
 
@@ -224,6 +226,7 @@ class PasantiasApp {
   }
 
   getInitialRole() {
+    if (!this.canAdminister) return 'usuario';
     const urlParams = new URLSearchParams(window.location.search);
     const roleParam = urlParams.get("role");
     if (roleParam === "admin" || roleParam === "usuario") {
@@ -442,9 +445,19 @@ class PasantiasApp {
 
     // 9. Cerrar Sesión
     if (this.btnDrawerLogout) {
-      this.btnDrawerLogout.addEventListener("click", (e) => {
+      this.btnDrawerLogout.addEventListener("click", async (e) => {
         e.preventDefault();
-        window.location.href = "/login";
+        if (this.isLoggingOut) return;
+        this.isLoggingOut = true;
+        this.btnDrawerLogout.setAttribute("aria-disabled", "true");
+        try {
+          await API.logout();
+        } catch (error) {
+          this.showToast(error.message, "error");
+        } finally {
+          this.isLoggingOut = false;
+          this.btnDrawerLogout.removeAttribute("aria-disabled");
+        }
       });
     }
   }
@@ -453,6 +466,7 @@ class PasantiasApp {
   // CONTROL DE ROLES & TABS
   // --------------------------------------------------------------------------
   setRole(role) {
+    if (role === 'admin' && !this.canAdminister) return;
     this.currentRole = role;
     localStorage.setItem("uni_current_view_role", role);
     this.applyRole(role);
@@ -468,6 +482,7 @@ class PasantiasApp {
   }
 
   applyRole(role) {
+    if (!this.canAdminister) role = 'usuario';
     const isAdmin = role === "admin";
     if (isAdmin) {
       this.pageWrapper?.classList.remove("view-usuario-mode");
@@ -494,7 +509,7 @@ class PasantiasApp {
   updateRoleIndicator(role) {
     if (!this.roleIndicatorBadge) return;
     const isAdmin = role === 'admin';
-    this.roleIndicatorBadge.textContent = isAdmin ? 'Administrador' : 'Usuario';
+    this.roleIndicatorBadge.textContent = isAdmin ? 'Administrador' : (this.accountRole === 'Estudiante' ? 'Estudiante' : 'Usuario');
     this.roleIndicatorBadge.className = 'role-indicator-badge ' + (isAdmin ? 'role-admin' : 'role-usuario');
   }
 

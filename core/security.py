@@ -7,14 +7,9 @@ y decoradores de autorización para control de acceso basado en roles (RBAC).
 ===============================================================================
 """
 
-import hmac
-import hashlib
-import json
-import base64
-import time
 from functools import wraps
 from typing import Callable, Any
-from flask import session, jsonify, request, current_app
+from flask import session, jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
 
 
@@ -44,44 +39,10 @@ def verify_password(password_hash: str, password: str) -> bool:
 
 
 def verify_token_and_restore_session() -> bool:
-    """
-    Verifica el token de sesión enviado en las cabeceras HTTP (Authorization / X-Session-Token).
-    Si el token es válido (firma HMAC limpia y fecha exp vigente), restaura la sesión de Flask.
-    """
-    auth_header = request.headers.get("Authorization", "")
-    token = None
-    if auth_header.startswith("Bearer "):
-        token = auth_header[7:].strip()
-    elif request.headers.get("X-Session-Token"):
-        token = request.headers.get("X-Session-Token").strip()
-
-    if token and "." in token:
-        try:
-            parts = token.split(".")
-            if len(parts) == 2:
-                payload_b64, sig = parts[0], parts[1]
-                secret = current_app.config.get("SECRET_KEY", "eventos-uni-secret-key-permanente-2026-production-v1")
-                expected_sig = hmac.new(
-                    secret.encode(),
-                    payload_b64.encode(),
-                    hashlib.sha256
-                ).hexdigest()
-
-                if hmac.compare_digest(sig, expected_sig):
-                    padded_b64 = payload_b64 + "=" * (-len(payload_b64) % 4)
-                    payload = json.loads(base64.b64decode(padded_b64).decode())
-                    now = int(time.time())
-                    if not payload.get("exp") or now <= payload["exp"]:
-                        session["user_id"] = payload.get("uid")
-                        session["user_role"] = payload.get("role")
-                        return True
-        except Exception:
-            pass
-
-    if "user_id" in session:
-        return True
-
-    return False
+    """Valida firma, vencimiento y estado revocable de la sesión."""
+    # Importación diferida para evitar un ciclo con los modelos de usuarios.
+    from core.auth_sessions import authenticate_session
+    return authenticate_session()
 
 
 # -----------------------------------------------------------------------------

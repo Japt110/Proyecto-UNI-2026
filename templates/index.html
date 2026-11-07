@@ -24,9 +24,9 @@
   <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 
-<body>
+<body data-account-role="{{ viewer_role }}">
   <!-- Contenedor Principal de la Página de Pasantías -->
-  <div id="pasantias-wrapper" class="pasantias-page-wrapper view-admin-mode">
+  <div id="pasantias-wrapper" class="pasantias-page-wrapper {{ 'view-admin-mode' if viewer_is_admin else 'view-usuario-mode' }}">
 
     <!-- ====================================================================
          HEADER INSTITUCIONAL (PÁGINAS 3, 5, 6 DEL PDF)
@@ -193,8 +193,8 @@
       <div class="drawer-profile-avatar-circle">
         <i data-lucide="user"></i>
       </div>
-      <h3 class="drawer-user-name">Juan Alejandro</h3>
-      <span class="drawer-user-cup">#CUP 8k4B7UP5</span>
+      <h3 class="drawer-user-name">{{ viewer_name }}</h3>
+      <span class="drawer-user-cup">{{ '#CUP ' ~ viewer_code if viewer_code else viewer_role }}</span>
 
       <!-- Botón 'Ajustes' con icono de engranaje -->
       <a href="/perfil" class="btn-drawer-ajustes" id="btn-drawer-ajustes" title="Ir a Configuración de Perfil">
@@ -203,6 +203,7 @@
       </a>
 
       <!-- Selector de tipo de vista (reemplaza el toggle superior) -->
+      {% if viewer_is_admin %}
       <div class="drawer-role-selector">
         <span class="drawer-role-label">Tipo de vista</span>
         <div class="drawer-role-buttons">
@@ -216,6 +217,7 @@
           </button>
         </div>
       </div>
+      {% endif %}
     </div>
 
     <!-- Sección 'Notificaciones' con tarjeta oscura y acento rojo -->
@@ -522,6 +524,7 @@
   <div id="toast-container" class="toast-container"></div>
 
   <!-- Scripts -->
+  <script src="{{ url_for('static', filename='js/api-client.js') }}"></script>
   <script src="{{ url_for('static', filename='js/pasantias.js') }}"></script>
 </body>
 

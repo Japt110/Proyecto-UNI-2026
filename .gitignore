@@ -35,4 +35,5 @@ static/uploads/
 files/
 
 # Carpeta de scripts de base de datos
-scripts/
+scripts/*
+!scripts/migrate_database.py
