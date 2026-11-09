@@ -1,6 +1,6 @@
 # ===============================================================================
-# EVENTOS-UNI - RENDER BLUEPRINT (INFRASTRUCTURE-AS-CODE)
-# Especificación de despliegue automático para OnRender.com
+# SISTEMA WEB DE CONTROL DE PASANTÍAS (UNI) - RENDER BLUEPRINT
+# Especificación de despliegue en OnRender.com conectado a PostgreSQL (Supabase)
 # ===============================================================================
 
 services:
@@ -8,13 +8,13 @@ services:
   # 1. Servidor Web Backend Principal (Flask + Gunicorn)
   # -----------------------------------------------------------------------------
   - type: web
-    name: eventos-uni-backend
+    name: pasantias-uni-web
     runtime: python
     buildCommand: "pip install -r requirements.txt"
     startCommand: "gunicorn --config gunicorn.conf.py app:app"
     env: python
-    region: oregon # o la región más cercana a tu proyecto de Supabase
-    plan: standard
+    region: oregon # Recomendado: misma región de tu proyecto en Supabase (ej: oregon / us-west)
+    plan: free     # Soporta plan free de Render
     healthCheckPath: /favicon.ico
     autoDeploy: true
     envVars:
@@ -23,35 +23,45 @@ services:
       - key: FLASK_DEBUG
         value: "0"
       - key: SECRET_KEY
-        generateValue: true # Render genera una clave criptográfica de 256 bits segura
+        generateValue: true # Render genera automáticamente una clave secreta segura de 256 bits
+      
+      # =========================================================================
+      # CONEXIÓN CON SUPABASE POSTGRESQL (CRÍTICO: USAR MODO SESSION POOLER IPV4)
+      # Ejemplo: postgresql://postgres.xxxx:[TU-PASSWORD]@aws-0-us-west-1.pooler.supabase.com:6543/postgres?sslmode=require
+      # =========================================================================
       - key: DATABASE_URL
-        sync: false # Pega aquí la Connection String de UNI-CLUSTER-PRIMARIO (Supabase)
-      - key: DATABASE_READ_URL
-        sync: false # Opcional: Connection String de UNI-CLUSTER-REPLICA (Supabase)
+        sync: false # Pega tu Connection String de Supabase aquí en el dashboard de Render
+      
+      # Parámetros optimizados para Supabase Pooler
       - key: DB_POOL_SIZE
-        value: "10"
+        value: "5"
       - key: DB_MAX_OVERFLOW
-        value: "20"
+        value: "10"
       - key: DB_POOL_TIMEOUT
         value: "30"
       - key: DB_POOL_RECYCLE
         value: "1800"
-      - key: REDIS_URL
-        fromService:
-          type: redis
-          name: eventos-uni-redis
-          property: connectionString
+
+      # Caché en memoria (SimpleCache por defecto sin necesidad de pagar Redis)
+      - key: CACHE_TYPE
+        value: "SimpleCache"
       - key: RATE_LIMIT_ENABLED
         value: "true"
       - key: RATE_LIMIT_PER_MINUTE
         value: "120"
 
-  # -----------------------------------------------------------------------------
-  # 2. Instancia de Redis para Sesiones Compartidas y Caché
-  # -----------------------------------------------------------------------------
-  - type: redis
-    name: eventos-uni-redis
-    region: oregon
-    plan: starter
-    maxmemoryPolicy: allkeys-lru
-    ipAllowList: [] # Solo accesible internamente por el backend en la red privada de Render
+      # Configuración de Correo para 2FA (Flask-Mail)
+      - key: MAIL_SERVER
+        value: "smtp.gmail.com"
+      - key: MAIL_PORT
+        value: "587"
+      - key: MAIL_USE_TLS
+        value: "true"
+      - key: MAIL_USE_SSL
+        value: "false"
+      - key: MAIL_USERNAME
+        sync: false
+      - key: MAIL_PASSWORD
+        sync: false
+      - key: MAIL_DEFAULT_SENDER
+        sync: false

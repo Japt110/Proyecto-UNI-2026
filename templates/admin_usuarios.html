@@ -1,0 +1,1083 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestión de Usuarios - Administración UNI</title>
+
+  <!-- Estilos base y variables -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/variables.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/global.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/layout-components.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/pasantias.css') }}">
+
+  <!-- Google Fonts: Inter & Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@500;600;700;800&display=swap"
+    rel="stylesheet">
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    /* Estilos específicos para la gestión administrativa de usuarios */
+    .admin-container {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 24px 20px 60px 20px;
+    }
+
+    .admin-header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .admin-title-group h1 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 26px;
+      font-weight: 700;
+      color: #0F172A;
+      margin: 0 0 6px 0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .admin-title-group p {
+      font-size: 13.5px;
+      color: #64748B;
+      margin: 0;
+    }
+
+    .admin-stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+
+    .stat-card {
+      background: #FFFFFF;
+      border: 1px solid #E2E8F0;
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .stat-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .stat-value {
+      font-size: 22px;
+      font-weight: 800;
+      color: #0F172A;
+      line-height: 1.1;
+    }
+
+    .stat-label {
+      font-size: 12px;
+      color: #64748B;
+      margin-top: 2px;
+      font-weight: 500;
+    }
+
+    /* Barra de filtros */
+    .admin-filters-card {
+      background: #FFFFFF;
+      border: 1px solid #E2E8F0;
+      border-radius: 14px;
+      padding: 18px 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+    }
+
+    .filters-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr 1fr auto;
+      gap: 12px;
+      align-items: center;
+    }
+
+    @media (max-width: 960px) {
+      .filters-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .filters-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .filter-input-wrap {
+      position: relative;
+    }
+
+    .filter-input-wrap input {
+      width: 100%;
+      padding: 10px 14px 10px 38px;
+      border: 1px solid #CBD5E1;
+      border-radius: 8px;
+      font-size: 13.5px;
+      outline: none;
+      transition: all 0.2s ease;
+    }
+
+    .filter-input-wrap input:focus {
+      border-color: #033E8C;
+      box-shadow: 0 0 0 3px rgba(3, 62, 140, 0.12);
+    }
+
+    .filter-input-wrap .filter-icon {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #94A3B8;
+      width: 16px;
+      height: 16px;
+    }
+
+    .filter-select {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1px solid #CBD5E1;
+      border-radius: 8px;
+      font-size: 13px;
+      background: #FFFFFF;
+      outline: none;
+      cursor: pointer;
+    }
+
+    .filter-select:focus {
+      border-color: #033E8C;
+    }
+
+    .btn-reset-filters {
+      background: #F1F5F9;
+      color: #475569;
+      border: 1px solid #E2E8F0;
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+      transition: all 0.15s ease;
+    }
+
+    .btn-reset-filters:hover {
+      background: #E2E8F0;
+      color: #0F172A;
+    }
+
+    /* Tabla de usuarios */
+    .admin-table-card {
+      background: #FFFFFF;
+      border: 1px solid #E2E8F0;
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+    }
+
+    .table-responsive {
+      width: 100%;
+      overflow-x: auto;
+    }
+
+    .admin-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 13.5px;
+    }
+
+    .admin-table th {
+      background: #F8FAFC;
+      color: #475569;
+      font-weight: 700;
+      padding: 14px 18px;
+      border-bottom: 1px solid #E2E8F0;
+      white-space: nowrap;
+      text-transform: uppercase;
+      font-size: 11.5px;
+      letter-spacing: 0.5px;
+    }
+
+    .admin-table td {
+      padding: 14px 18px;
+      border-bottom: 1px solid #F1F5F9;
+      vertical-align: middle;
+      color: #334155;
+    }
+
+    .admin-table tr:hover td {
+      background-color: #F8FAFC;
+    }
+
+    .user-cell-wrap {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .user-avatar-circle {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: #033E8C;
+      color: #FFFFFF;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+
+    .user-name-title {
+      font-weight: 700;
+      color: #0F172A;
+      font-size: 14px;
+      margin-bottom: 2px;
+    }
+
+    .user-sub-info {
+      font-size: 12px;
+      color: #64748B;
+    }
+
+    .role-badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 11.5px;
+      font-weight: 700;
+      letter-spacing: 0.4px;
+    }
+
+    .role-admin { background: #E0E7FF; color: #3730A3; }
+    .role-estudiante { background: #DCFCE7; color: #166534; }
+    .role-supervisor { background: #FEF3C7; color: #92400E; }
+    .role-tutor { background: #F3E8FF; color: #6B21A8; }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 9px;
+      border-radius: 12px;
+      font-size: 11.5px;
+      font-weight: 600;
+    }
+
+    .status-active { background: #ECFDF5; color: #047857; }
+    .status-inactive { background: #FEE2E2; color: #B91C1C; }
+
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+    }
+    .status-dot-active { background: #10B981; }
+    .status-dot-inactive { background: #EF4444; }
+
+    .btn-action-view {
+      background: #EFF6FF;
+      color: #1D4ED8;
+      border: 1px solid #BFDBFE;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.15s ease;
+    }
+
+    .btn-action-view:hover {
+      background: #DBEAFE;
+    }
+
+    .btn-action-toggle {
+      border: none;
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.15s ease;
+    }
+
+    .btn-action-suspend { background: #FEE2E2; color: #DC2626; }
+    .btn-action-suspend:hover { background: #FCD34D; color: #92400E; }
+    .btn-action-activate { background: #DCFCE7; color: #15803D; }
+    .btn-action-activate:hover { background: #BBF7D0; }
+
+    /* Barra de paginación */
+    .admin-pagination-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 14px;
+      padding: 16px 20px;
+      background: #F8FAFC;
+      border-top: 1px solid #E2E8F0;
+    }
+
+    .pagination-info {
+      font-size: 13px;
+      color: #64748B;
+    }
+
+    .pagination-controls {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .page-btn {
+      min-width: 34px;
+      height: 34px;
+      padding: 0 10px;
+      border: 1px solid #CBD5E1;
+      background: #FFFFFF;
+      color: #334155;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s ease;
+    }
+
+    .page-btn:hover:not(:disabled) {
+      background: #F1F5F9;
+      border-color: #94A3B8;
+    }
+
+    .page-btn.is-active {
+      background: #033E8C;
+      color: #FFFFFF;
+      border-color: #033E8C;
+    }
+
+    .page-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Header institucional -->
+  <header class="pasantias-topbar" style="background: #FFFFFF; border-bottom: 1px solid #E2E8F0; padding: 12px 24px; display: flex; justify-content: space-between; align-items: center;">
+    <div style="display: flex; align-items: center; gap: 16px;">
+      <a href="/" title="Volver al Portal de Pasantías">
+        <img src="{{ url_for('static', filename='img/uni_logo.png') }}" alt="Logo UNI" style="height: 42px;">
+      </a>
+      <div style="height: 28px; width: 1px; background: #CBD5E1;"></div>
+      <span style="font-family: 'Outfit', sans-serif; font-size: 15px; font-weight: 700; color: #033E8C; letter-spacing: 0.3px;">
+        MÓDULO DE AUDITORÍA Y USUARIOS
+      </span>
+    </div>
+
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <a href="/" style="background: #F1F5F9; color: #0F172A; text-decoration: none; padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; border: 1px solid #CBD5E1;">
+        <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i>
+        <span>Bolsa de Pasantías</span>
+      </a>
+
+      <a href="/perfil" style="background: #EFF6FF; color: #033E8C; text-decoration: none; padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; border: 1px solid #BFDBFE;">
+        <i data-lucide="user" style="width: 16px; height: 16px;"></i>
+        <span>Mi Ficha</span>
+      </a>
+
+      <button type="button" id="btn-admin-logout" style="background: #FEE2E2; color: #DC2626; border: none; padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+        <i data-lucide="power" style="width: 16px; height: 16px;"></i>
+        <span>Salir</span>
+      </button>
+    </div>
+  </header>
+
+  <main class="admin-container">
+    <!-- Fila de Título -->
+    <div class="admin-header-row">
+      <div class="admin-title-group">
+        <h1>
+          <i data-lucide="users" style="width: 28px; height: 28px; color: #033E8C;"></i>
+          <span>Gestión y Auditoría de Cuentas de Usuario</span>
+        </h1>
+        <p>Directorio institucional de cuentas activas, roles de acceso y personificaciones universitarias.</p>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span id="label-total-registros" style="font-size: 13px; font-weight: 700; color: #033E8C; background: #EFF6FF; padding: 6px 14px; border-radius: 20px; border: 1px solid #BFDBFE;">
+          Cargando usuarios...
+        </span>
+      </div>
+    </div>
+
+    <!-- Tarjetas de Estadísticas Rápidas -->
+    <div class="admin-stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon" style="background: #EFF6FF; color: #1D4ED8;">
+          <i data-lucide="users" style="width: 22px; height: 22px;"></i>
+        </div>
+        <div>
+          <div class="stat-value" id="stat-total-usuarios">-</div>
+          <div class="stat-label">Total Cuentas</div>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon" style="background: #ECFDF5; color: #059669;">
+          <i data-lucide="graduation-cap" style="width: 22px; height: 22px;"></i>
+        </div>
+        <div>
+          <div class="stat-value" id="stat-estudiantes">-</div>
+          <div class="stat-label">Estudiantes</div>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon" style="background: #FEF3C7; color: #D97706;">
+          <i data-lucide="briefcase" style="width: 22px; height: 22px;"></i>
+        </div>
+        <div>
+          <div class="stat-value" id="stat-supervisores">-</div>
+          <div class="stat-label">Supervisores Empresa</div>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon" style="background: #F3E8FF; color: #9333EA;">
+          <i data-lucide="book-open" style="width: 22px; height: 22px;"></i>
+        </div>
+        <div>
+          <div class="stat-value" id="stat-tutores">-</div>
+          <div class="stat-label">Tutores Docentes</div>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon" style="background: #E0E7FF; color: #4338CA;">
+          <i data-lucide="shield-check" style="width: 22px; height: 22px;"></i>
+        </div>
+        <div>
+          <div class="stat-value" id="stat-admins">-</div>
+          <div class="stat-label">Administradores</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Barra de Búsqueda y Filtros Multicriterio -->
+    <div class="admin-filters-card">
+      <div class="filters-grid">
+        <!-- Búsqueda general -->
+        <div class="filter-input-wrap">
+          <i data-lucide="search" class="filter-icon"></i>
+          <input type="text" id="filter-busqueda" placeholder="Buscar por nombre, usuario, correo, CUP..." />
+        </div>
+
+        <!-- Filtro por Rol -->
+        <div>
+          <select id="filter-rol" class="filter-select">
+            <option value="">Todos los Roles</option>
+            <option value="Administrador">Administrador</option>
+            <option value="Estudiante">Estudiante</option>
+            <option value="Supervisor">Supervisor</option>
+            <option value="Tutor">Tutor</option>
+          </select>
+        </div>
+
+        <!-- Filtro por Estado -->
+        <div>
+          <select id="filter-estado" class="filter-select">
+            <option value="">Todos los Estados</option>
+            <option value="activo">Solo Activos</option>
+            <option value="inactivo">Solo Inactivos</option>
+          </select>
+        </div>
+
+        <!-- Ordenamiento -->
+        <div>
+          <select id="filter-orden" class="filter-select">
+            <option value="fecha_desc">Más recientes</option>
+            <option value="fecha_asc">Más antiguos</option>
+            <option value="nombre_asc">Nombre (A - Z)</option>
+            <option value="usuario_asc">Usuario (A - Z)</option>
+          </select>
+        </div>
+
+        <!-- Botón Restablecer -->
+        <div>
+          <button type="button" id="btn-limpiar-filtros" class="btn-reset-filters">
+            <i data-lucide="rotate-ccw" style="width: 15px; height: 15px;"></i>
+            <span>Limpiar</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabla de Usuarios -->
+    <div class="admin-table-card">
+      <div class="table-responsive">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Identidad / Usuario</th>
+              <th>Correo Electrónico</th>
+              <th>Rol Institucional</th>
+              <th>Personificación / Cup</th>
+              <th>Estado</th>
+              <th>Fecha Creación</th>
+              <th style="text-align: right;">Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="usuarios-table-body">
+            <tr>
+              <td colspan="7" style="text-align: center; padding: 40px; color: #64748B;">
+                Consultando directorio de usuarios...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Paginación -->
+      <div class="admin-pagination-bar">
+        <div class="pagination-info" id="pagination-info-text">
+          Mostrando 0 de 0 registros
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 16px;">
+          <!-- Selector de por página -->
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #64748B;">
+            <span>Mostrar:</span>
+            <select id="select-por-pagina" style="padding: 4px 8px; border-radius: 6px; border: 1px solid #CBD5E1; font-size: 12.5px; background: #FFFFFF;">
+              <option value="10">10</option>
+              <option value="25">25</option>
+              <option value="50">50</option>
+            </select>
+          </div>
+
+          <!-- Botones de Paginación -->
+          <div class="pagination-controls" id="pagination-buttons-container">
+            <!-- Botones inyectados dinámicamente -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Modal Detalle de Usuario -->
+  <div id="modal-detalle-usuario" class="uni-modal-overlay">
+    <div class="uni-modal-content" style="max-width: 540px;">
+      <div class="uni-modal-header" style="background: #033E8C; color: #FFFFFF; display: flex; justify-content: space-between; align-items: center;">
+        <h3 id="modal-detalle-titulo" style="font-size: 17px; margin: 0; display: flex; align-items: center; gap: 8px;">
+          <i data-lucide="user-check" style="width: 20px; height: 20px;"></i>
+          <span>Ficha Técnica de Usuario</span>
+        </h3>
+        <button type="button" id="btn-close-modal-detalle" class="btn-close-modal" style="background: transparent; border: none; color: #FFFFFF; cursor: pointer;">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+
+      <div class="uni-modal-body" id="modal-detalle-body" style="padding: 24px; display: flex; flex-direction: column; gap: 16px;">
+        <!-- Se inyecta dinámicamente -->
+      </div>
+
+      <div class="uni-modal-footer" style="padding: 14px 20px; background: #F8FAFC; border-top: 1px solid #E2E8F0; display: flex; justify-content: flex-end;">
+        <button type="button" id="btn-cerrar-detalle" class="btn-modal-cancel">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- Lógica de Consulta, Paginación y Filtrado -->
+  <script>
+    class AdminUsuariosApp {
+      constructor() {
+        this.paginaActual = 1;
+        this.porPagina = 10;
+        this.totalPaginas = 1;
+        this.filtros = {
+          busqueda: "",
+          rol: "",
+          estado: "",
+          orden: "fecha_desc"
+        };
+
+        this.init();
+      }
+
+      init() {
+        document.addEventListener("DOMContentLoaded", () => {
+          this.bindElements();
+          this.bindEvents();
+          this.cargarEstadisticas();
+          this.cargarUsuarios();
+          lucide.createIcons();
+        });
+      }
+
+      bindElements() {
+        this.tableBody = document.getElementById("usuarios-table-body");
+        this.filterBusqueda = document.getElementById("filter-busqueda");
+        this.filterRol = document.getElementById("filter-rol");
+        this.filterEstado = document.getElementById("filter-estado");
+        this.filterOrden = document.getElementById("filter-orden");
+        this.btnLimpiar = document.getElementById("btn-limpiar-filtros");
+        this.selectPorPagina = document.getElementById("select-por-pagina");
+        this.paginationInfo = document.getElementById("pagination-info-text");
+        this.paginationButtons = document.getElementById("pagination-buttons-container");
+        this.labelTotalRegistros = document.getElementById("label-total-registros");
+
+        // Modal detalle
+        this.modalDetalle = document.getElementById("modal-detalle-usuario");
+        this.modalDetalleBody = document.getElementById("modal-detalle-body");
+        this.btnCloseModalDetalle = document.getElementById("btn-close-modal-detalle");
+        this.btnCerrarDetalle = document.getElementById("btn-cerrar-detalle");
+
+        // Logout
+        this.btnLogout = document.getElementById("btn-admin-logout");
+      }
+
+      bindEvents() {
+        // Búsqueda con debounce de 300ms
+        let timer = null;
+        this.filterBusqueda.addEventListener("input", (e) => {
+          clearTimeout(timer);
+          timer = setTimeout(() => {
+            this.filtros.busqueda = e.target.value.trim();
+            this.paginaActual = 1;
+            this.cargarUsuarios();
+          }, 300);
+        });
+
+        this.filterRol.addEventListener("change", (e) => {
+          this.filtros.rol = e.target.value;
+          this.paginaActual = 1;
+          this.cargarUsuarios();
+        });
+
+        this.filterEstado.addEventListener("change", (e) => {
+          this.filtros.estado = e.target.value;
+          this.paginaActual = 1;
+          this.cargarUsuarios();
+        });
+
+        this.filterOrden.addEventListener("change", (e) => {
+          this.filtros.orden = e.target.value;
+          this.paginaActual = 1;
+          this.cargarUsuarios();
+        });
+
+        this.selectPorPagina.addEventListener("change", (e) => {
+          this.porPagina = parseInt(e.target.value, 10) || 10;
+          this.paginaActual = 1;
+          this.cargarUsuarios();
+        });
+
+        this.btnLimpiar.addEventListener("click", () => {
+          this.filterBusqueda.value = "";
+          this.filterRol.value = "";
+          this.filterEstado.value = "";
+          this.filterOrden.value = "fecha_desc";
+          this.filtros = { busqueda: "", rol: "", estado: "", orden: "fecha_desc" };
+          this.paginaActual = 1;
+          this.cargarUsuarios();
+        });
+
+        // Modal
+        this.btnCloseModalDetalle?.addEventListener("click", () => this.cerrarModal());
+        this.btnCerrarDetalle?.addEventListener("click", () => this.cerrarModal());
+
+        // Logout
+        this.btnLogout?.addEventListener("click", async () => {
+          try {
+            await fetch("/api/auth/logout", { method: "POST" });
+          } catch (_) {}
+          window.location.href = "/login";
+        });
+
+        document.addEventListener("keydown", (e) => {
+          if (e.key === "Escape") this.cerrarModal();
+        });
+      }
+
+      async cargarEstadisticas() {
+        try {
+          const res = await fetch("/api/admin/usuarios/estadisticas");
+          const data = await res.json();
+          if (res.ok && data.success && data.estadisticas) {
+            const st = data.estadisticas;
+            document.getElementById("stat-total-usuarios").textContent = st.total || 0;
+            document.getElementById("stat-estudiantes").textContent = st.por_rol?.Estudiante || 0;
+            document.getElementById("stat-supervisores").textContent = st.por_rol?.Supervisor || 0;
+            document.getElementById("stat-tutores").textContent = st.por_rol?.Tutor || 0;
+            document.getElementById("stat-admins").textContent = st.por_rol?.Administrador || 0;
+          }
+        } catch (_) {}
+      }
+
+      async cargarUsuarios() {
+        const params = new URLSearchParams({
+          pagina: this.paginaActual,
+          por_pagina: this.porPagina,
+          busqueda: this.filtros.busqueda,
+          rol: this.filtros.rol,
+          estado: this.filtros.estado,
+          orden: this.filtros.orden
+        });
+
+        this.tableBody.innerHTML = `
+          <tr>
+            <td colspan="7" style="text-align: center; padding: 40px; color: #64748B;">
+              Cargando usuarios desde la base de datos...
+            </td>
+          </tr>
+        `;
+
+        try {
+          const res = await fetch(`/api/admin/usuarios?${params.toString()}`);
+          if (res.status === 401 || res.status === 403) {
+            window.location.href = "/login";
+            return;
+          }
+
+          const data = await res.json();
+          if (res.ok && data.success) {
+            this.totalPaginas = data.paginas || 1;
+            this.paginaActual = data.pagina || 1;
+            this.renderUsuarios(data.usuarios || []);
+            this.renderPaginacion(data.total, data.pagina, data.paginas, data.por_pagina);
+          } else {
+            this.tableBody.innerHTML = `
+              <tr>
+                <td colspan="7" style="text-align: center; padding: 30px; color: #DC2626;">
+                  ${data.message || 'Error al obtener usuarios'}
+                </td>
+              </tr>
+            `;
+          }
+        } catch (err) {
+          this.tableBody.innerHTML = `
+            <tr>
+              <td colspan="7" style="text-align: center; padding: 30px; color: #DC2626;">
+                Error de comunicación con el servidor.
+              </td>
+            </tr>
+          `;
+        }
+      }
+
+      renderUsuarios(usuarios) {
+        if (!usuarios || usuarios.length === 0) {
+          this.tableBody.innerHTML = `
+            <tr>
+              <td colspan="7" style="text-align: center; padding: 40px 20px; color: #94A3B8;">
+                <p style="font-size: 15px; margin-bottom: 6px; font-weight: 600; color: #475569;">No se encontraron usuarios</p>
+                <p style="font-size: 12.5px; margin: 0;">Prueba modificando los criterios de búsqueda o filtros seleccionados.</p>
+              </td>
+            </tr>
+          `;
+          return;
+        }
+
+        this.tableBody.innerHTML = usuarios.map(u => {
+          const iniciales = (u.nombre_completo || u.nombre_usuario || 'U')
+            .split(" ")
+            .map(n => n[0])
+            .slice(0, 2)
+            .join("")
+            .toUpperCase();
+
+          const rolClass = u.rol === 'Administrador' ? 'role-admin' :
+                           u.rol === 'Estudiante' ? 'role-estudiante' :
+                           u.rol === 'Supervisor' ? 'role-supervisor' : 'role-tutor';
+
+          const det = u.detalles_actor || {};
+          let infoExtra = '';
+          if (det.tipo === 'Estudiante') {
+            infoExtra = `CUP: <strong>${det.cup || 'N/A'}</strong> · ${det.carrera || 'Carrera UNI'}`;
+          } else if (det.tipo === 'Supervisor') {
+            infoExtra = `Empresa: <strong>${det.empresa || 'Entidad Receptora'}</strong>`;
+          } else if (det.tipo === 'Tutor') {
+            infoExtra = `Cargo: <strong>${det.cargo || 'Docente'}</strong>`;
+          } else {
+            infoExtra = `Identidad: <strong>${u.nombre_usuario}</strong>`;
+          }
+
+          return `
+            <tr>
+              <td>
+                <div class="user-cell-wrap">
+                  <div class="user-avatar-circle" style="background: ${u.rol === 'Estudiante' ? '#059669' : u.rol === 'Supervisor' ? '#D97706' : '#033E8C'};">
+                    ${iniciales}
+                  </div>
+                  <div>
+                    <div class="user-name-title">${u.nombre_completo || u.nombre_usuario}</div>
+                    <div class="user-sub-info">@${u.nombre_usuario} (ID #${u.id_usuario})</div>
+                  </div>
+                </div>
+              </td>
+              <td>
+                <span style="font-weight: 500; color: #0F172A;">${u.email}</span>
+              </td>
+              <td>
+                <span class="role-badge ${rolClass}">${u.rol}</span>
+              </td>
+              <td>
+                <span style="font-size: 12px; color: #475569;">${infoExtra}</span>
+              </td>
+              <td>
+                <span class="status-badge ${u.activo ? 'status-active' : 'status-inactive'}">
+                  <span class="status-dot ${u.activo ? 'status-dot-active' : 'status-dot-inactive'}"></span>
+                  <span>${u.activo ? 'Activo' : 'Inactivo'}</span>
+                </span>
+              </td>
+              <td>
+                <span style="font-size: 12px; color: #64748B;">${u.fecha_creacion ? u.fecha_creacion.split(' ')[0] : 'N/A'}</span>
+              </td>
+              <td style="text-align: right;">
+                <div style="display: inline-flex; gap: 6px; align-items: center;">
+                  <button type="button" class="btn-action-view" onclick="window.adminApp.verDetalle(${u.id_usuario})">
+                    <span>Ver Ficha</span>
+                  </button>
+                  <button type="button" class="btn-action-toggle ${u.activo ? 'btn-action-suspend' : 'btn-action-activate'}" onclick="window.adminApp.toggleActivo(${u.id_usuario}, ${u.activo})">
+                    <span>${u.activo ? 'Suspender' : 'Activar'}</span>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          `;
+        }).join("");
+
+        lucide.createIcons();
+      }
+
+      renderPaginacion(total, pagina, paginas, porPagina) {
+        if (this.labelTotalRegistros) {
+          this.labelTotalRegistros.textContent = `${total} Usuarios Registrados`;
+        }
+
+        const inicio = total === 0 ? 0 : (pagina - 1) * porPagina + 1;
+        const fin = Math.min(pagina * porPagina, total);
+        this.paginationInfo.textContent = `Mostrando ${inicio} a ${fin} de ${total} usuarios`;
+
+        let btnsHtml = `
+          <button type="button" class="page-btn" ${pagina <= 1 ? 'disabled' : ''} onclick="window.adminApp.irAPagina(1)" title="Primera Página">«</button>
+          <button type="button" class="page-btn" ${pagina <= 1 ? 'disabled' : ''} onclick="window.adminApp.irAPagina(${pagina - 1})" title="Página Anterior">‹</button>
+        `;
+
+        // Generar páginas numeradas
+        const radio = 2;
+        const desde = Math.max(1, pagina - radio);
+        const hasta = Math.min(paginas, pagina + radio);
+
+        for (let i = desde; i <= hasta; i++) {
+          btnsHtml += `
+            <button type="button" class="page-btn ${i === pagina ? 'is-active' : ''}" onclick="window.adminApp.irAPagina(${i})">
+              ${i}
+            </button>
+          `;
+        }
+
+        btnsHtml += `
+          <button type="button" class="page-btn" ${pagina >= paginas ? 'disabled' : ''} onclick="window.adminApp.irAPagina(${pagina + 1})" title="Página Siguiente">›</button>
+          <button type="button" class="page-btn" ${pagina >= paginas ? 'disabled' : ''} onclick="window.adminApp.irAPagina(${paginas})" title="Última Página">»</button>
+        `;
+
+        this.paginationButtons.innerHTML = btnsHtml;
+      }
+
+      irAPagina(p) {
+        if (p < 1 || p > this.totalPaginas || p === this.paginaActual) return;
+        this.paginaActual = p;
+        this.cargarUsuarios();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+
+      async verDetalle(idUsuario) {
+        try {
+          const res = await fetch(`/api/admin/usuarios/${idUsuario}`);
+          const data = await res.json();
+          if (!res.ok || !data.success) {
+            this.showToast(data.message || "No se pudo consultar el usuario", "error");
+            return;
+          }
+
+          const u = data.usuario;
+          const det = u.detalles_actor || {};
+
+          this.modalDetalleBody.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 16px; padding-bottom: 16px; border-bottom: 1px solid #E2E8F0;">
+              <div style="width: 52px; height: 52px; border-radius: 50%; background: #033E8C; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 800;">
+                ${(u.nombre_completo || u.nombre_usuario || 'U').charAt(0).toUpperCase()}
+              </div>
+              <div>
+                <h4 style="margin: 0 0 4px 0; font-size: 16px; color: #0F172A; font-weight: 700;">
+                  ${u.nombre_completo || u.nombre_usuario}
+                </h4>
+                <div style="font-size: 12.5px; color: #64748B;">
+                  Nombre de usuario: <strong>@${u.nombre_usuario}</strong>
+                </div>
+              </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 13px;">
+              <div>
+                <span style="color: #64748B; display: block; font-size: 11.5px; font-weight: 600;">CORREO ELECTRÓNICO</span>
+                <span style="color: #0F172A; font-weight: 600;">${u.email}</span>
+              </div>
+              <div>
+                <span style="color: #64748B; display: block; font-size: 11.5px; font-weight: 600;">ROL EN PLATAFORMA</span>
+                <span style="color: #033E8C; font-weight: 700;">${u.rol}</span>
+              </div>
+              <div>
+                <span style="color: #64748B; display: block; font-size: 11.5px; font-weight: 600;">ESTADO DE ACCESO</span>
+                <span style="font-weight: 700; color: ${u.activo ? '#15803D' : '#DC2626'};">${u.activo ? 'Cuenta Habilitada' : 'Cuenta Suspendida'}</span>
+              </div>
+              <div>
+                <span style="color: #64748B; display: block; font-size: 11.5px; font-weight: 600;">FECHA DE REGISTRO</span>
+                <span style="color: #334155;">${u.fecha_creacion || 'N/A'}</span>
+              </div>
+            </div>
+
+            <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 14px;">
+              <span style="font-size: 11.5px; font-weight: 700; color: #475569; text-transform: uppercase; display: block; margin-bottom: 8px;">
+                Personificación Institucional (${det.tipo || u.rol}):
+              </span>
+              ${det.tipo === 'Estudiante' ? `
+                <div style="font-size: 12.5px; color: #334155; line-height: 1.6;">
+                  <div>• Código CUP: <strong>${det.cup || 'N/A'}</strong></div>
+                  <div>• Cédula: <strong>${det.cedula || 'N/A'}</strong></div>
+                  <div>• Carrera: <strong>${det.carrera || 'Ingeniería de Sistemas'}</strong></div>
+                  <div>• Documentos en Expediente: <strong>${det.documentos_count || 0} subido(s)</strong></div>
+                </div>
+              ` : det.tipo === 'Supervisor' ? `
+                <div style="font-size: 12.5px; color: #334155; line-height: 1.6;">
+                  <div>• Entidad Receptora: <strong>${det.empresa || 'N/A'}</strong></div>
+                  <div>• Cargo: <strong>${det.cargo || 'Supervisor'}</strong></div>
+                </div>
+              ` : det.tipo === 'Tutor' ? `
+                <div style="font-size: 12.5px; color: #334155; line-height: 1.6;">
+                  <div>• Cargo Académico: <strong>${det.cargo || 'Tutor Docente'}</strong></div>
+                </div>
+              ` : `
+                <div style="font-size: 12.5px; color: #64748B; font-style: italic;">
+                  Cuenta con permisos de nivel Administrador Universitario.
+                </div>
+              `}
+            </div>
+          `;
+
+          this.modalDetalle.classList.add("is-visible");
+          lucide.createIcons();
+        } catch (_) {
+          this.showToast("Error de conexión al cargar la ficha", "error");
+        }
+      }
+
+      async toggleActivo(idUsuario, estadoActual) {
+        const accion = estadoActual ? "suspender" : "activar";
+        if (!confirm(`¿Confirmas que deseas ${accion} el acceso de este usuario al sistema?`)) {
+          return;
+        }
+
+        try {
+          const res = await fetch(`/api/admin/usuarios/${idUsuario}/toggle-activo`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" }
+          });
+          const data = await res.json();
+          if (res.ok && data.success) {
+            this.showToast(data.message || "Estado de usuario actualizado", "success");
+            await this.cargarEstadisticas();
+            await this.cargarUsuarios();
+          } else {
+            this.showToast(data.message || "Error al actualizar estado", "error");
+          }
+        } catch (_) {
+          this.showToast("Error de conexión con el servidor", "error");
+        }
+      }
+
+      cerrarModal() {
+        this.modalDetalle?.classList.remove("is-visible");
+      }
+
+      showToast(message, type = "info") {
+        let container = document.getElementById("toast-container");
+        if (!container) {
+          container = document.createElement("div");
+          container.id = "toast-container";
+          container.className = "toast-container";
+          document.body.appendChild(container);
+        }
+
+        const toast = document.createElement("div");
+        toast.className = `toast-message toast-${type}`;
+        toast.style.cssText = `
+          background: ${type === 'success' ? '#059669' : type === 'error' ? '#DC2626' : '#033E8C'};
+          color: #FFFFFF;
+          padding: 12px 18px;
+          border-radius: 8px;
+          font-size: 13.5px;
+          font-weight: 600;
+          box-shadow: 0 10px 25px rgba(0,0,0,0.25);
+          margin-bottom: 10px;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          animation: fadeInToast 0.25s ease-out;
+          z-index: 10000;
+        `;
+        toast.textContent = message;
+        container.appendChild(toast);
+        setTimeout(() => {
+          toast.style.opacity = "0";
+          toast.style.transition = "all 0.25s ease";
+          setTimeout(() => toast.remove(), 250);
+        }, 3500);
+      }
+    }
+
+    window.adminApp = new AdminUsuariosApp();
+  </script>
+</body>
+
+</html>

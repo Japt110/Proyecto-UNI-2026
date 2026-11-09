@@ -1,23 +1,23 @@
 """
 ===============================================================================
-EVENTOS-UNI - API REST DE CATÁLOGOS INSTITUCIONALES, GEOGRÁFICOS Y ESTRATÉGICOS (`/api/catalogos`)
+SISTEMA WEB DE CONTROL DE PASANTÍAS - API REST DE CATÁLOGOS (`/api/catalogos`)
 ===============================================================================
 Proporciona el endpoint RESTful centralizado para alimentar selecciones dinámicas:
-- GET /api/catalogos : Retorna sedes, espacios físicos, unidades, tipos de actividad,
-  departamentos, ciudades y ejes/lineamientos estratégicos.
+- GET /api/catalogos : Retorna departamentos, municipios, carreras, áreas,
+  becas, países y etnias del padrón institucional.
 ===============================================================================
 """
 
 from flask import Blueprint, jsonify
 from models.catalogos import (
+    Pais,
+    Etnia,
     Departamento,
-    Ciudad,
-    Sede,
-    EspacioFisico,
-    UnidadOrganizativa,
-    TipoActividad,
-    EjeLineamiento,
-    Lineamiento,
+    Municipio,
+    CentroEducativo,
+    AreaCarrera,
+    Carrera,
+    Beca,
 )
 from core.security import login_required
 from extensions import cache
@@ -26,7 +26,7 @@ catalogos_bp = Blueprint("catalogos_api", __name__)
 
 
 # -----------------------------------------------------------------------------
-# 1. GET /api/catalogos - Carga Unificada de Catálogos
+# 1. GET /api/catalogos - Carga Unificada de Catálogos del Sistema
 # -----------------------------------------------------------------------------
 
 @catalogos_bp.route("", methods=["GET"])
@@ -35,33 +35,26 @@ catalogos_bp = Blueprint("catalogos_api", __name__)
 def get_catalogos():
     """
     Retorna todos los catálogos base requeridos para poblar dinámicamente los campos
-    <select> de los formularios del frontend (Crear Actividad, Edición, Filtros).
+    <select> de los formularios del frontend (Filtro de ofertas, Perfil, etc.).
+    Endpoint común accesible para todos los roles autenticados.
     """
     departamentos = Departamento.query.all()
-    ciudades = Ciudad.query.all()
-    sedes = Sede.query.all()
-    espacios = EspacioFisico.query.all()
-    unidades = UnidadOrganizativa.query.all()
-    tipos = TipoActividad.query.all()
-    ejes = EjeLineamiento.query.all()
+    municipios = Municipio.query.all()
+    carreras = Carrera.query.all()
+    areas = AreaCarrera.query.all()
+    becas = Beca.query.all()
+    paises = Pais.query.all()
+    etnias = Etnia.query.all()
 
     return jsonify({
         "success": True,
-        "departamentos": [{"id": d.id, "nombre": d.nombre} for d in departamentos],
-        "ciudades": [{"id": c.id, "nombre": c.nombre, "departamento_id": c.departamento_id} for c in ciudades],
-        "sedes": [{"id": s.id, "nombre": s.nombre, "codigo": s.codigo, "ciudad_id": s.ciudad_id} for s in sedes],
-        "espacios": [{"id": e.id, "sede_id": e.sede_id, "nombre": e.nombre, "capacidad": e.capacidad} for e in espacios],
-        "unidades": [{"id": u.id, "nombre": u.nombre, "codigo": u.codigo, "nivel": u.nivel_jerarquico} for u in unidades],
-        "tipos": [{"id": t.id, "nombre": t.nombre, "descripcion": t.descripcion} for t in tipos],
-        "ejes": [{
-            "id": ej.id,
-            "numero_oficial": ej.numero_oficial,
-            "nombre": ej.nombre,
-            "descripcion": ej.descripcion,
-            "lineamientos": [{
-                "id": l.id,
-                "numero_oficial": l.numero_oficial,
-                "descripcion": l.descripcion
-            } for l in ej.lineamientos]
-        } for ej in ejes]
+        "departamentos": [{"id": d.id_departamento, "id_departamento": d.id_departamento, "nombre": d.nombre} for d in departamentos],
+        "municipios": [{"id": m.id_municipio, "id_municipio": m.id_municipio, "nombre": m.nombre, "id_departamento": m.id_departamento} for m in municipios],
+        # Compatibilidad con vistas previas que esperaban "ciudades"
+        "ciudades": [{"id": m.id_municipio, "nombre": m.nombre, "departamento_id": m.id_departamento} for m in municipios],
+        "carreras": [{"id": c.id_carrera, "id_carrera": c.id_carrera, "nombre": c.nombre, "id_area": c.id_area} for c in carreras],
+        "areas_carrera": [{"id": a.id_area, "id_area": a.id_area, "nombre": a.nombre} for a in areas],
+        "becas": [{"id": b.id_beca, "id_beca": b.id_beca, "nombre": b.nombre, "tipo": b.tipo} for b in becas],
+        "paises": [{"id": p.id_pais, "id_pais": p.id_pais, "nombre": p.nombre, "codigo_iso": p.codigo_iso} for p in paises],
+        "etnias": [{"id": e.id_etnia, "id_etnia": e.id_etnia, "nombre": e.nombre} for e in etnias],
     }), 200

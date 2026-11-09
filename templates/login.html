@@ -4,29 +4,33 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Login - Sistema Académico UNI</title>
+  <title>Acceso al Sistema - Control de Pasantías UNI</title>
 
   <!-- Google Fonts: Raleway -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
 
+  <!-- Cliente API RESTful -->
+  <script src="{{ url_for('static', filename='js/api-client.js') }}"></script>
+
   <style>
-    /* ========================================================= */
-    /* || [MODULO VISUAL]: VARIABLES GLOBALES Y RESET           || */
-    /* ========================================================= */
     :root {
       --color-primary: #033E8C;
       --color-primary-hover: #022a5e;
+      --color-primary-light: #EFF6FF;
+      --color-accent: #2563EB;
+      --color-success: #10B981;
+      --color-danger: #EF4444;
       --color-white: #FEFFFE;
       --color-gray-text: #6B7280;
       --color-gray-dark: #374151;
       --color-border: #D1D5DB;
-      --color-bg-input: #F3F4F6;
-      --color-overlay: rgba(3, 62, 140, 0.4);
+      --color-bg-input: #F9FAFB;
+      --color-overlay: rgba(3, 62, 140, 0.45);
       --font-main: 'Raleway', sans-serif;
     }
 
@@ -38,114 +42,149 @@
 
     body {
       font-family: var(--font-main);
-      height: 100vh;
+      min-height: 100vh;
       width: 100vw;
-      overflow: hidden;
+      overflow-x: hidden;
       display: flex;
       align-items: center;
       justify-content: center;
+      padding: 20px 10px;
     }
 
-    /* ========================================================= */
-    /* || [MODULO VISUAL]: FONDO Y CAPA SUPERPUESTA             || */
-    /* ========================================================= */
     .login-background {
-      position: absolute;
+      position: fixed;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      background-image: url('static/img/estudiantes.jpg');
+      background-image: url("{{ url_for('static', filename='img/estudiantes.jpg') }}");
       background-size: cover;
       background-position: center;
       z-index: -2;
     }
 
     .login-overlay {
-      position: absolute;
+      position: fixed;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
       background-color: var(--color-overlay);
-      backdrop-filter: blur(10px);
+      backdrop-filter: blur(8px);
       z-index: -1;
     }
 
-    /* ========================================================= */
-    /* || [MODULO VISUAL]: TARJETA DE LOGIN CENTRAL             || */
-    /* ========================================================= */
     .login-card {
       background-color: var(--color-white);
-      border-radius: 16px;
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+      border-radius: 18px;
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.25);
       width: 100%;
-      max-width: 420px;
-      padding: 40px 32px;
+      max-width: 440px;
+      padding: 34px 30px;
       display: flex;
       flex-direction: column;
       align-items: center;
       position: relative;
       z-index: 1;
+      transition: all 0.3s ease;
     }
 
-    /* ========================================================= */
-    /* || [MODULO VISUAL]: ENCABEZADO Y LOGO                    || */
-    /* ========================================================= */
     .logo-container {
-      background-color: var(--color-primary);
-      width: 56px;
-      height: 56px;
-      border-radius: 12px;
+      background: linear-gradient(135deg, var(--color-primary), #1E40AF);
+      width: 58px;
+      height: 58px;
+      border-radius: 14px;
       display: flex;
       align-items: center;
       justify-content: center;
-      margin-bottom: 20px;
+      margin-bottom: 14px;
       color: var(--color-white);
+      box-shadow: 0 4px 10px rgba(3, 62, 140, 0.3);
     }
 
     .logo-container i {
-      width: 28px;
-      height: 28px;
+      width: 30px;
+      height: 30px;
     }
 
     .login-title {
-      font-size: 24px;
-      font-weight: 700;
+      font-size: 22px;
+      font-weight: 800;
       color: var(--color-gray-dark);
       margin-bottom: 4px;
       text-align: center;
+      letter-spacing: -0.3px;
     }
 
     .login-subtitle {
-      font-size: 14px;
+      font-size: 13px;
       color: var(--color-gray-text);
       font-weight: 500;
-      margin-bottom: 32px;
+      margin-bottom: 20px;
       text-align: center;
     }
 
-    /* ========================================================= */
-    /* || [MODULO VISUAL]: FORMULARIO E INPUTS                  || */
-    /* ========================================================= */
-    .login-form {
-      width: 100%;
+    /* Pestañas de Navegación Login / Registro */
+    .auth-tabs {
       display: flex;
+      width: 100%;
+      background: #F3F4F6;
+      border-radius: 10px;
+      padding: 4px;
+      margin-bottom: 22px;
+      gap: 4px;
+    }
+
+    .auth-tab-btn {
+      flex: 1;
+      padding: 9px 0;
+      border: none;
+      background: transparent;
+      font-family: var(--font-main);
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--color-gray-text);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .auth-tab-btn.active {
+      background: var(--color-white);
+      color: var(--color-primary);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    }
+
+    /* Formularios y Vistas */
+    .auth-section {
+      width: 100%;
+      display: none;
       flex-direction: column;
-      gap: 20px;
+      gap: 16px;
+    }
+
+    .auth-section.active {
+      display: flex;
+      animation: fadeIn 0.25s ease forwards;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
     }
 
     .input-group {
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 6px;
     }
 
     .input-label {
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 700;
       color: var(--color-gray-dark);
       letter-spacing: 0.5px;
+      text-transform: uppercase;
     }
 
     .input-wrapper {
@@ -158,30 +197,28 @@
       position: absolute;
       left: 14px;
       color: var(--color-gray-text);
-      width: 20px;
-      height: 20px;
+      width: 18px;
+      height: 18px;
+      pointer-events: none;
     }
 
     .input-field {
       width: 100%;
-      padding: 12px 14px 12px 42px;
+      padding: 11px 14px 11px 40px;
       border: 1px solid var(--color-border);
       border-radius: 8px;
       background-color: var(--color-bg-input);
       font-family: var(--font-main);
-      font-size: 14px;
+      font-size: 13.5px;
       color: var(--color-gray-dark);
-      transition: border-color 0.2s, background-color 0.2s;
+      transition: border-color 0.2s, background-color 0.2s, box-shadow 0.2s;
     }
 
     .input-field:focus {
       outline: none;
       border-color: var(--color-primary);
       background-color: var(--color-white);
-    }
-
-    .input-field::placeholder {
-      color: #9CA3AF;
+      box-shadow: 0 0 0 3px rgba(3, 62, 140, 0.12);
     }
 
     .input-icon-right {
@@ -189,27 +226,74 @@
       right: 14px;
       color: var(--color-gray-text);
       cursor: pointer;
-      width: 20px;
-      height: 20px;
-      transition: color 0.2s;
+      width: 18px;
+      height: 18px;
     }
 
-    .input-icon-right:hover {
+    /* Selector de Rol */
+    .role-selector {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+
+    .role-btn {
+      padding: 8px 10px;
+      border: 1px solid var(--color-border);
+      background: var(--color-bg-input);
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      font-family: var(--font-main);
+      color: var(--color-gray-dark);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+
+    .role-btn.active {
+      border-color: var(--color-primary);
+      background: var(--color-primary-light);
       color: var(--color-primary);
     }
 
-    /* ========================================================= */
-    /* || [MÃ“DULO VISUAL]: BOTÃ“N PRINCIPAL                      || */
-    /* ========================================================= */
+    /* Checkbox de Recordar Sesión */
+    .remember-container {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      margin-top: 2px;
+      user-select: none;
+      cursor: pointer;
+    }
+
+    .remember-container input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      cursor: pointer;
+      accent-color: var(--color-primary);
+    }
+
+    .remember-label {
+      font-size: 12.5px;
+      font-weight: 600;
+      color: var(--color-gray-dark);
+      cursor: pointer;
+    }
+
+    /* Botón Submit */
     .btn-submit {
-      margin-top: 8px;
       width: 100%;
       background-color: var(--color-primary);
       color: var(--color-white);
       border: none;
-      padding: 14px;
+      padding: 13px;
       border-radius: 8px;
-      font-size: 15px;
+      font-size: 14px;
       font-weight: 700;
       font-family: var(--font-main);
       cursor: pointer;
@@ -217,51 +301,141 @@
       justify-content: center;
       align-items: center;
       gap: 8px;
-      transition: background-color 0.2s;
+      transition: background-color 0.2s, transform 0.1s;
+      margin-top: 6px;
     }
 
     .btn-submit:hover {
       background-color: var(--color-primary-hover);
     }
 
-    /* ========================================================= */
-    /* || [MÃ“DULO VISUAL]: ENLACES Y FOOTER                     || */
-    /* ========================================================= */
-    .login-links {
-      margin-top: 24px;
-      width: 100%;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
+    .btn-submit:active {
+      transform: scale(0.99);
     }
 
-    .link-item {
+    .btn-submit:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    /* Vista 2FA */
+    .twofa-header {
+      text-align: center;
+      margin-bottom: 10px;
+    }
+
+    .twofa-icon-badge {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      background-color: #DBEAFE;
+      color: var(--color-primary);
       display: flex;
       align-items: center;
-      gap: 8px;
-      color: var(--color-gray-dark);
-      text-decoration: none;
+      justify-content: center;
+      margin: 0 auto 12px auto;
+    }
+
+    .twofa-desc {
       font-size: 13px;
+      color: var(--color-gray-text);
+      line-height: 1.45;
+      margin-bottom: 6px;
+    }
+
+    .email-highlight {
+      font-weight: 700;
+      color: var(--color-primary);
+    }
+
+    .otp-input-box {
+      width: 100%;
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing: 10px;
+      text-align: center;
+      padding: 12px 10px;
+      border: 2px solid var(--color-primary);
+      border-radius: 10px;
+      background: #F8FAFC;
+      color: var(--color-primary);
+      outline: none;
+      font-family: monospace, var(--font-main);
+    }
+
+    .otp-input-box:focus {
+      background: #FFFFFF;
+      box-shadow: 0 0 0 4px rgba(3, 62, 140, 0.15);
+    }
+
+    .dev-badge-code {
+      background: #FEF3C7;
+      border: 1px dashed #D97706;
+      color: #92400E;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 11.5px;
+      text-align: center;
+      margin-top: 4px;
+    }
+
+    .links-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      margin-top: 14px;
+      width: 100%;
+    }
+
+    .action-link {
+      font-size: 12.5px;
       font-weight: 600;
+      color: var(--color-primary);
+      text-decoration: none;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-family: var(--font-main);
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
       transition: color 0.2s;
     }
 
-    .link-item i {
-      width: 16px;
-      height: 16px;
-      color: var(--color-gray-text);
+    .action-link:hover {
+      text-decoration: underline;
+      color: var(--color-primary-hover);
     }
 
-    .link-item:hover {
-      color: var(--color-primary);
+    /* Mensajes de Alerta */
+    .alert-banner {
+      display: none;
+      width: 100%;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 12.5px;
+      font-weight: 600;
+      margin-bottom: 12px;
+      line-height: 1.4;
     }
 
-    .link-item:hover i {
-      color: var(--color-primary);
+    .alert-banner.error {
+      display: block;
+      background-color: #FEE2E2;
+      color: #991B1B;
+      border: 1px solid #F87171;
+    }
+
+    .alert-banner.success {
+      display: block;
+      background-color: #D1FAE5;
+      color: #065F46;
+      border: 1px solid #34D399;
     }
 
     .login-footer {
-      margin-top: 32px;
+      margin-top: 24px;
       font-size: 11px;
       color: var(--color-gray-text);
       text-align: center;
@@ -271,142 +445,477 @@
 
 <body>
 
-  <!-- ========================================================= -->
-  <!-- || [MÃ“DULO VISUAL]: FONDO SUPERPUESTO (OVERLAY)        || -->
-  <!-- ========================================================= -->
   <div class="login-background"></div>
   <div class="login-overlay"></div>
 
-  <!-- ========================================================= -->
-  <!-- || [MÃ“DULO VISUAL]: TARJETA DE LOGIN CENTRAL           || -->
-  <!-- ========================================================= -->
   <div class="login-card">
 
-    <!-- ========================================================= -->
-    <!-- || [MÃ“DULO VISUAL]: LOGO Y TÃTULOS                     || -->
-    <!-- ========================================================= -->
     <div class="logo-container">
       <i data-lucide="graduation-cap"></i>
     </div>
-    <h1 class="login-title">Sistema Académico</h1>
-    <h2 class="login-subtitle">Universidad Nacional de Ingeniería</h2>
+    <h1 class="login-title">Control de Pasantías</h1>
+    <h2 class="login-subtitle">Universidad Nacional de Ingeniería (UNI)</h2>
 
-    <!-- ========================================================= -->
-    <!-- || [MÃ“DULO VISUAL]: FORMULARIO PRINCIPAL               || -->
-    <!-- ========================================================= -->
-    <form class="login-form" id="loginForm">
+    <!-- Banner de Notificación -->
+    <div id="alertBanner" class="alert-banner"></div>
 
-      <!-- INPUT: CÃ“DIGO DE PERSONA -->
-      <div class="input-group">
-        <label class="input-label" for="userCode">CÓDIGO DE PERSONA</label>
-        <div class="input-wrapper">
-          <i data-lucide="user" class="input-icon-left"></i>
-          <input type="text" id="userCode" class="input-field" placeholder="Ej. 2021-12345" autocomplete="off" required>
-        </div>
-      </div>
-
-      <!-- INPUT: CONTRASEÃ‘A -->
-      <div class="input-group">
-        <label class="input-label" for="userPassword">CONTRASEÑA</label>
-        <div class="input-wrapper">
-          <i data-lucide="lock" class="input-icon-left"></i>
-          <input type="password" id="userPassword" class="input-field" placeholder="Ingresa tu contraseÃ±a" required>
-          <i data-lucide="eye" class="input-icon-right" id="togglePassword" title="Mostrar contraseÃ±a"></i>
-        </div>
-      </div>
-
-      <!-- ========================================================= -->
-      <!-- || [MODULO VISUAL]: BOTON DE ACCION                    || -->
-      <!-- ========================================================= -->
-      <button type="submit" class="btn-submit">
-        Iniciar sesión
-        <i data-lucide="chevron-right" style="width: 18px; height: 18px;"></i>
-      </button>
-
-    </form>
-
-    <!-- ========================================================= -->
-    <!-- || [MÃ“DULO VISUAL]: ENLACES INFERIORES                 || -->
-    <!-- ========================================================= -->
-    <div class="login-links">
-      <a href="#" class="link-item">
-        <i data-lucide="mail"></i>
-        Recuperar contraseña por correo
-      </a>
-      <a href="#" class="link-item">
-        <i data-lucide="refresh-cw"></i>
-        Necesita ayuda?
-      </a>
+    <!-- Pestañas de Modo (Login / Registro) -->
+    <div class="auth-tabs" id="authTabs">
+      <button type="button" class="auth-tab-btn active" id="tabLoginBtn" onclick="switchView('login')">Iniciar Sesión</button>
+      <button type="button" class="auth-tab-btn" id="tabRegisterBtn" onclick="switchView('register')">Registrarse</button>
     </div>
 
-    <!-- ========================================================= -->
-    <!-- || [MODULO VISUAL]: FOOTER DE LA TARJETA               || -->
-    <!-- ========================================================= -->
+    <!-- ===================================================================== -->
+    <!-- 1. SECCIÓN: INICIO DE SESIÓN (PASO 1)                                   -->
+    <!-- ===================================================================== -->
+    <form class="auth-section active" id="loginForm">
+      <div class="input-group">
+        <label class="input-label" for="loginIdentifier">Usuario / CUP / Cédula / Correo</label>
+        <div class="input-wrapper">
+          <i data-lucide="user" class="input-icon-left"></i>
+          <input type="text" id="loginIdentifier" class="input-field" placeholder="admin, carlos.mendoza o CUP-2026-001" autocomplete="username" required>
+        </div>
+      </div>
+
+      <div class="input-group">
+        <label class="input-label" for="loginPassword">Contraseña</label>
+        <div class="input-wrapper">
+          <i data-lucide="lock" class="input-icon-left"></i>
+          <input type="password" id="loginPassword" class="input-field" placeholder="Tu contraseña" autocomplete="current-password" required>
+          <i data-lucide="eye" class="input-icon-right" id="toggleLoginPass" title="Ver contraseña"></i>
+        </div>
+      </div>
+
+      <!-- Recordar sesión -->
+      <label class="remember-container">
+        <input type="checkbox" id="rememberMe" checked>
+        <span class="remember-label">Recordar mi sesión en este dispositivo (30 días)</span>
+      </label>
+
+      <button type="submit" class="btn-submit" id="btnLoginSubmit">
+        Continuar al Paso 2
+        <i data-lucide="chevron-right" style="width: 17px; height: 17px;"></i>
+      </button>
+
+      <div class="links-container">
+        <button type="button" class="action-link" onclick="switchView('register')">
+          ¿No tienes una cuenta aún? Regístrate aquí
+        </button>
+      </div>
+    </form>
+
+    <!-- ===================================================================== -->
+    <!-- 2. SECCIÓN: AUTENTICACIÓN EN 2 PASOS (PASO 2 - 2FA CON FLASK-MAIL)    -->
+    <!-- ===================================================================== -->
+    <form class="auth-section" id="twofaForm">
+      <div class="twofa-header">
+        <div class="twofa-icon-badge">
+          <i data-lucide="shield-check" style="width: 28px; height: 28px;"></i>
+        </div>
+        <h3 style="font-size: 16px; font-weight: 700; color: var(--color-gray-dark); margin-bottom: 4px;">Verificación de 2 Pasos</h3>
+        <p class="twofa-desc">
+          Hemos enviado un código de 6 dígitos a su correo electrónico institucional:<br>
+          <span class="email-highlight" id="twofaMaskedEmail">correo@uni.edu.ni</span>
+        </p>
+      </div>
+
+      <div class="input-group">
+        <label class="input-label" style="text-align: center;" for="otpInput">CÓDIGO DE SEGURIDAD (6 DÍGITOS)</label>
+        <input type="text" id="otpInput" class="otp-input-box" maxlength="6" pattern="[0-9]{6}" placeholder="000000" autocomplete="one-time-code" required autofocus>
+      </div>
+
+      <!-- Código de prueba para ambiente local sin SMTP -->
+      <div id="devOtpBox" class="dev-badge-code" style="display: none;">
+        <span>Código de prueba detectado: <strong id="devOtpValue">------</strong></span>
+      </div>
+
+      <button type="submit" class="btn-submit" id="btnTwofaSubmit">
+        <i data-lucide="check-circle" style="width: 18px; height: 18px;"></i>
+        Verificar Código y Acceder
+      </button>
+
+      <div class="links-container">
+        <button type="button" class="action-link" id="btnResendOtp" onclick="handleResendOtp()">
+          <i data-lucide="refresh-cw" style="width: 14px; height: 14px;"></i>
+          ¿No recibiste el código? Reenviar código
+        </button>
+        <button type="button" class="action-link" onclick="switchView('login')">
+          <i data-lucide="arrow-left" style="width: 14px; height: 14px;"></i>
+          Volver a ingresar credenciales
+        </button>
+      </div>
+    </form>
+
+    <!-- ===================================================================== -->
+    <!-- 3. SECCIÓN: REGISTRO DE NUEVA CUENTA                                  -->
+    <!-- ===================================================================== -->
+    <form class="auth-section" id="registerForm">
+      <div class="input-group">
+        <label class="input-label">Tipo de Cuenta (Rol)</label>
+        <div class="role-selector">
+          <button type="button" class="role-btn active" id="roleBtnEst" onclick="selectRole('Estudiante')">
+            <i data-lucide="graduation-cap" style="width: 16px; height: 16px;"></i>
+            Estudiante
+          </button>
+          <button type="button" class="role-btn" id="roleBtnEmp" onclick="selectRole('Supervisor')">
+            <i data-lucide="briefcase" style="width: 16px; height: 16px;"></i>
+            Empresa / Sup.
+          </button>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+        <div class="input-group">
+          <label class="input-label" for="regNombre">Nombre</label>
+          <input type="text" id="regNombre" class="input-field" style="padding-left: 12px;" placeholder="Ej. Ana" required>
+        </div>
+        <div class="input-group">
+          <label class="input-label" for="regApellido">Apellido</label>
+          <input type="text" id="regApellido" class="input-field" style="padding-left: 12px;" placeholder="Ej. Morales" required>
+        </div>
+      </div>
+
+      <div class="input-group">
+        <label class="input-label" for="regUsername">Nombre de Usuario</label>
+        <div class="input-wrapper">
+          <i data-lucide="user" class="input-icon-left"></i>
+          <input type="text" id="regUsername" class="input-field" placeholder="ej. ana.morales" required>
+        </div>
+      </div>
+
+      <div class="input-group">
+        <label class="input-label" for="regEmail">Correo Institucional / Empresarial</label>
+        <div class="input-wrapper">
+          <i data-lucide="mail" class="input-icon-left"></i>
+          <input type="email" id="regEmail" class="input-field" placeholder="ana.morales@est.uni.edu.ni" required>
+        </div>
+      </div>
+
+      <!-- Campos Dinámicos para Estudiante -->
+      <div id="fieldsEstudiante" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+        <div class="input-group">
+          <label class="input-label" for="regCup">CUP (Código)</label>
+          <input type="text" id="regCup" class="input-field" style="padding-left: 12px;" placeholder="CUP-2026-999">
+        </div>
+        <div class="input-group">
+          <label class="input-label" for="regCedula">Cédula</label>
+          <input type="text" id="regCedula" class="input-field" style="padding-left: 12px;" placeholder="001-XXXXXX-XXXXA">
+        </div>
+      </div>
+
+      <!-- Campos Dinámicos para Empresa -->
+      <div id="fieldsEmpresa" style="display: none; flex-direction: column; gap: 8px;">
+        <div class="input-group">
+          <label class="input-label" for="regEmpresa">Razón Social de la Empresa</label>
+          <input type="text" id="regEmpresa" class="input-field" style="padding-left: 12px;" placeholder="Nombre de la Entidad Receptora">
+        </div>
+        <div class="input-group">
+          <label class="input-label" for="regCargo">Cargo o Función</label>
+          <input type="text" id="regCargo" class="input-field" style="padding-left: 12px;" placeholder="Ej. Gerente de Recursos Humanos">
+        </div>
+      </div>
+
+      <div class="input-group">
+        <label class="input-label" for="regPassword">Contraseña</label>
+        <div class="input-wrapper">
+          <i data-lucide="lock" class="input-icon-left"></i>
+          <input type="password" id="regPassword" class="input-field" placeholder="Mínimo 6 caracteres" minlength="6" required>
+          <i data-lucide="eye" class="input-icon-right" id="toggleRegPass" title="Ver contraseña"></i>
+        </div>
+      </div>
+
+      <button type="submit" class="btn-submit" id="btnRegisterSubmit">
+        <i data-lucide="user-plus" style="width: 17px; height: 17px;"></i>
+        Crear Cuenta
+      </button>
+
+      <div class="links-container">
+        <button type="button" class="action-link" onclick="switchView('login')">
+          ¿Ya tienes cuenta? Inicia sesión aquí
+        </button>
+      </div>
+    </form>
+
     <div class="login-footer">
-      © 2025 UNI · Dirección de Informática
+      © 2026 Universidad Nacional de Ingeniería (UNI) · Dirección de Informática
     </div>
 
   </div>
 
-  <!-- ========================================================= -->
-  <!-- || [MODULO VISUAL]: SCRIPT FUNCIONAL (VANILLA JS)      || -->
-  <!-- ========================================================= -->
   <script>
-    // Inicializar iconos de Lucide
+    // Inicializar iconos
     lucide.createIcons();
 
-    // LÃ³gica para alternar la visibilidad de la contraseÃ±a
-    const togglePasswordBtn = document.getElementById('togglePassword');
-    const passwordInput = document.getElementById('userPassword');
+    // Estado global de vista
+    let currentRoleSelected = 'Estudiante';
+    let lastRememberMeChoice = true;
 
-    togglePasswordBtn.addEventListener('click', function () {
-      const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
-      passwordInput.setAttribute('type', type);
+    function showAlert(message, type = 'error') {
+      const banner = document.getElementById('alertBanner');
+      banner.className = `alert-banner ${type}`;
+      banner.textContent = message;
+      banner.style.display = 'block';
+    }
 
-      // Cambiar el icono visualmente (Eye / Eye-Off)
-      if (type === 'password') {
-        this.setAttribute('data-lucide', 'eye');
-      } else {
-        this.setAttribute('data-lucide', 'eye-off');
+    function hideAlert() {
+      const banner = document.getElementById('alertBanner');
+      banner.style.display = 'none';
+    }
+
+    function switchView(viewName) {
+      hideAlert();
+      const loginForm = document.getElementById('loginForm');
+      const twofaForm = document.getElementById('twofaForm');
+      const registerForm = document.getElementById('registerForm');
+      const tabs = document.getElementById('authTabs');
+      const tabLoginBtn = document.getElementById('tabLoginBtn');
+      const tabRegisterBtn = document.getElementById('tabRegisterBtn');
+
+      loginForm.classList.remove('active');
+      twofaForm.classList.remove('active');
+      registerForm.classList.remove('active');
+
+      if (viewName === 'login') {
+        tabs.style.display = 'flex';
+        tabLoginBtn.classList.add('active');
+        tabRegisterBtn.classList.remove('active');
+        loginForm.classList.add('active');
+      } else if (viewName === 'register') {
+        tabs.style.display = 'flex';
+        tabRegisterBtn.classList.add('active');
+        tabLoginBtn.classList.remove('active');
+        registerForm.classList.add('active');
+      } else if (viewName === 'twofa') {
+        tabs.style.display = 'none';
+        twofaForm.classList.add('active');
+        setTimeout(() => document.getElementById('otpInput').focus(), 100);
       }
-
-      // Renderizar el nuevo icono y preservar las clases/IDs
       lucide.createIcons();
-    });
+    }
 
-    // Lógica de inicio de sesión conectada a la API REST
+    function selectRole(role) {
+      currentRoleSelected = role;
+      const btnEst = document.getElementById('roleBtnEst');
+      const btnEmp = document.getElementById('roleBtnEmp');
+      const fieldsEst = document.getElementById('fieldsEstudiante');
+      const fieldsEmp = document.getElementById('fieldsEmpresa');
+
+      if (role === 'Estudiante') {
+        btnEst.classList.add('active');
+        btnEmp.classList.remove('active');
+        fieldsEst.style.display = 'grid';
+        fieldsEmp.style.display = 'none';
+      } else {
+        btnEmp.classList.add('active');
+        btnEst.classList.remove('active');
+        fieldsEst.style.display = 'none';
+        fieldsEmp.style.display = 'flex';
+      }
+      lucide.createIcons();
+    }
+
+    // Toggle de visibilidad de contraseñas
+    function setupPasswordToggle(toggleId, inputId) {
+      const toggleBtn = document.getElementById(toggleId);
+      const input = document.getElementById(inputId);
+      if (!toggleBtn || !input) return;
+
+      toggleBtn.addEventListener('click', () => {
+        const isPass = input.getAttribute('type') === 'password';
+        input.setAttribute('type', isPass ? 'text' : 'password');
+        toggleBtn.setAttribute('data-lucide', isPass ? 'eye-off' : 'eye');
+        lucide.createIcons();
+      });
+    }
+
+    setupPasswordToggle('toggleLoginPass', 'loginPassword');
+    setupPasswordToggle('toggleRegPass', 'regPassword');
+
+    // -------------------------------------------------------------------------
+    // 1. MANEJADOR: LOGIN PASO 1 (Envío de OTP con Flask-Mail)
+    // -------------------------------------------------------------------------
     document.getElementById('loginForm').addEventListener('submit', async function (e) {
       e.preventDefault();
-      const code = document.getElementById('userCode').value.trim();
-      const pass = document.getElementById('userPassword').value;
+      hideAlert();
 
-      if (!code || !pass) return;
+      const identifier = document.getElementById('loginIdentifier').value.trim();
+      const password = document.getElementById('loginPassword').value;
+      const rememberMe = document.getElementById('rememberMe').checked;
+      lastRememberMeChoice = rememberMe;
 
-      const submitBtn = this.querySelector('.btn-submit');
-      const originalText = submitBtn.innerHTML;
-      submitBtn.innerHTML = 'Verificando...';
+      if (!identifier || !password) {
+        showAlert('Por favor ingrese su usuario y contraseña');
+        return;
+      }
+
+      const submitBtn = document.getElementById('btnLoginSubmit');
+      const origText = submitBtn.innerHTML;
+      submitBtn.innerHTML = 'Verificando credenciales...';
       submitBtn.disabled = true;
 
-      const res = await API.login(code, pass);
+      try {
+        const res = await API.login(identifier, password, rememberMe);
 
-      if (res.success) {
-        // Redirigir según rol de usuario
-        if (res.user && res.user.role === 'Rector') {
-          window.location.href = '/rector';
-        } else {
+        if (res.success && res.requires_2fa) {
+          document.getElementById('twofaMaskedEmail').textContent = res.email_masked || 'correo registrado';
+
+          if (res.dev_otp_preview) {
+            document.getElementById('devOtpBox').style.display = 'block';
+            document.getElementById('devOtpValue').textContent = res.dev_otp_preview;
+            document.getElementById('otpInput').value = res.dev_otp_preview;
+          } else {
+            document.getElementById('devOtpBox').style.display = 'none';
+          }
+
+          showAlert(res.message, 'success');
+          switchView('twofa');
+        } else if (res.success) {
+          // Autenticación directa sin 2FA si aplicara
           window.location.href = '/';
+        } else {
+          showAlert(res.message || 'Credenciales incorrectas');
         }
-      } else {
-        alert(res.message || 'Error de autenticación. Verifique sus credenciales.');
-        submitBtn.innerHTML = originalText;
+      } catch (err) {
+        showAlert('Error al conectar con el servidor.');
+      } finally {
+        submitBtn.innerHTML = origText;
         submitBtn.disabled = false;
+        lucide.createIcons();
       }
     });
-  </script>
 
-  <!-- Cargar primero el cliente de API y después la lógica de la app -->
-  <script src="{{ url_for('static', filename='js/api-client.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    // -------------------------------------------------------------------------
+    // 2. MANEJADOR: VERIFICACIÓN 2FA (Paso 2)
+    // -------------------------------------------------------------------------
+    document.getElementById('twofaForm').addEventListener('submit', async function (e) {
+      e.preventDefault();
+      hideAlert();
+
+      const otp = document.getElementById('otpInput').value.trim();
+      if (!otp || otp.length < 6) {
+        showAlert('Ingrese el código numérico de 6 dígitos completo.');
+        return;
+      }
+
+      const submitBtn = document.getElementById('btnTwofaSubmit');
+      const origText = submitBtn.innerHTML;
+      submitBtn.innerHTML = 'Validando código...';
+      submitBtn.disabled = true;
+
+      try {
+        const res = await API.verify2FA(otp, lastRememberMeChoice);
+
+        if (res.success) {
+          showAlert('¡Acceso concedido! Redirigiendo...', 'success');
+          setTimeout(() => {
+            window.location.href = '/';
+          }, 600);
+        } else {
+          showAlert(res.message || 'Código de seguridad incorrecto.');
+        }
+      } catch (err) {
+        showAlert('Error al procesar la verificación 2FA.');
+      } finally {
+        submitBtn.innerHTML = origText;
+        submitBtn.disabled = false;
+        lucide.createIcons();
+      }
+    });
+
+    // -------------------------------------------------------------------------
+    // 3. REENVIAR CÓDIGO OTP
+    // -------------------------------------------------------------------------
+    async function handleResendOtp() {
+      hideAlert();
+      const btn = document.getElementById('btnResendOtp');
+      const origText = btn.innerHTML;
+      btn.innerHTML = 'Enviando...';
+      btn.disabled = true;
+
+      try {
+        const res = await API.resend2FA();
+        if (res.success) {
+          showAlert(res.message || 'Nuevo código enviado.', 'success');
+          if (res.dev_otp_preview) {
+            document.getElementById('devOtpBox').style.display = 'block';
+            document.getElementById('devOtpValue').textContent = res.dev_otp_preview;
+            document.getElementById('otpInput').value = res.dev_otp_preview;
+          }
+        } else {
+          showAlert(res.message || 'No se pudo reenviar el código.');
+        }
+      } catch (err) {
+        showAlert('Error al solicitar nuevo código.');
+      } finally {
+        btn.innerHTML = origText;
+        btn.disabled = false;
+        lucide.createIcons();
+      }
+    }
+
+    // -------------------------------------------------------------------------
+    // 4. MANEJADOR: REGISTRO DE NUEVA CUENTA
+    // -------------------------------------------------------------------------
+    document.getElementById('registerForm').addEventListener('submit', async function (e) {
+      e.preventDefault();
+      hideAlert();
+
+      const nombre = document.getElementById('regNombre').value.trim();
+      const apellido = document.getElementById('regApellido').value.trim();
+      const username = document.getElementById('regUsername').value.trim().toLowerCase();
+      const email = document.getElementById('regEmail').value.trim().toLowerCase();
+      const password = document.getElementById('regPassword').value;
+
+      const payload = {
+        nombre,
+        apellido,
+        nombre_usuario: username,
+        email,
+        password,
+        rol: currentRoleSelected,
+      };
+
+      if (currentRoleSelected === 'Estudiante') {
+        payload.cup = document.getElementById('regCup').value.trim();
+        payload.cedula = document.getElementById('regCedula').value.trim();
+      } else {
+        payload.empresa_nombre = document.getElementById('regEmpresa').value.trim();
+        payload.cargo = document.getElementById('regCargo').value.trim();
+      }
+
+      const submitBtn = document.getElementById('btnRegisterSubmit');
+      const origText = submitBtn.innerHTML;
+      submitBtn.innerHTML = 'Registrando cuenta...';
+      submitBtn.disabled = true;
+
+      try {
+        const res = await API.register(payload);
+
+        if (res.success) {
+          showAlert('¡Cuenta creada exitosamente! Iniciando verificación...', 'success');
+          // Autocompletar en el login y proceder a iniciar sesión
+          document.getElementById('loginIdentifier').value = username;
+          document.getElementById('loginPassword').value = password;
+          setTimeout(() => {
+            document.getElementById('loginForm').dispatchEvent(new Event('submit'));
+          }, 800);
+        } else {
+          showAlert(res.message || 'Error durante el registro.');
+        }
+      } catch (err) {
+        showAlert('Error de comunicación al intentar registrarse.');
+      } finally {
+        submitBtn.innerHTML = origText;
+        submitBtn.disabled = false;
+        lucide.createIcons();
+      }
+    });
+
+    // Detectar si la URL es /register para abrir pestaña de registro
+    if (window.location.pathname.toLowerCase().endsWith('register')) {
+      switchView('register');
+    }
+  </script>
 </body>
 
 </html>

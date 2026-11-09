@@ -455,12 +455,13 @@ const API = {
      ======================================================================== */
 
   /**
-   * Realiza la autenticación polimórfica de usuario en el sistema.
+   * Realiza la autenticación polimórfica de usuario en el sistema (Paso 1).
    * @param {string} identifier - Email, Carné, Cédula o Código de Trabajador.
    * @param {string} password - Contraseña en texto plano.
-   * @returns {Promise<Object>} Respuesta JSON del servidor con estado y datos de usuario.
+   * @param {boolean} remember_me - Indicador para recordar la sesión de forma prolongada (30 días).
+   * @returns {Promise<Object>} Respuesta JSON con estado de 2FA o token.
    */
-  async login(identifier, password) {
+  async login(identifier, password, remember_me = false) {
     try {
       // Purgar cualquier caché estática previa de la sesión anterior
       ClientCache.invalidateAll();
@@ -468,11 +469,32 @@ const API = {
       const response = await fetchWithAuth(`${API_BASE}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ identifier, password })
+        body: JSON.stringify({ identifier, password, remember_me })
+      });
+      const result = await response.json();
+      return result;
+    } catch (error) {
+      console.error('Error de red en login:', error);
+      return { success: false, message: 'Error de conexión con el servidor.' };
+    }
+  },
+
+  /**
+   * Valida el código de verificación de 2 pasos enviado por correo (Paso 2).
+   * @param {string} code - Código OTP de 6 dígitos.
+   * @param {boolean} remember_me - Política de recordar sesión persistente.
+   * @returns {Promise<Object>} Resultado de la autenticación formal.
+   */
+  async verify2FA(code, remember_me = false) {
+    try {
+      const response = await fetchWithAuth(`${API_BASE}/auth/verify-2fa`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code, remember_me })
       });
       const result = await response.json();
       if (result.success) {
-        ClientCache.invalidateAll(); // Limpieza completa post-login
+        ClientCache.invalidateAll();
         if (result.session_token) {
           setStoredToken(result.session_token);
         }
@@ -488,8 +510,44 @@ const API = {
       }
       return result;
     } catch (error) {
-      console.error('Error de red en login:', error);
-      return { success: false, message: 'Error de conexión con el servidor.' };
+      console.error('Error de red en verify2FA:', error);
+      return { success: false, message: 'Error de conexión al verificar código 2FA.' };
+    }
+  },
+
+  /**
+   * Solicita el reenvío de un nuevo código 2FA por correo electrónico.
+   * @returns {Promise<Object>} Confirmación de reenvío.
+   */
+  async resend2FA() {
+    try {
+      const response = await fetchWithAuth(`${API_BASE}/auth/resend-2fa`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      return await response.json();
+    } catch (error) {
+      console.error('Error de red en resend2FA:', error);
+      return { success: false, message: 'Error al solicitar nuevo código.' };
+    }
+  },
+
+  /**
+   * Registra una nueva cuenta de usuario en la plataforma.
+   * @param {Object} payload - Datos de la cuenta (nombre, usuario, email, rol, password, etc.)
+   * @returns {Promise<Object>} Resultado del registro.
+   */
+  async register(payload) {
+    try {
+      const response = await fetchWithAuth(`${API_BASE}/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      return await response.json();
+    } catch (error) {
+      console.error('Error de red en register:', error);
+      return { success: false, message: 'Error de conexión durante el registro.' };
     }
   },
 
@@ -985,6 +1043,73 @@ const API = {
     } catch (error) {
       console.error('Error al subir imagen:', error);
       return { success: false, message: 'Error de red al subir la imagen.' };
+    }
+  },
+
+  /* ========================================================================
+     8. MÓDULO DE PASANTÍAS Y POSTULACIONES
+     ======================================================================== */
+
+  async getPasantias(filters = {}) {
+    try {
+      const params = new URLSearchParams(filters).toString();
+      const res = await fetchWithAuth(`${API_BASE}/pasantias${params ? '?' + params : ''}`);
+      return await res.json();
+    } catch (error) {
+      console.error('Error al listar pasantías:', error);
+      return { success: false, pasantias: [] };
+    }
+  },
+
+  async createPasantia(data) {
+    try {
+      const res = await fetchWithAuth(`${API_BASE}/pasantias`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      return await res.json();
+    } catch (error) {
+      console.error('Error al crear pasantía:', error);
+      return { success: false, message: 'Error de conexión con el servidor.' };
+    }
+  },
+
+  async aplicarPasantia(idOferta, mensaje = '') {
+    try {
+      const res = await fetchWithAuth(`${API_BASE}/pasantias/${idOferta}/aplicar`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mensaje })
+      });
+      return await res.json();
+    } catch (error) {
+      console.error('Error al aplicar a pasantía:', error);
+      return { success: false, message: 'Error de red al enviar la solicitud.' };
+    }
+  },
+
+  async getMisAplicaciones() {
+    try {
+      const res = await fetchWithAuth(`${API_BASE}/pasantias/mis-aplicaciones`);
+      return await res.json();
+    } catch (error) {
+      console.error('Error al obtener mis aplicaciones:', error);
+      return { success: false, aplicaciones: [] };
+    }
+  },
+
+  async cambiarEstadoAplicacion(idAplicacion, estado) {
+    try {
+      const res = await fetchWithAuth(`${API_BASE}/pasantias/aplicaciones/${idAplicacion}/estado`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ estado })
+      });
+      return await res.json();
+    } catch (error) {
+      console.error('Error al actualizar postulación:', error);
+      return { success: false, message: 'Error de red.' };
     }
   }
 };

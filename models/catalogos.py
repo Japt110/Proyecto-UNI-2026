@@ -1,154 +1,168 @@
 """
 ===============================================================================
-EVENTOS-UNI - MODELOS DE CATÁLOGOS INSTITUCIONALES, GEOGRÁFICOS Y ESTRATÉGICOS
+SISTEMA WEB DE CONTROL DE PASANTÍAS - SUBDOMINIO A: CATÁLOGOS
 ===============================================================================
-Define los modelos ORM relacionales para las entidades de catálogo base:
-- Departamento: División político-administrativa
-- Ciudad: Municipio o ciudad pertenecientes a un departamento
-- Sede: Recintos universitarios (RUSB, RUPAP, Sede Norte, etc.)
-- EspacioFisico: Auditorios, laboratorios, plazoletas y recintos
-- UnidadOrganizativa: Facultades, direcciones y dependencias organizativas
-- TipoActividad: Categorización formal de los eventos universitarios con descripción
-- EjeLineamiento, Lineamiento, AccionEstrategica: Estrategia Nacional de Educación 2026
+Modelos ORM relacionales para entidades de catálogo base:
+- Pais (paises): Procedencia geográfica internacional
+- Etnia (etnias): Autoidentificación cultural / étnica
+- Departamento (departamentos): División político-administrativa
+- Municipio (municipios): División territorial dependiente de departamento
+- CentroEducativo (centros_educativos): Colegios / institutos de procedencia
+- AreaCarrera (areas_carrera): Agrupación académica de carreras
+- Carrera (carreras): Programas de formación universitaria
+- Beca (becas): Beneficios de beca otorgados en matrículas
 ===============================================================================
 """
 
-import uuid
 from database import db
 
 
-# -----------------------------------------------------------------------------
-# 1. Catálogos Geográficos (Departamentos y Ciudades)
-# -----------------------------------------------------------------------------
+class Pais(db.Model):
+    """Catálogo de países para la procedencia de estudiantes."""
+    __tablename__ = "paises"
+
+    id_pais = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    nombre = db.Column(db.String(100), nullable=False, unique=True, index=True)
+    codigo_iso = db.Column(db.String(3), nullable=False, unique=True, index=True)
+
+    # Relaciones
+    estudiantes = db.relationship("Estudiante", back_populates="pais_origen", lazy="select")
+
+    def __repr__(self):
+        return f"<Pais id={self.id_pais} nombre='{self.nombre}' codigo_iso='{self.codigo_iso}'>"
+
+
+class Etnia(db.Model):
+    """Catálogo de autoidentificación étnica."""
+    __tablename__ = "etnias"
+
+    id_etnia = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    nombre = db.Column(db.String(100), nullable=False, unique=True, index=True)
+
+    # Relaciones
+    estudiantes = db.relationship("Estudiante", back_populates="etnia", lazy="select")
+
+    def __repr__(self):
+        return f"<Etnia id={self.id_etnia} nombre='{self.nombre}'>"
+
 
 class Departamento(db.Model):
-    """Modelo ORM que representa un departamento del país."""
+    """Catálogo de departamentos geográficos."""
     __tablename__ = "departamentos"
 
-    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    nombre = db.Column(db.String(100), nullable=False, unique=True)
+    id_departamento = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    nombre = db.Column(db.String(100), nullable=False, unique=True, index=True)
 
     # Relaciones
-    ciudades = db.relationship("Ciudad", backref="departamento", cascade="all, delete-orphan")
+    municipios = db.relationship("Municipio", back_populates="departamento", cascade="all, delete-orphan", lazy="select")
+
+    def __repr__(self):
+        return f"<Departamento id={self.id_departamento} nombre='{self.nombre}'>"
 
 
-class Ciudad(db.Model):
-    """Modelo ORM que representa un municipio o ciudad dentro de un departamento."""
-    __tablename__ = "ciudades"
+class Municipio(db.Model):
+    """Catálogo de municipios pertenecientes a un departamento."""
+    __tablename__ = "municipios"
 
-    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    id_municipio = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    id_departamento = db.Column(db.Integer, db.ForeignKey("departamentos.id_departamento", ondelete="CASCADE"), nullable=False, index=True)
     nombre = db.Column(db.String(100), nullable=False)
-    departamento_id = db.Column(db.String(36), db.ForeignKey("departamentos.id", ondelete="CASCADE"), nullable=False)
 
     # Relaciones
-    sedes = db.relationship("Sede", backref="ciudad")
+    departamento = db.relationship("Departamento", back_populates="municipios")
+    direcciones = db.relationship("DireccionEstudiante", back_populates="municipio", lazy="select")
+    centros_educativos = db.relationship("CentroEducativo", back_populates="municipio", lazy="select")
+
+    def __repr__(self):
+        return f"<Municipio id={self.id_municipio} nombre='{self.nombre}'>"
 
 
-# -----------------------------------------------------------------------------
-# 2. Catálogo de Sedes / Recintos Universitarios
-# -----------------------------------------------------------------------------
+class CentroEducativo(db.Model):
+    """Catálogo de colegios o centros de procedencia estudiantil."""
+    __tablename__ = "centros_educativos"
 
-class Sede(db.Model):
-    """Modelo ORM que representa un recinto o sede física de la universidad."""
-    __tablename__ = "sedes"
-
-    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    nombre = db.Column(db.String(100), nullable=False)
-    codigo = db.Column(db.String(20), nullable=False, unique=True, index=True)
-    ciudad_id = db.Column(db.String(36), db.ForeignKey("ciudades.id"), nullable=False)
-
-    # Relaciones relacionales
-    espacios = db.relationship("EspacioFisico", backref="sede", cascade="all, delete-orphan")
-    personas = db.relationship("Persona", backref="sede")
-
-
-# -----------------------------------------------------------------------------
-# 3. Catálogo de Espacios Físicos (Locaciones internas)
-# -----------------------------------------------------------------------------
-
-class EspacioFisico(db.Model):
-    """Modelo ORM que representa auditorios, laboratorios o salas dentro de una sede."""
-    __tablename__ = "espacios_fisicos"
-
-    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    sede_id = db.Column(db.String(36), db.ForeignKey("sedes.id", ondelete="CASCADE"), nullable=False)
-    nombre = db.Column(db.String(100), nullable=False)
-    capacidad = db.Column(db.Integer, nullable=False, default=0)
-
-    # Relaciones relacionales
-    actividades = db.relationship("Actividad", backref="espacio_fisico")
-
-
-# -----------------------------------------------------------------------------
-# 4. Catálogo de Unidades Organizativas (Facultades / Direcciones)
-# -----------------------------------------------------------------------------
-
-class UnidadOrganizativa(db.Model):
-    """Modelo ORM que representa facultades, direcciones o decanatos organizadores."""
-    __tablename__ = "unidades_organizativas"
-
-    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    nombre = db.Column(db.String(120), nullable=False)
-    codigo = db.Column(db.String(20), nullable=False, unique=True, index=True)
-    nivel_jerarquico = db.Column(db.String(50), nullable=False)  # ej. "Dirección", "Facultad"
-
-    # Relaciones relacionales
-    usuarios = db.relationship("Usuario", backref="unidad")
-    estudiantes = db.relationship("Estudiante", backref="area_conocimiento")
-    trabajadores = db.relationship("Trabajador", backref="unidad")
-    actividades_organizadas = db.relationship("Actividad", backref="unidad_responsable")
-
-
-# -----------------------------------------------------------------------------
-# 5. Catálogo de Tipos de Actividad
-# -----------------------------------------------------------------------------
-
-class TipoActividad(db.Model):
-    """Modelo ORM que categoriza las actividades (Feria, Conferencia, Taller, Simposio)."""
-    __tablename__ = "tipos_actividad"
-
-    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    nombre = db.Column(db.String(80), nullable=False, unique=True)
-    descripcion = db.Column(db.Text, nullable=True)
-
-    # Relaciones relacionales
-    actividades = db.relationship("Actividad", backref="tipo")
-
-
-# -----------------------------------------------------------------------------
-# 6. Módulo Estrategia Nacional de Educación 2026 (Ejes, Lineamientos y Acciones)
-# -----------------------------------------------------------------------------
-
-class EjeLineamiento(db.Model):
-    """Modelo ORM que representa un Eje Estratégico de la Estrategia Nacional de Educación."""
-    __tablename__ = "ejes_lineamiento"
-
-    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    numero_oficial = db.Column(db.String(20), nullable=False)
+    id_centro = db.Column(db.Integer, primary_key=True, autoincrement=True)
     nombre = db.Column(db.String(150), nullable=False)
-    descripcion = db.Column(db.Text, nullable=True)
+    tipo = db.Column(db.String(20), nullable=False)  # ENUM: 'Privado', 'Estatal'
+    id_municipio = db.Column(db.Integer, db.ForeignKey("municipios.id_municipio", ondelete="RESTRICT"), nullable=False, index=True)
 
     # Relaciones
-    lineamientos = db.relationship("Lineamiento", backref="eje", cascade="all, delete-orphan")
+    municipio = db.relationship("Municipio", back_populates="centros_educativos")
+    educaciones_previas = db.relationship("EducacionPreviaEstudiante", back_populates="centro_educativo", lazy="select")
+
+    def __repr__(self):
+        return f"<CentroEducativo id={self.id_centro} nombre='{self.nombre}' tipo='{self.tipo}'>"
 
 
-class Lineamiento(db.Model):
-    """Modelo ORM que representa un Lineamiento específico dentro de un Eje Estratégico."""
-    __tablename__ = "lineamientos"
+class AreaCarrera(db.Model):
+    """Áreas de conocimiento que agrupan a las carreras."""
+    __tablename__ = "areas_carrera"
 
-    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    eje_id = db.Column(db.String(36), db.ForeignKey("ejes_lineamiento.id", ondelete="CASCADE"), nullable=False)
-    numero_oficial = db.Column(db.String(20), nullable=False)
-    descripcion = db.Column(db.Text, nullable=False)
+    id_area = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    nombre = db.Column(db.String(100), nullable=False, unique=True, index=True)
 
     # Relaciones
-    acciones = db.relationship("AccionEstrategica", backref="lineamiento", cascade="all, delete-orphan")
+    carreras = db.relationship("Carrera", back_populates="area", cascade="all, delete-orphan", lazy="select")
+
+    def __repr__(self):
+        return f"<AreaCarrera id={self.id_area} nombre='{self.nombre}'>"
 
 
-class AccionEstrategica(db.Model):
-    """Modelo ORM que representa una Acción Estratégica derivada de un Lineamiento."""
-    __tablename__ = "acciones_estrategicas"
+class Carrera(db.Model):
+    """Catálogo de carreras universitarias."""
+    __tablename__ = "carreras"
 
-    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    lineamiento_id = db.Column(db.String(36), db.ForeignKey("lineamientos.id", ondelete="CASCADE"), nullable=False)
-    descripcion = db.Column(db.Text, nullable=False)
+    id_carrera = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    nombre = db.Column(db.String(100), nullable=False, unique=True, index=True)
+    id_area = db.Column(db.Integer, db.ForeignKey("areas_carrera.id_area", ondelete="RESTRICT"), nullable=False, index=True)
+    duracion_anios = db.Column(db.Integer, nullable=False, default=5)
+
+    # Relaciones
+    area = db.relationship("AreaCarrera", back_populates="carreras")
+    matriculas = db.relationship("Matricula", back_populates="carrera", lazy="select")
+
+    def __repr__(self):
+        return f"<Carrera id={self.id_carrera} nombre='{self.nombre}'>"
+
+
+class Beca(db.Model):
+    """Catálogo de becas que se pueden otorgar en las matrículas."""
+    __tablename__ = "becas"
+
+    id_beca = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    nombre = db.Column(db.String(100), nullable=False, unique=True, index=True)
+    tipo = db.Column(db.String(50), nullable=False)  # ENUM: ej. 'Completa', 'Parcial', 'Alimenticia', 'Exoneración'
+
+    # Relaciones
+    matriculas = db.relationship("Matricula", back_populates="beca", lazy="select")
+
+    def __repr__(self):
+        return f"<Beca id={self.id_beca} nombre='{self.nombre}' tipo='{self.tipo}'>"
+
+
+# -----------------------------------------------------------------------------
+# Stubs de compatibilidad hacia atrás (NO mapeados en SQLAlchemy)
+# -----------------------------------------------------------------------------
+class Sede:
+    query = None
+
+class Ciudad:
+    query = None
+
+class EspacioFisico:
+    query = None
+
+class UnidadOrganizativa:
+    query = None
+
+class TipoActividad:
+    query = None
+
+class EjeLineamiento:
+    query = None
+
+class Lineamiento:
+    query = None
+
+class AccionEstrategica:
+    query = None

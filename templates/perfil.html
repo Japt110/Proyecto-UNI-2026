@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Perfil de Usuario - Universidad Nacional de Ingeniería (UNI)</title>
+  <title>Mi Perfil Socio-Académico - Universidad Nacional de Ingeniería (UNI)</title>
 
   <!-- Estilos base y de pasantías -->
   <link rel="stylesheet" href="{{ url_for('static', filename='css/variables.css') }}">
@@ -34,130 +34,215 @@
 
     <!-- TOPBAR ESPECÍFICO DEL PERFIL: REGRESAR Y EDITAR / GUARDAR -->
     <div class="perfil-topbar">
-      <!-- Botón '< Regresar' (Páginas 8 y 9) -->
+      <!-- Botón '< Regresar' -->
       <a href="/" class="btn-perfil-regresar" title="Regresar al catálogo">
         <i data-lucide="chevron-left"></i>
         <span>Regresar</span>
       </a>
 
-      <!-- Botón 'EDITAR' (Pág 8) o 'GUARDAR' (Pág 9) -->
-      <button type="button" id="btn-perfil-toggle-mode" class="btn-perfil-mode-toggle mode-editar">
-        <i data-lucide="edit-3" id="mode-icon"></i>
-        <span id="mode-text">EDITAR</span>
-      </button>
+      <div style="display: flex; align-items: center; gap: 10px;">
+        {% if usuario.rol == 'Administrador' %}
+        <a href="/admin/usuarios" class="btn-perfil-regresar" style="background: #E0E7FF; color: #3730A3; border-color: #C7D2FE;" title="Panel de Gestión de Usuarios">
+          <i data-lucide="users"></i>
+          <span>Gestión de Usuarios</span>
+        </a>
+        {% endif %}
+
+        <!-- Botón 'EDITAR' o 'GUARDAR' -->
+        <button type="button" id="btn-perfil-toggle-mode" class="btn-perfil-mode-toggle mode-editar">
+          <i data-lucide="edit-3" id="mode-icon"></i>
+          <span id="mode-text">EDITAR</span>
+        </button>
+      </div>
     </div>
 
     <!-- CONTENEDOR CARD GRISÁCEO DEL PERFIL -->
     <main class="perfil-card-container">
       
-      <!-- Avatar central grande con botón de lápiz -->
+      <!-- Avatar central grande -->
       <div class="perfil-avatar-wrapper">
         <div class="perfil-avatar-circle">
           <i data-lucide="user"></i>
         </div>
-        <button type="button" class="btn-perfil-avatar-edit" id="btn-avatar-edit" title="Cambiar foto de perfil">
-          <i data-lucide="edit-2"></i>
-        </button>
       </div>
 
-      <!-- Formulario de campos de estudiante -->
+      <!-- Formulario de campos de estudiante conectado y pre-renderizado al instante -->
       <form id="perfil-form" class="perfil-form-grid">
         
         <!-- Fila 1: Cédula & Código Único de persona -->
         <div class="perfil-row-2col">
           <div class="perfil-field-group">
-            <label for="perfil-cedula">Cedula</label>
-            <input type="text" id="perfil-cedula" class="perfil-input" value="001-158475-5001T" />
+            <label for="perfil-cedula">Cédula de Identidad</label>
+            <input type="text" id="perfil-cedula" class="perfil-input" value="{{ perfil.cedula or 'N/A' }}" readonly />
           </div>
           <div class="perfil-field-group">
-            <label for="perfil-cup">Codigo Unico de persona</label>
-            <input type="text" id="perfil-cup" class="perfil-input" value="8k4B7UP5" readonly />
+            <label for="perfil-cup">Código Único Permanente (CUP)</label>
+            <input type="text" id="perfil-cup" class="perfil-input" value="{{ perfil.cup or '' }}" readonly />
           </div>
         </div>
 
         <!-- Fila 2: Nombres -->
         <div class="perfil-field-group">
-          <label for="perfil-nombres">Nombres</label>
-          <input type="text" id="perfil-nombres" class="perfil-input" value="Juan Alejandro" />
+          <label for="perfil-nombres">Nombres *</label>
+          <input type="text" id="perfil-nombres" class="perfil-input" value="{{ perfil.nombre or '' }}" readonly required />
         </div>
 
         <!-- Fila 3: Apellidos -->
         <div class="perfil-field-group">
-          <label for="perfil-apellidos">Apellidos</label>
-          <input type="text" id="perfil-apellidos" class="perfil-input" value="Perez Martinez" />
+          <label for="perfil-apellidos">Apellidos *</label>
+          <input type="text" id="perfil-apellidos" class="perfil-input" value="{{ perfil.apellido or '' }}" readonly required />
         </div>
 
-        <!-- Fila 4: Carrera -->
-        <div class="perfil-field-group">
-          <label for="perfil-carrera">Carrera</label>
-          <select id="perfil-carrera" class="perfil-select">
-            <option value="Ing. Quimica" selected>Ing. Quimica</option>
-            <option value="Ing. Sistemas">Ing. Sistemas</option>
-            <option value="Ing. Industrial">Ing. Industrial</option>
-            <option value="Ing. Civil">Ing. Civil</option>
-            <option value="Ing. Electrica">Ing. Electrica</option>
-          </select>
-        </div>
-
-        <!-- Fila 5: Carnet de estudiante -->
-        <div class="perfil-field-group">
-          <label for="perfil-carnet">Carnet de estudiante</label>
-          <input type="text" id="perfil-carnet" class="perfil-input" value="1999 2526T" />
-        </div>
-
-        <!-- Fila 6: Año & Modalidad -->
+        <!-- Fila 4: Carrera & Año Académico (Elegibilidad CU-01 / CU-09) -->
         <div class="perfil-row-2col">
           <div class="perfil-field-group">
-            <label for="perfil-anio">Año</label>
-            <input type="text" id="perfil-anio" class="perfil-input" value="1er año" />
+            <label for="perfil-carrera">Carrera Universitaria</label>
+            <input type="text" id="perfil-carrera" class="perfil-input" value="{{ perfil.carrera or 'Ingeniería' }}" readonly />
           </div>
           <div class="perfil-field-group">
-            <label for="perfil-modalidad">Modalidad</label>
-            <input type="text" id="perfil-modalidad" class="perfil-input" value="Sabatino" />
+            <label for="perfil-anio">Año Académico</label>
+            <input type="text" id="perfil-anio" class="perfil-input" value="{{ perfil.anio_academico }}° Año ({{ perfil.matricula_periodo or 'I Semestre 2026' }})" readonly />
           </div>
         </div>
 
-        <!-- Fila 7: Teléfono & Correo -->
+        <!-- Fila 5: Estado de Matrícula & Beca -->
         <div class="perfil-row-2col">
           <div class="perfil-field-group">
-            <label for="perfil-telefono">Telefono</label>
-            <input type="text" id="perfil-telefono" class="perfil-input" value="4568 1239" />
+            <label for="perfil-estado-matricula">Estado de Matrícula</label>
+            <input type="text" id="perfil-estado-matricula" class="perfil-input" value="{{ perfil.matricula_estado or 'Activa' }}" readonly />
           </div>
           <div class="perfil-field-group">
-            <label for="perfil-correo">Correo</label>
-            <input type="email" id="perfil-correo" class="perfil-input" value="estudiante@std.uni.edu.ni" />
+            <label for="perfil-beca">Beneficio de Beca</label>
+            <input type="text" id="perfil-beca" class="perfil-input" value="{{ perfil.beca or 'Sin Beca' }}" readonly />
           </div>
         </div>
 
-        <!-- Fila 8: Ciudad & Estado de matrícula -->
+        <!-- Fila 6: Teléfono & Correo Institucional -->
         <div class="perfil-row-2col">
           <div class="perfil-field-group">
-            <label for="perfil-ciudad">Ciudad</label>
-            <input type="text" id="perfil-ciudad" class="perfil-input" value="Chinandega" />
+            <label for="perfil-telefono">Teléfono de Contacto</label>
+            <input type="text" id="perfil-telefono" class="perfil-input" value="{{ perfil.telefono_principal or '' }}" readonly />
           </div>
           <div class="perfil-field-group">
-            <label for="perfil-estado-matricula">Estado de matricula</label>
-            <select id="perfil-estado-matricula" class="perfil-select">
-              <option value="Matriculado" selected>Matriculado</option>
-              <option value="Pre-matriculado">Pre-matriculado</option>
-              <option value="Inactivo">Inactivo</option>
-            </select>
+            <label for="perfil-correo">Correo Electrónico</label>
+            <input type="email" id="perfil-correo" class="perfil-input" value="{{ perfil.email or '' }}" readonly />
           </div>
         </div>
 
-        <!-- Fila 9: Dirección (textarea multilínea) -->
+        <!-- Fila 7: Procedencia Geográfica -->
+        <div class="perfil-row-2col">
+          <div class="perfil-field-group">
+            <label for="perfil-departamento">Departamento</label>
+            <input type="text" id="perfil-departamento" class="perfil-input" value="{{ perfil.departamento_principal or 'Managua' }}" readonly />
+          </div>
+          <div class="perfil-field-group">
+            <label for="perfil-municipio">Municipio</label>
+            <input type="text" id="perfil-municipio" class="perfil-input" value="{{ perfil.municipio_principal or 'Managua' }}" readonly />
+          </div>
+        </div>
+
+        <!-- Fila 8: Dirección Domiciliar -->
         <div class="perfil-field-group">
-          <label for="perfil-direccion">Dirección</label>
-          <textarea id="perfil-direccion" class="perfil-textarea" placeholder="Place hoder">De la rotonda Universitaria 2c al lago, Managua.</textarea>
+          <label for="perfil-direccion">Dirección Domiciliar</label>
+          <textarea id="perfil-direccion" class="perfil-textarea" rows="2" placeholder="Dirección exacta de residencia" readonly>{{ perfil.direccion_principal or '' }}</textarea>
         </div>
 
       </form>
 
-      <!-- Botón inferior derecho: 'Eliminar Cuenta' en rojo con icono de power -->
+      <!-- ====================================================================
+           SECCIÓN DE DOCUMENTOS PERSONALES (EXCLUSIVA PARA ESTUDIANTES)
+           ==================================================================== -->
+      {% if es_estudiante %}
+      <section id="perfil-documentos-seccion" style="margin-top: 28px; padding-top: 22px; border-top: 1px solid #E2E8F0;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+          <div>
+            <h4 style="margin: 0; font-size: 15px; font-weight: 700; color: #0F172A;">Documentos Personales y Expediente</h4>
+            <p style="margin: 3px 0 0 0; font-size: 12.5px; color: #64748B;">Sube tu CV, récord policial, licencia de conducir u otros para que las empresas evalúen tus postulaciones.</p>
+          </div>
+          <button type="button" id="btn-mostrar-subir-doc" class="btn-perfil-mode-toggle" style="background: #033E8C; color: #fff; padding: 7px 16px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px;">
+            <i data-lucide="upload" style="width: 14px; height: 14px;"></i>
+            <span>Subir Documento</span>
+          </button>
+        </div>
+
+        <!-- Formulario Desplegable para Subir Documento con Selector Específico -->
+        <div id="subir-doc-form-wrapper" style="display: none; background: #F8FAFC; border: 1.5px solid #CBD5E1; border-radius: 10px; padding: 18px; margin-bottom: 18px;">
+          <form id="form-subir-documento" style="display: flex; flex-direction: column; gap: 14px;">
+            <div style="display: flex; gap: 14px; flex-wrap: wrap;">
+              <div style="flex: 1; min-width: 220px;">
+                <label for="doc-tipo-select" style="font-size: 12.5px; font-weight: 700; color: #1E293B; display: block; margin-bottom: 6px;">
+                  Tipo de Documento a Subir *
+                </label>
+                <select id="doc-tipo-select" class="perfil-select" style="width: 100%; padding: 9px 12px; font-size: 13px; border-radius: 8px; border: 1.5px solid #033E8C; background: #FFFFFF; color: #0F172A; font-weight: 600;" required>
+                  <option value="CV" selected>Curriculum Vitae (CV)</option>
+                  <option value="Record_Policial">Récord Policial</option>
+                  <option value="Licencia_Conducir">Licencia de Conducir</option>
+                  <option value="Cedula">Cédula de Identidad</option>
+                  <option value="Certificado_Notas">Certificado de Notas</option>
+                  <option value="Carta_Recomendacion">Carta de Recomendación</option>
+                  <option value="Otro">Otro Documento</option>
+                </select>
+              </div>
+
+              <div style="flex: 2; min-width: 260px;">
+                <label for="doc-file-input" style="font-size: 12.5px; font-weight: 700; color: #1E293B; display: block; margin-bottom: 6px;">
+                  Archivo (PDF, Word, Imagen) *
+                </label>
+                <input type="file" id="doc-file-input" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg" style="width: 100%; padding: 8px; font-size: 12.5px; background: #FFFFFF; border: 1px solid #CBD5E1; border-radius: 8px;" required />
+              </div>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 4px;">
+              <button type="button" id="btn-cancelar-subir-doc" style="background: #E2E8F0; color: #334155; border: none; padding: 8px 16px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer;">Cancelar</button>
+              <button type="submit" id="btn-guardar-subir-doc" style="background: #059669; color: #fff; border: none; padding: 8px 18px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer;">Guardar en Base de Datos</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Lista de Documentos Pre-renderizada -->
+        <div id="perfil-documentos-lista" style="display: flex; flex-direction: column; gap: 8px;">
+          {% if documentos and documentos|length > 0 %}
+            {% for d in documentos %}
+              <div style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 8px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; gap: 12px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                  <div style="width: 38px; height: 38px; border-radius: 8px; background: #EFF6FF; color: #1D4ED8; display: flex; align-items: center; justify-content: center; font-size: 18px;">
+                    📄
+                  </div>
+                  <div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                      <strong style="font-size: 13.5px; color: #0F172A;">{{ d.tipo_documento.replace('_', ' ') }}</strong>
+                      <span style="font-size: 10.5px; font-weight: 700; color: #059669; background: #ECFDF5; padding: 1px 6px; border-radius: 4px;">{{ d.estado }}</span>
+                    </div>
+                    <div style="font-size: 12px; color: #64748B; margin-top: 2px;">
+                      {{ d.nombre_original }} · {{ (d.tamano_bytes / 1024)|round(0)|int }} KB · Subido: {{ d.fecha_subida or 'Reciente' }}
+                    </div>
+                  </div>
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <a href="{{ d.ruta_archivo }}" target="_blank" rel="noopener noreferrer" style="background: #EFF6FF; color: #1D4ED8; border: 1px solid #BFDBFE; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; text-decoration: none;">
+                    Ver / Descargar
+                  </a>
+                  <button type="button" onclick="window.eliminarDocumentoEstudiante({{ d.id_documento }})" style="background: #FEE2E2; color: #DC2626; border: none; padding: 6px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer;">
+                    Eliminar
+                  </button>
+                </div>
+              </div>
+            {% endfor %}
+          {% else %}
+            <div style="background: #F8FAFC; border: 1px dashed #CBD5E1; border-radius: 8px; padding: 18px; text-align: center; color: #64748B; font-size: 13px;">
+              No has adjuntado documentos aún. Haz clic en "Subir Documento" para registrar tu CV, récord policial o licencia.
+            </div>
+          {% endif %}
+        </div>
+      </section>
+      {% endif %}
+
+      <!-- Botón inferior derecho: Cerrar Sesión -->
       <div class="perfil-footer-actions">
-        <button type="button" id="btn-eliminar-cuenta" class="btn-perfil-eliminar-cuenta">
+        <button type="button" id="btn-cerrar-sesion-perfil" class="btn-perfil-eliminar-cuenta" style="border: none; cursor: pointer;">
           <i data-lucide="power"></i>
-          <span>Eliminar Cuenta</span>
+          <span>Cerrar Sesión</span>
         </button>
       </div>
 
@@ -168,7 +253,7 @@
   <!-- Toast Notification Container -->
   <div id="toast-container" class="toast-container"></div>
 
-  <!-- Lógica interactiva de cambio de modo Lectura / Edición -->
+  <!-- Lógica interactiva rápida y optimizada -->
   <script>
     document.addEventListener("DOMContentLoaded", () => {
       lucide.createIcons();
@@ -177,36 +262,213 @@
       const btnToggle = document.getElementById("btn-perfil-toggle-mode");
       const modeIcon = document.getElementById("mode-icon");
       const modeText = document.getElementById("mode-text");
-      const btnEliminar = document.getElementById("btn-eliminar-cuenta");
+      const btnLogout = document.getElementById("btn-cerrar-sesion-perfil");
       let isEditing = false;
 
-      btnToggle.addEventListener("click", () => {
-        isEditing = !isEditing;
-        if (isEditing) {
-          // Cambiar a Modo Edición (Página 9 del PDF)
+      // Habilitar / deshabilitar campos para edición
+      function setInputsEditable(editable) {
+        const editableIds = ["perfil-nombres", "perfil-apellidos", "perfil-telefono", "perfil-correo", "perfil-direccion"];
+        editableIds.forEach(id => {
+          const el = document.getElementById(id);
+          if (el) {
+            if (editable) {
+              el.removeAttribute("readonly");
+              el.style.backgroundColor = "#FFFFFF";
+              el.style.borderColor = "#033E8C";
+            } else {
+              el.setAttribute("readonly", true);
+              el.style.backgroundColor = "";
+              el.style.borderColor = "";
+            }
+          }
+        });
+      }
+
+      // 1. Conmutar Modo Lectura / Modo Edición con persistencia CRUD en SQLAlchemy
+      btnToggle.addEventListener("click", async () => {
+        if (!isEditing) {
+          isEditing = true;
           body.classList.remove("mode-reading");
           body.classList.add("mode-editing");
           btnToggle.className = "btn-perfil-mode-toggle mode-guardar";
           modeText.textContent = "GUARDAR";
           modeIcon.setAttribute("data-lucide", "save");
-          showToast("Modo de edición activado. Modifica los campos que requieras.", "info");
+          setInputsEditable(true);
+          showToast("Modo de edición activado. Modifica tus datos de contacto o personales.", "info");
+          lucide.createIcons();
         } else {
-          // Guardar y volver a Modo Lectura (Página 8 del PDF)
-          body.classList.remove("mode-editing");
-          body.classList.add("mode-reading");
-          btnToggle.className = "btn-perfil-mode-toggle mode-editar";
-          modeText.textContent = "EDITAR";
-          modeIcon.setAttribute("data-lucide", "edit-3");
-          showToast("Información de perfil guardada exitosamente.", "success");
+          const payload = {
+            nombre: document.getElementById("perfil-nombres").value.trim(),
+            apellido: document.getElementById("perfil-apellidos").value.trim(),
+            telefono: document.getElementById("perfil-telefono").value.trim(),
+            correo: document.getElementById("perfil-correo").value.trim(),
+            email: document.getElementById("perfil-correo").value.trim(),
+            direccion: document.getElementById("perfil-direccion").value.trim(),
+          };
+
+          try {
+            const res = await fetch("/api/pasantias/perfil", {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+
+            if (res.ok && data.success) {
+              showToast(data.message || "Ficha actualizada exitosamente en la base de datos", "success");
+              isEditing = false;
+              body.classList.remove("mode-editing");
+              body.classList.add("mode-reading");
+              btnToggle.className = "btn-perfil-mode-toggle mode-editar";
+              modeText.textContent = "EDITAR";
+              modeIcon.setAttribute("data-lucide", "edit-3");
+              setInputsEditable(false);
+              lucide.createIcons();
+            } else {
+              showToast(data.message || "Error al actualizar la ficha en la base de datos", "error");
+            }
+          } catch (err) {
+            showToast("Error de red al intentar guardar los cambios", "error");
+          }
         }
-        lucide.createIcons();
       });
 
-      btnEliminar.addEventListener("click", () => {
-        if (confirm("¿Estás seguro de que deseas solicitar la baja o eliminación de tu cuenta de estudiante?")) {
-          showToast("Solicitud de eliminación de cuenta registrada.", "error");
+      // 2. Gestión de Documentos Personales (Exclusivo Estudiantes)
+      const btnMostrarSubirDoc = document.getElementById("btn-mostrar-subir-doc");
+      const subirDocFormWrapper = document.getElementById("subir-doc-form-wrapper");
+      const btnCancelarSubirDoc = document.getElementById("btn-cancelar-subir-doc");
+      const formSubirDocumento = document.getElementById("form-subir-documento");
+      const perfilDocumentosLista = document.getElementById("perfil-documentos-lista");
+
+      if (btnMostrarSubirDoc) {
+        btnMostrarSubirDoc.addEventListener("click", () => {
+          subirDocFormWrapper.style.display = subirDocFormWrapper.style.display === "none" ? "block" : "none";
+        });
+      }
+
+      if (btnCancelarSubirDoc) {
+        btnCancelarSubirDoc.addEventListener("click", () => {
+          subirDocFormWrapper.style.display = "none";
+          formSubirDocumento.reset();
+        });
+      }
+
+      if (formSubirDocumento) {
+        formSubirDocumento.addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const tipo = document.getElementById("doc-tipo-select").value;
+          const fileInput = document.getElementById("doc-file-input");
+          if (!fileInput.files || fileInput.files.length === 0) {
+            showToast("Por favor selecciona un archivo a subir.", "error");
+            return;
+          }
+
+          const formData = new FormData();
+          formData.append("tipo_documento", tipo);
+          formData.append("archivo", fileInput.files[0]);
+
+          try {
+            const res = await fetch("/api/estudiantes/documentos", {
+              method: "POST",
+              body: formData
+            });
+            const data = await res.json();
+            if (res.ok && data.success) {
+              showToast(data.message || "Documento guardado exitosamente", "success");
+              formSubirDocumento.reset();
+              subirDocFormWrapper.style.display = "none";
+              await refrescarDocumentos();
+            } else {
+              showToast(data.message || "Error al subir documento", "error");
+            }
+          } catch (_) {
+            showToast("Error de conexión al subir el documento", "error");
+          }
+        });
+      }
+
+      async function refrescarDocumentos() {
+        try {
+          const res = await fetch("/api/estudiantes/documentos");
+          const data = await res.json();
+          if (res.ok && data.success && Array.isArray(data.documentos)) {
+            renderDocumentos(data.documentos);
+          }
+        } catch (_) {}
+      }
+
+      function renderDocumentos(docs) {
+        if (!perfilDocumentosLista) return;
+        if (!docs || docs.length === 0) {
+          perfilDocumentosLista.innerHTML = `
+            <div style="background: #F8FAFC; border: 1px dashed #CBD5E1; border-radius: 8px; padding: 18px; text-align: center; color: #64748B; font-size: 13px;">
+              No has adjuntado documentos aún. Haz clic en "Subir Documento" para registrar tu CV, récord policial o licencia.
+            </div>
+          `;
+          return;
         }
-      });
+
+        perfilDocumentosLista.innerHTML = docs.map(d => {
+          const tipoLabel = d.tipo_documento.replace(/_/g, ' ');
+          const kb = Math.round((d.tamano_bytes || 0) / 1024);
+          return `
+            <div style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 8px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; gap: 12px;">
+              <div style="display: flex; align-items: center; gap: 12px;">
+                <div style="width: 38px; height: 38px; border-radius: 8px; background: #EFF6FF; color: #1D4ED8; display: flex; align-items: center; justify-content: center; font-size: 18px;">
+                  📄
+                </div>
+                <div>
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <strong style="font-size: 13.5px; color: #0F172A;">${tipoLabel}</strong>
+                    <span style="font-size: 10.5px; font-weight: 700; color: #059669; background: #ECFDF5; padding: 1px 6px; border-radius: 4px;">${d.estado}</span>
+                  </div>
+                  <div style="font-size: 12px; color: #64748B; margin-top: 2px;">
+                    ${d.nombre_original} · ${kb} KB · Subido: ${d.fecha_subida || 'Reciente'}
+                  </div>
+                </div>
+              </div>
+
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <a href="${d.ruta_archivo}" target="_blank" rel="noopener noreferrer" style="background: #EFF6FF; color: #1D4ED8; border: 1px solid #BFDBFE; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; text-decoration: none;">
+                  Ver / Descargar
+                </a>
+                <button type="button" onclick="window.eliminarDocumentoEstudiante(${d.id_documento})" style="background: #FEE2E2; color: #DC2626; border: none; padding: 6px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer;">
+                  Eliminar
+                </button>
+              </div>
+            </div>
+          `;
+        }).join("");
+        lucide.createIcons();
+      }
+
+      window.eliminarDocumentoEstudiante = async (idDoc) => {
+        if (!confirm("¿Deseas eliminar este documento de tu expediente?")) return;
+        try {
+          const res = await fetch(`/api/estudiantes/documentos/${idDoc}`, { method: "DELETE" });
+          const data = await res.json();
+          if (res.ok && data.success) {
+            showToast(data.message || "Documento eliminado", "info");
+            await refrescarDocumentos();
+          } else {
+            showToast(data.message || "Error al eliminar documento", "error");
+          }
+        } catch (_) {
+          showToast("Error de conexión", "error");
+        }
+      };
+
+      // 3. Logout
+      if (btnLogout) {
+        btnLogout.addEventListener("click", async () => {
+          if (confirm("¿Deseas cerrar tu sesión activa?")) {
+            try {
+              await fetch("/api/auth/logout", { method: "POST" });
+            } catch (_) {}
+            window.location.href = "/login";
+          }
+        });
+      }
 
       function showToast(message, type = "info") {
         let container = document.getElementById("toast-container");
@@ -219,10 +481,10 @@
 
         const toast = document.createElement("div");
         toast.style.cssText = `
-          background: ${type === 'success' ? '#00C853' : type === 'error' ? '#EF4444' : '#0B1B48'};
+          background: ${type === 'success' ? '#059669' : type === 'error' ? '#DC2626' : '#033E8C'};
           color: #FFFFFF;
           padding: 12px 18px;
-          border-radius: 10px;
+          border-radius: 8px;
           font-size: 13.5px;
           font-weight: 600;
           box-shadow: 0 10px 25px rgba(0,0,0,0.25);
@@ -239,7 +501,7 @@
           toast.style.opacity = "0";
           toast.style.transition = "all 0.25s ease";
           setTimeout(() => toast.remove(), 250);
-        }, 3000);
+        }, 3500);
       }
     });
   </script>

@@ -1,14 +1,21 @@
 """
 ===============================================================================
-EVENTOS-UNI - CONFIGURACIÓN DEL SISTEMA BACKEND (LOCAL / RENDER / SUPABASE)
+SISTEMA WEB DE CONTROL DE PASANTÍAS - CONFIGURACIÓN MODULAR DEL BACKEND
 ===============================================================================
-Módulo centralizado de parámetros de configuración, políticas de seguridad OWASP,
-pool de conexiones PostgreSQL (Supabase / Render) y backend de sesiones/caché Redis.
+Módulo centralizado de parámetros de configuración y variables de entorno (.env):
+- Políticas de seguridad OWASP y claves criptográficas.
+- Persistencia de base de datos relacional (PostgreSQL / SQLite).
+- Motor de correo electrónico transaccional y 2FA (Flask-Mail).
+- Parámetros institucionales, reglas de negocio académicas y duraciones de sesión.
 ===============================================================================
 """
 
 import os
 from datetime import timedelta
+from dotenv import load_dotenv
+
+# Cargar automáticamente las variables de entorno desde el archivo .env
+load_dotenv()
 
 
 def _normalize_database_url(url: str) -> str:
@@ -33,7 +40,7 @@ class Config:
     # -------------------------------------------------------------------------
     ENV = os.getenv("FLASK_ENV", "production" if os.getenv("RENDER") else "development")
     DEBUG = os.getenv("FLASK_DEBUG", "0").lower() in ("1", "true", "yes")
-    SECRET_KEY = os.getenv("SECRET_KEY", "eventos-uni-secret-key-permanente-2026-production-v1")
+    SECRET_KEY = os.getenv("SECRET_KEY", "pasantias-uni-secret-key-permanente-2026-production-v1")
 
     # -------------------------------------------------------------------------
     # 2. Persistencia Principal: PostgreSQL (Supabase / Render) o SQLite Local
@@ -54,7 +61,7 @@ class Config:
             "max_overflow": int(os.getenv("DB_MAX_OVERFLOW", 20)),
             "pool_timeout": int(os.getenv("DB_POOL_TIMEOUT", 30)),
             "pool_recycle": int(os.getenv("DB_POOL_RECYCLE", 1800)),
-            "pool_pre_ping": True,  # Verifica liveness de conexión antes de usarla (Vital para Supabase)
+            "pool_pre_ping": True,
         }
 
     # Réplica de Lectura Opcional (Read Replica Splitting)
@@ -70,12 +77,18 @@ class Config:
     SESSION_COOKIE_HTTPONLY = True          # Inaccesible desde scripts JavaScript del cliente (Anti-XSS)
     SESSION_COOKIE_SAMESITE = "Lax"         # Restringe envío de cookies en peticiones cruzadas (Anti-CSRF)
     SESSION_COOKIE_SECURE = os.getenv("SESSION_COOKIE_SECURE", "0").lower() in ("1", "true", "yes") or bool(os.getenv("RENDER"))
-    PERMANENT_SESSION_LIFETIME = timedelta(hours=8)  # Duración de la sesión laboral
+    
+    SECURITY_SESSION_LIFETIME_HOURS = int(os.getenv("SECURITY_SESSION_LIFETIME_HOURS", 8))
+    PERMANENT_SESSION_LIFETIME = timedelta(hours=SECURITY_SESSION_LIFETIME_HOURS)
+    
+    SECURITY_REMEMBER_DAYS = int(os.getenv("SECURITY_REMEMBER_DAYS", 30))
+    REMEMBER_COOKIE_DURATION = timedelta(days=SECURITY_REMEMBER_DAYS)
 
     # -------------------------------------------------------------------------
     # 4. Restricciones de Carga y Payload (Protección contra DoS / Inundación)
     # -------------------------------------------------------------------------
-    MAX_CONTENT_LENGTH = 16 * 1024 * 1024   # Tamaño máximo de payload: 16 Megabytes
+    MAX_CONTENT_LENGTH_MB = int(os.getenv("MAX_CONTENT_LENGTH_MB", 16))
+    MAX_CONTENT_LENGTH = MAX_CONTENT_LENGTH_MB * 1024 * 1024
 
     # -------------------------------------------------------------------------
     # 5. Caché Centralizado y Sesiones Distribuidas (Redis / SimpleCache)
@@ -85,7 +98,6 @@ class Config:
         CACHE_TYPE = "RedisCache"
         CACHE_REDIS_URL = REDIS_URL
         CACHE_DEFAULT_TIMEOUT = int(os.getenv("CACHE_DEFAULT_TIMEOUT", 300))
-        # Configuración de Sesiones en Redis si Flask-Session está habilitado
         SESSION_TYPE = "redis"
         SESSION_REDIS_URL = REDIS_URL
     else:
@@ -98,3 +110,46 @@ class Config:
     # -------------------------------------------------------------------------
     RATE_LIMIT_ENABLED = os.getenv("RATE_LIMIT_ENABLED", "true").lower() in ("1", "true", "yes")
     RATE_LIMIT_PER_MINUTE = int(os.getenv("RATE_LIMIT_PER_MINUTE", 120))
+
+    # -------------------------------------------------------------------------
+    # 7. Configuración Modular de Correo Electrónico (Flask-Mail / 2FA)
+    # -------------------------------------------------------------------------
+    MAIL_SERVER = os.getenv("MAIL_SERVER", "smtp.gmail.com")
+    MAIL_PORT = int(os.getenv("MAIL_PORT", 587))
+    MAIL_USE_TLS = os.getenv("MAIL_USE_TLS", "true").lower() in ("1", "true", "yes")
+    MAIL_USE_SSL = os.getenv("MAIL_USE_SSL", "false").lower() in ("1", "true", "yes")
+    MAIL_USERNAME = os.getenv("MAIL_USERNAME", "notificaciones.pasantias@uni.edu.ni")
+    MAIL_PASSWORD = os.getenv("MAIL_PASSWORD", "")
+    MAIL_SENDER_NAME = os.getenv("MAIL_SENDER_NAME", "Sistema de Control de Pasantías UNI")
+    
+    # Remitente por defecto (tupla o string RFC 822)
+    _custom_sender = os.getenv("MAIL_DEFAULT_SENDER")
+    if _custom_sender:
+        MAIL_DEFAULT_SENDER = _custom_sender
+    else:
+        MAIL_DEFAULT_SENDER = (MAIL_SENDER_NAME, MAIL_USERNAME)
+
+    MAIL_SUPPRESS_SEND = os.getenv("MAIL_SUPPRESS_SEND", "false").lower() in ("1", "true", "yes")
+    MAIL_ASCII_ATTACHMENTS = False
+
+    # -------------------------------------------------------------------------
+    # 8. Identidad Institucional y Branding Modular
+    # -------------------------------------------------------------------------
+    SYSTEM_NAME = os.getenv("SYSTEM_NAME", "Sistema Web de Control de Pasantías")
+    INSTITUTION_NAME = os.getenv("INSTITUTION_NAME", "Universidad Nacional de Ingeniería")
+    INSTITUTION_SHORT = os.getenv("INSTITUTION_SHORT", "UNI")
+    INSTITUTION_CONTACT_EMAIL = os.getenv("INSTITUTION_CONTACT_EMAIL", "vinculacion@uni.edu.ni")
+    INSTITUTION_WEBSITE = os.getenv("INSTITUTION_WEBSITE", "https://www.uni.edu.ni")
+
+    # -------------------------------------------------------------------------
+    # 9. Parámetros de Seguridad y 2FA
+    # -------------------------------------------------------------------------
+    SECURITY_2FA_EXPIRATION_MINUTES = int(os.getenv("SECURITY_2FA_EXPIRATION_MINUTES", 10))
+
+    # -------------------------------------------------------------------------
+    # 10. Reglas de Negocio Institucionales (Elegibilidad de Pasantías)
+    # -------------------------------------------------------------------------
+    ACADEMIC_MIN_YEAR = int(os.getenv("ACADEMIC_MIN_YEAR", 4))
+    ACADEMIC_MAX_YEAR = int(os.getenv("ACADEMIC_MAX_YEAR", 5))
+    ACADEMIC_REQUIRE_ACTIVE_ENROLLMENT = os.getenv("ACADEMIC_REQUIRE_ACTIVE_ENROLLMENT", "true").lower() in ("1", "true", "yes")
+    COMPANY_REQUIRE_APPROVAL = os.getenv("COMPANY_REQUIRE_APPROVAL", "true").lower() in ("1", "true", "yes")

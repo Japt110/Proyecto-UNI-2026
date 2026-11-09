@@ -14,9 +14,20 @@ Este módulo implementa el patrón Application Factory (`create_app`), encargán
 from flask import Flask, render_template
 from config import Config
 from database import db
-from extensions import cache
+from extensions import cache, mail
+from core.security import (
+    login_required,
+    admin_required,
+    student_required,
+    roles_required,
+)
 from routes import (
     auth_bp,
+    admin_bp,
+    pasantias_bp,
+    empresas_bp,
+    vinculacion_bp,
+    estudiantes_bp,
     eventos_bp,
     asistencia_bp,
     stats_bp,
@@ -38,15 +49,21 @@ def create_app() -> Flask:
     app.config.from_object(Config)
 
     # -------------------------------------------------------------------------
-    # 1. Inicialización de Extensiones (SQLAlchemy y Flask-Caching)
+    # 1. Inicialización de Extensiones (SQLAlchemy, Cache y Flask-Mail)
     # -------------------------------------------------------------------------
     db.init_app(app)
     cache.init_app(app)
+    mail.init_app(app)
 
     # -------------------------------------------------------------------------
     # 2. Registro de Blueprints API RESTful
     # -------------------------------------------------------------------------
     app.register_blueprint(auth_bp, url_prefix="/api/auth")
+    app.register_blueprint(admin_bp, url_prefix="/api/admin")
+    app.register_blueprint(pasantias_bp, url_prefix="/api/pasantias")
+    app.register_blueprint(empresas_bp, url_prefix="/api/empresas")
+    app.register_blueprint(vinculacion_bp, url_prefix="/api/vinculacion")
+    app.register_blueprint(estudiantes_bp, url_prefix="/api/estudiantes")
     app.register_blueprint(eventos_bp, url_prefix="/api/eventos")
     app.register_blueprint(asistencia_bp, url_prefix="/api/asistencia")
     app.register_blueprint(stats_bp, url_prefix="/api/stats")
@@ -106,52 +123,45 @@ def create_app() -> Flask:
 
     # -------------------------------------------------------------------------
     # 4. Rutas Directas de Vistas HTML (Interfaz Web Vanilla JS)
+    # Protegidas con @login_required: No se puede acceder sin crear sesión previa
     # -------------------------------------------------------------------------
 
     @app.route('/')
+    @app.route('/index')
+    @login_required
     def index():
-        """Página principal - Dashboard de Mis Actividades (Encargado)"""
+        """Página principal - Dashboard de Mis Actividades / Catálogo Pasantías"""
         return render_template('index.html')
 
     @app.route('/login')
     def login():
-        """Vista de Autenticación de Usuario"""
+        """Vista pública de Autenticación de Usuario (Login / Registro / 2FA)"""
         return render_template('login.html')
 
-    @app.route('/asistencia')
-    def asistencia():
-        """Vista de Registro y Toma de Asistencia (Escáner/Manual)"""
-        return render_template('asistencia.html')
-
-    @app.route('/crear-actividad')
-    def crear_actividad():
-        """Formulario de Registro de Nuevas Actividades Institucionales"""
-        return render_template('crear-actividad.html')
-
-    @app.route('/detalle-actividad')
-    def detalle_actividad():
-        """Vista Detallada y Edición de una Actividad"""
-        return render_template('detalle-actividad.html')
-
-    @app.route('/rector')
-    def rector():
-        """Dashboard General de Estadísticas e Indicadores (Rector)"""
-        return render_template('rector.html')
-
-    @app.route('/usuarios')
-    def usuarios():
-        """Gestión y Consulta del Padrón Universitario"""
-        return render_template('usuarios.html')
+    @app.route('/register')
+    def register_view():
+        """Vista pública de Registro de Nuevos Usuarios"""
+        return render_template('login.html')
 
     @app.route('/pasantias')
+    @login_required
     def pasantias():
-        """Catálogo de Pasantías (Vista Admin / Usuario)"""
+        """Catálogo de Pasantías (Vista Bolsa de Trabajo)"""
         return render_template('index.html')
 
     @app.route('/perfil')
+    @login_required
     def perfil():
-        """Vista de Perfil de Usuario (Lectura y Edición)"""
-        return render_template('perfil.html')
+        """Vista de Perfil Socio-Académico del Estudiante (CU-01) pre-renderizada al instante"""
+        from routes.views import _get_perfil_context
+        ctx = _get_perfil_context()
+        return render_template('perfil.html', **ctx)
+
+    @app.route('/admin/usuarios')
+    @admin_required
+    def admin_usuarios():
+        """Vista del Panel de Administración para Gestión de Usuarios."""
+        return render_template('admin_usuarios.html')
 
     @app.route('/favicon.ico')
     def favicon():
@@ -159,8 +169,11 @@ def create_app() -> Flask:
         return '', 204
 
     @app.route('/<path:filename>.html')
+    @login_required
     def serve_html(filename: str):
-        """Manejador dinámico de compatibilidad para URLs con extensión .html"""
+        """Manejador dinámico de compatibilidad para URLs con extensión .html protegido"""
+        if filename.lower() in ('login', 'register'):
+            return render_template('login.html')
         return render_template(f'{filename}.html')
 
     return app

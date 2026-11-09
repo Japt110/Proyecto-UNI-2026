@@ -7,5 +7,7 @@ Instanciación centralizada de extensiones Flask para evitar importaciones circu
 """
 
 from flask_caching import Cache
+from flask_mail import Mail
 
 cache = Cache()
+mail = Mail()

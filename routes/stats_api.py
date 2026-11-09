@@ -14,7 +14,7 @@ from database import db
 from models.eventos import Asistencia, Actividad, ActividadLineamiento
 from models.base import Persona, Estudiante, Trabajador
 from models.catalogos import Sede, Ciudad, Departamento, Lineamiento, EjeLineamiento
-from core.security import login_required
+from core.security import login_required, admin_required
 from extensions import cache
 
 stats_bp = Blueprint("stats_api", __name__)
@@ -157,7 +157,7 @@ def get_stats_evento(evento_id: str):
 # -----------------------------------------------------------------------------
 
 @stats_bp.route("/globales", methods=["GET"])
-@login_required
+@admin_required
 @cache.cached(timeout=60, query_string=True)
 def get_stats_globales():
     """

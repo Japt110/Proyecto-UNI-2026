@@ -4,13 +4,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pasantías - Universidad Nacional de Ingeniería (UNI)</title>
+  <title>Bolsa de Pasantías - Universidad Nacional de Ingeniería (UNI)</title>
   
   <!-- Estilos base y variables -->
   <link rel="stylesheet" href="{{ url_for('static', filename='css/variables.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/global.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/layout-components.css') }}">
-  <!-- Nueva hoja de estilos fiel al PDF -->
   <link rel="stylesheet" href="{{ url_for('static', filename='css/pasantias.css') }}">
 
   <!-- Google Fonts: Inter & Outfit -->
@@ -26,10 +25,10 @@
 
 <body>
   <!-- Contenedor Principal de la Página de Pasantías -->
-  <div id="pasantias-wrapper" class="pasantias-page-wrapper view-admin-mode">
+  <div id="pasantias-wrapper" class="pasantias-page-wrapper">
 
     <!-- ====================================================================
-         HEADER INSTITUCIONAL (PÁGINAS 3, 5, 6 DEL PDF)
+         HEADER INSTITUCIONAL REAL
          ==================================================================== -->
     <header class="pasantias-topbar">
       <!-- Logotipo Oficial UNI a la izquierda -->
@@ -37,15 +36,10 @@
         <img src="{{ url_for('static', filename='img/uni_logo.png') }}" alt="Logo UNI" class="uni-topbar-logo">
       </a>
 
-      <!-- Conmutador de Rol (Admin / Usuario) y Avatar de Usuario a la derecha -->
-      <div class="topbar-actions-group">
-        <!-- Switch visual para alternar y evaluar Vista Admin vs Vista Usuario -->
-        <div class="role-toggle-pill" title="Alternar entre Vista Admin y Vista Usuario">
-          <button type="button" id="role-toggle-admin" class="role-toggle-btn active">Vista Admin</button>
-          <button type="button" id="role-toggle-usuario" class="role-toggle-btn">Vista Usuario</button>
-        </div>
+      <!-- Rol activo en BD y Avatar de Usuario a la derecha -->
+      <div class="topbar-actions-group" style="display: flex; align-items: center; gap: 14px;">
+        <span id="topbar-user-badge" style="display: none; padding: 6px 14px; border-radius: 20px; font-size: 11.5px; font-weight: 700; letter-spacing: 0.5px; background: #033E8C; color: #FFFFFF; text-transform: uppercase;"></span>
 
-        <!-- Avatar circular del PDF (Abre el Drawer de Ajustes y Notificaciones - Pág 7) -->
         <button type="button" id="btn-profile-trigger" class="topbar-profile-avatar-btn" title="Abrir Ajustes y Perfil">
           <i data-lucide="user"></i>
         </button>
@@ -53,16 +47,21 @@
     </header>
 
     <!-- ====================================================================
-         BOTÓN "AGREGAR PASANTIA" (VISTA ADMIN - PÁGINA 3 DEL PDF)
+         BOTÓN "AGREGAR PASANTIA" (EXCLUSIVO ADMIN / EMPRESA)
          ==================================================================== -->
-    <div class="admin-action-container">
+    <div class="admin-action-container" id="admin-action-container" style="display: none; align-items: center; gap: 10px;">
+      <a href="/admin/usuarios" id="btn-topbar-admin-usuarios" style="display: none; text-decoration: none; background: #033E8C; color: #FFFFFF; padding: 10px 18px; border-radius: 8px; font-weight: 700; font-size: 13px; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(3, 62, 140, 0.2);">
+        <i data-lucide="users" style="width: 16px; height: 16px;"></i>
+        <span>USUARIOS DEL SISTEMA</span>
+      </a>
       <button type="button" id="btn-agregar-pasantia" class="btn-agregar-pasantia">
+        <i data-lucide="plus" style="width: 18px; height: 18px; margin-right: 6px;"></i>
         <span>AGREGAR PASANTIA</span>
       </button>
     </div>
 
     <!-- ====================================================================
-         BARRA DE BÚSQUEDA Y FILTROS TIPO PASTILLA (PÁGINAS 3, 5, 6 DEL PDF)
+         BARRA DE BÚSQUEDA Y FILTROS TIPO PASTILLA
          ==================================================================== -->
     <section class="pasantias-filter-section">
       <!-- Input de búsqueda centrado -->
@@ -71,7 +70,7 @@
           type="text" 
           id="pasantias-search-input" 
           class="pasantias-search-input" 
-          placeholder="Buscar pasantia" 
+          placeholder="Buscar por título, empresa o requisitos..." 
           autocomplete="off" 
         />
         <i data-lucide="search" class="pasantias-search-icon"></i>
@@ -93,7 +92,7 @@
           </div>
         </div>
 
-        <!-- Filtro 2: MODALIDAD (En la Pág 6 se ilumina en azul sólido como 'PRESENCIAL') -->
+        <!-- Filtro 2: MODALIDAD -->
         <div class="filter-dropdown-container" data-filter-key="modalidad">
           <button type="button" class="filter-pill-button" id="btn-filter-modalidad">
             <span class="pill-text">MODALIDAD</span>
@@ -142,24 +141,24 @@
     </section>
 
     <!-- ====================================================================
-         INDICADOR DE ESTADO "ACTIVO" (PÁGINAS 3, 5, 6 DEL PDF)
+         INDICADOR DE ESTADO "ACTIVO"
          ==================================================================== -->
     <div class="pasantias-status-indicator">
       <span class="status-dot-green"></span>
-      <span class="status-text-label">Activo</span>
+      <span class="status-text-label" id="status-text-count">Cargando pasantías...</span>
     </div>
 
     <!-- ====================================================================
-         GRID DE TARJETAS DE PASANTÍAS (3 COLUMNAS)
+         GRID DE TARJETAS DE PASANTÍAS (ALIMENTADA DESDE SQLALCHEMY)
          ==================================================================== -->
     <main id="pasantias-grid" class="pasantias-grid-container">
-      <!-- Se inyecta dinámicamente desde pasantias.js con tarjetas fieles al PDF -->
+      <!-- Se inyecta dinámicamente con fetch('/api/pasantias') -->
     </main>
 
   </div>
 
   <!-- ====================================================================
-       DRAWER LATERAL DE AJUSTES & NOTIFICACIONES (PÁGINA 7 DEL PDF)
+       DRAWER LATERAL DE AJUSTES & NOTIFICACIONES EN VIVO
        ==================================================================== -->
   <div id="uni-drawer-backdrop" class="uni-backdrop"></div>
   
@@ -176,65 +175,55 @@
       <div class="drawer-profile-avatar-circle">
         <i data-lucide="user"></i>
       </div>
-      <h3 class="drawer-user-name">Juan Alejandro</h3>
-      <span class="drawer-user-cup">#CUP 8k4B7UP5</span>
+      <h3 class="drawer-user-name" id="drawer-user-name">Usuario</h3>
+      <span class="drawer-user-cup" id="drawer-user-cup">#CUP</span>
+      <span id="drawer-user-email" style="font-size: 12px; color: #64748B; margin-top: 4px; display: block;"></span>
 
       <!-- Botón 'Ajustes' con icono de engranaje -->
       <a href="/perfil" class="btn-drawer-ajustes" id="btn-drawer-ajustes" title="Ir a Configuración de Perfil">
         <i data-lucide="settings"></i>
-        <span>Ajustes</span>
+        <span>Mi Ficha / Perfil</span>
+      </a>
+
+      <!-- Botón 'Gestión de Usuarios' (Exclusivo Administrador) -->
+      <a href="/admin/usuarios" class="btn-drawer-ajustes" id="btn-drawer-admin-usuarios" title="Directorio y Gestión de Usuarios" style="display: none; margin-top: 8px; background: #E0E7FF; color: #3730A3; border-color: #C7D2FE;">
+        <i data-lucide="users"></i>
+        <span>Gestión de Usuarios</span>
       </a>
     </div>
 
-    <!-- Sección 'Notificaciones' con tarjeta oscura y acento rojo -->
+    <!-- Sección 'Notificaciones / Postulaciones' -->
     <div class="drawer-notifications-section">
-      <span class="notifications-heading">Notificaciones</span>
+      <span class="notifications-heading" id="drawer-notif-heading">Mis Postulaciones</span>
       
-      <div id="drawer-notifications-list">
-        <!-- Notificación fija fiel al mockup de la Página 7 -->
-        <div class="notification-card-item">
-          <div class="notif-avatar-col">
-            <div class="notif-avatar-circle">
-              <i data-lucide="user"></i>
-            </div>
-          </div>
-          <div class="notif-body-col">
-            <h5 class="notif-title">Pasantia #</h5>
-            <p class="notif-text">texto de descripcion....</p>
-            <div class="notif-buttons-row">
-              <button type="button" class="btn-notif-aceptar" onclick="window.pasantiasApp.showToast('Pasantía aceptada correctamente', 'success')">Aceptar</button>
-              <button type="button" class="btn-notif-vermas" onclick="window.pasantiasApp.showToast('Visualizando detalles completos', 'info')">Ver mas</button>
-            </div>
-          </div>
-          <button type="button" class="btn-notif-dismiss" title="Cerrar notificación">
-            <i data-lucide="x"></i>
-          </button>
-        </div>
+      <div id="drawer-notifications-list" style="margin-top: 12px;">
+        <p style="color: #94A3B8; font-size: 12.5px; text-align: center;">Sin notificaciones pendientes</p>
       </div>
     </div>
 
-    <!-- Botón inferior rojo: Cerrar Sesión -->
+    <!-- Botón inferior rojo: Cerrar Sesión Real -->
     <div class="drawer-footer-section">
-      <a href="/login" id="btn-drawer-logout" class="btn-drawer-cerrar-sesion">
+      <button type="button" id="btn-drawer-logout" class="btn-drawer-cerrar-sesion" style="width: 100%; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
         <i data-lucide="power"></i>
-        <span>Cerrar Sesion</span>
-      </a>
+        <span>Cerrar Sesión</span>
+      </button>
     </div>
   </aside>
 
   <!-- ====================================================================
-       MODAL PARA "AGREGAR PASANTIA" (VISTA ADMIN)
+       MODAL PARA "AGREGAR / EDITAR PASANTIA" (CRUD SQLALCHEMY)
        ==================================================================== -->
   <div id="modal-agregar-pasantia" class="uni-modal-overlay">
     <div class="uni-modal-content">
       <div class="uni-modal-header">
-        <h3>Publicar Nueva Pasantía</h3>
+        <h3 id="modal-pasantia-form-title">Publicar Nueva Pasantía</h3>
         <button type="button" id="btn-close-modal" class="btn-close-modal">
           <i data-lucide="x"></i>
         </button>
       </div>
 
       <form id="form-agregar-pasantia">
+        <input type="hidden" id="modal-pasantia-id" value="" />
         <div class="uni-modal-body">
           <div class="modal-form-group">
             <label for="modal-pasantia-titulo">Título de la Pasantía *</label>
@@ -297,6 +286,25 @@
             </div>
           </div>
 
+          <div class="modal-form-row">
+            <div class="modal-form-group">
+              <label for="modal-pasantia-cupos">Cupos Disponibles</label>
+              <input type="number" id="modal-pasantia-cupos" class="modal-form-input" value="1" min="1" max="20" />
+            </div>
+            <div class="modal-form-group">
+              <label for="modal-pasantia-remuneracion">Condición</label>
+              <select id="modal-pasantia-remuneracion" class="modal-form-select">
+                <option value="No remunerada">No remunerada</option>
+                <option value="Remunerada">Remunerada (Beca/Estipendio)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="modal-form-group">
+            <label for="modal-pasantia-requisitos">Requisitos Específicos</label>
+            <input type="text" id="modal-pasantia-requisitos" class="modal-form-input" placeholder="Ej: Conocimientos en Python, SQL, Git..." />
+          </div>
+
           <div class="modal-form-group">
             <label for="modal-pasantia-desc">Descripción Detallada *</label>
             <textarea id="modal-pasantia-desc" class="modal-form-textarea" rows="3" placeholder="Describe los requisitos y actividades de la pasantía..." required></textarea>
@@ -305,7 +313,87 @@
 
         <div class="uni-modal-footer">
           <button type="button" id="btn-cancel-modal" class="btn-modal-cancel">Cancelar</button>
-          <button type="submit" class="btn-modal-submit">Publicar Pasantía</button>
+          <button type="submit" class="btn-modal-submit" id="btn-submit-pasantia">Guardar en Base de Datos</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ====================================================================
+       MODAL DE CANDIDATOS POSTULANTES (CU-07 EVALUACIÓN EMPRESARIAL)
+       ==================================================================== -->
+  <div id="modal-postulantes" class="uni-modal-overlay">
+    <div class="uni-modal-content" style="max-width: 640px;">
+      <div class="uni-modal-header">
+        <h3 id="modal-postulantes-titulo">Candidatos Postulados</h3>
+        <button type="button" id="btn-close-modal-postulantes" class="btn-close-modal">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+      <div class="uni-modal-body" id="modal-postulantes-body" style="max-height: 400px; overflow-y: auto;">
+        <!-- Se inyecta dinámicamente con las postulaciones reales -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ====================================================================
+       MODAL DE POSTULACIÓN CON AUTORIZACIÓN DE DOCUMENTOS (CU-03)
+       ==================================================================== -->
+  <div id="modal-aplicar-pasantia" class="uni-modal-overlay">
+    <div class="uni-modal-content" style="max-width: 580px;">
+      <div class="uni-modal-header" style="background: linear-gradient(135deg, #033E8C 0%, #022859 100%);">
+        <h3 id="modal-aplicar-titulo" style="display: flex; align-items: center; gap: 8px;">
+          <i data-lucide="send" style="width: 20px; height: 20px;"></i>
+          <span>Postular a Pasantía</span>
+        </h3>
+        <button type="button" id="btn-close-modal-aplicar" class="btn-close-modal">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+
+      <form id="form-confirmar-aplicacion">
+        <input type="hidden" id="modal-aplicar-oferta-id" value="" />
+        <div class="uni-modal-body">
+          <div style="background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 8px; padding: 12px 14px;">
+            <h4 id="modal-aplicar-oferta-titulo" style="margin: 0 0 4px 0; font-size: 15px; color: #1E3A8A; font-weight: 700;">
+              Vacante
+            </h4>
+            <p id="modal-aplicar-oferta-empresa" style="margin: 0; font-size: 12.5px; color: #3B82F6; font-weight: 500;">
+              Empresa
+            </p>
+          </div>
+
+          <div style="margin-top: 4px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <span style="font-size: 13px; font-weight: 700; color: #0F172A;">
+                Documentos a Compartir con el Ofertante:
+              </span>
+              <a href="/perfil" target="_blank" rel="noopener noreferrer" style="font-size: 11.5px; color: #033E8C; text-decoration: underline; font-weight: 600;">
+                + Administrar en Mi Perfil
+              </a>
+            </div>
+            <p style="font-size: 12px; color: #64748B; margin-top: 0; margin-bottom: 10px;">
+              Marca con un check los documentos personales (CV, récord policial, etc.) que autorizas revisar a la empresa receptora para evaluar tu candidatura:
+            </p>
+
+            <div id="modal-aplicar-docs-container" style="display: flex; flex-direction: column; gap: 8px; max-height: 220px; overflow-y: auto; padding: 2px;">
+              <!-- Se listan dinámicamente los documentos del estudiante con checkboxes -->
+            </div>
+          </div>
+
+          <div class="modal-form-group" style="margin-top: 8px;">
+            <label for="modal-aplicar-motivo" style="font-size: 12.5px; font-weight: 600; color: #334155;">
+              Motivo o Mensaje para la Empresa (Opcional):
+            </label>
+            <textarea id="modal-aplicar-motivo" class="modal-form-textarea" rows="2" placeholder="Describe brevemente por qué eres el candidato ideal para esta pasantía..."></textarea>
+          </div>
+        </div>
+
+        <div class="uni-modal-footer">
+          <button type="button" id="btn-cancel-modal-aplicar" class="btn-modal-cancel">Cancelar</button>
+          <button type="submit" class="btn-modal-submit" id="btn-submit-aplicar" style="background: #059669; border-color: #059669;">
+            Enviar Postulación Formal
+          </button>
         </div>
       </form>
     </div>

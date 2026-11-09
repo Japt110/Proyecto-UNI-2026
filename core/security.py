@@ -45,9 +45,14 @@ def verify_password(password_hash: str, password: str) -> bool:
 
 def verify_token_and_restore_session() -> bool:
     """
-    Verifica el token de sesión enviado en las cabeceras HTTP (Authorization / X-Session-Token).
-    Si el token es válido (firma HMAC limpia y fecha exp vigente), restaura la sesión de Flask.
+    Verifica el token de sesión enviado en las cabeceras HTTP (Authorization / X-Session-Token)
+    o la existencia de una sesión de servidor Flask activa.
+    Si 2FA se encuentra pendiente, no se concede acceso autenticado.
     """
+    # Si la sesión actual está en proceso intermedio de 2FA, no está autenticada completamente
+    if session.get("2fa_pending"):
+        return False
+
     auth_header = request.headers.get("Authorization", "")
     token = None
     if auth_header.startswith("Bearer "):
@@ -78,10 +83,26 @@ def verify_token_and_restore_session() -> bool:
         except Exception:
             pass
 
-    if "user_id" in session:
+    if "user_id" in session and session.get("user_id") is not None:
         return True
 
     return False
+
+
+def normalize_role(role: str | None) -> str:
+    """Normaliza las variantes de nombres de rol a las claves canónicas del sistema."""
+    if not role:
+        return ""
+    r = str(role).strip().lower()
+    if r in ("administrador", "admin", "rector"):
+        return "Administrador"
+    if r in ("estudiante", "alumno"):
+        return "Estudiante"
+    if r in ("supervisor", "empresa", "empresario", "encargado"):
+        return "Supervisor"
+    if r in ("tutor", "docente"):
+        return "Tutor"
+    return str(role).strip()
 
 
 # -----------------------------------------------------------------------------
@@ -92,11 +113,27 @@ def login_required(f: Callable[..., Any]) -> Callable[..., Any]:
     """
     Decorador middleware que restringe el acceso a un endpoint exigiendo
     un estado de sesión autenticado activo o un token Bearer válido.
+    Para vistas HTML (como /index, /rector, etc.) redirige a /login.
+    Para APIs RESTful, retorna respuesta JSON HTTP 401.
     """
     @wraps(f)
     def decorated_function(*args: Any, **kwargs: Any) -> Any:
         if not verify_token_and_restore_session():
-            return jsonify({"success": False, "message": "Acceso denegado. Sesión no iniciada o token vencido."}), 401
+            # Si es solicitud a API REST o petición AJAX/JSON
+            if (
+                request.path.startswith("/api/")
+                or request.is_json
+                or request.headers.get("X-Requested-With") == "XMLHttpRequest"
+                or "application/json" in request.headers.get("Accept", "")
+            ):
+                return jsonify({
+                    "success": False,
+                    "message": "Acceso denegado. Sesión no iniciada o token vencido."
+                }), 401
+
+            # Si es vista web en navegador, redirigir al login
+            from flask import redirect
+            return redirect("/login")
         return f(*args, **kwargs)
     return decorated_function
 
@@ -104,20 +141,71 @@ def login_required(f: Callable[..., Any]) -> Callable[..., Any]:
 def roles_required(*allowed_roles: str) -> Callable[..., Any]:
     """
     Decorador middleware para Control de Acceso Basado en Roles (RBAC).
-    Restringe la ejecución de un endpoint a usuarios cuyo rol coincida con los roles autorizados.
-    
-    :param allowed_roles: Roles permitidos (ej. "Rector", "Encargado").
+    Garantiza que usuarios sin el rol requerido no puedan acceder al recurso.
+    Si un estudiante intenta acceder a endpoints exclusivos de administradores,
+    o si un administrador intenta acceder a endpoints exclusivos de estudiantes,
+    se bloquea con HTTP 403 Forbidden.
     """
+    normalized_allowed = {normalize_role(r) for r in allowed_roles}
+
     def decorator(f: Callable[..., Any]) -> Callable[..., Any]:
         @wraps(f)
         def decorated_function(*args: Any, **kwargs: Any) -> Any:
+            # 1. Verificar autenticación previa
             if not verify_token_and_restore_session():
-                return jsonify({"success": False, "message": "Acceso denegado. No autenticado."}), 401
+                if (
+                    request.path.startswith("/api/")
+                    or request.is_json
+                    or request.headers.get("X-Requested-With") == "XMLHttpRequest"
+                    or "application/json" in request.headers.get("Accept", "")
+                ):
+                    return jsonify({"success": False, "message": "Acceso denegado. Sesión no iniciada o token vencido."}), 401
+                from flask import redirect
+                return redirect("/login")
 
-            user_role = session.get("user_role")
-            if user_role not in allowed_roles:
-                return jsonify({"success": False, "message": "Acceso denegado. Permisos insuficientes."}), 403
+            # 2. Verificar autorización de rol
+            raw_role = session.get("user_role")
+            current_role = normalize_role(raw_role)
+
+            if current_role not in normalized_allowed:
+                msg = f"Acceso denegado: El rol '{raw_role}' no tiene autorización para este recurso. Acción restringida exclusivamente a: {', '.join(allowed_roles)}."
+                if (
+                    request.path.startswith("/api/")
+                    or request.is_json
+                    or request.headers.get("X-Requested-With") == "XMLHttpRequest"
+                    or "application/json" in request.headers.get("Accept", "")
+                ):
+                    return jsonify({
+                        "success": False,
+                        "message": msg,
+                        "rol_actual": raw_role,
+                        "roles_permitidos": list(allowed_roles)
+                    }), 403
+
+                # En vistas HTML devolver 403 con mensaje claro
+                return f"""
+                <div style="font-family: Arial, sans-serif; text-align: center; padding: 50px;">
+                    <h2 style="color: #DC2626;">403 - Acceso Denegado</h2>
+                    <p style="color: #4B5563;">{msg}</p>
+                    <p><a href="/" style="color: #033E8C; text-decoration: underline;">Volver al Inicio</a></p>
+                </div>
+                """, 403
 
             return f(*args, **kwargs)
         return decorated_function
     return decorator
+
+
+def admin_required(f: Callable[..., Any]) -> Callable[..., Any]:
+    """Decorador exclusivo para Administradores de la Universidad."""
+    return roles_required("Administrador")(f)
+
+
+def student_required(f: Callable[..., Any]) -> Callable[..., Any]:
+    """Decorador exclusivo para Estudiantes Universitarios."""
+    return roles_required("Estudiante")(f)
+
+
+def company_or_admin_required(f: Callable[..., Any]) -> Callable[..., Any]:
+    """Decorador para Entidades Receptoras (Supervisores) y Administradores."""
+    return roles_required("Supervisor", "Administrador")(f)
