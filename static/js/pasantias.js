@@ -1,28 +1,151 @@
 /**
  * ==============================================================================
- * SISTEMA WEB DE CONTROL DE PASANTÍAS - CONTROLADOR CRUD REAL CON SQLALCHEMY
- * Conecta directamente con las APIs RESTful del backend:
- * - GET  /api/auth/me                      : Identidad y rol en sesión activa
- * - POST /api/auth/logout                  : Cierre formal de sesión
- * - GET  /api/pasantias                    : Catálogo y filtrado de ofertas
- * - POST /api/pasantias                    : Creación de nueva oferta (Admin/Empresa)
- * - GET  /api/pasantias/<id>               : Consulta de detalle de oferta
- * - PUT  /api/pasantias/<id>               : Actualización de oferta
- * - DELETE /api/pasantias/<id>             : Eliminación de oferta
- * - POST /api/pasantias/<id>/aplicar       : Postulación de estudiante (CU-03)
- * - GET  /api/pasantias/mis-aplicaciones   : Historial de postulaciones (CU-04)
- * - GET  /api/pasantias/<id>/aplicaciones  : Evaluación de candidatos (CU-07)
- * - PUT  /api/pasantias/aplicaciones/<id>/estado : Transición y aprobación (CU-07)
- * - PUT  /api/empresas/<id>/aprobar        : Aprobación institucional (CU-08)
+ * PASANTÍAS UNI - CONTROLADOR PRINCIPAL Y DE ADMINISTRACIÓN
+ * Gestiona: Vista Admin / Usuario, Postulación con CV (cualquier formato),
+ * Panel de Candidatos, Aprobación / Rechazo, Exportación a CSV con BOM UTF-8,
+ * Pestañas Activas vs Historial privado, y Sistema de Notificaciones.
  * ==============================================================================
  */
 
+// Versión de los datos semilla — incrementar para forzar actualización limpia de caché
+const DATA_VERSION = "v3-claudio-2026";
+
+// 3 Pasantías reales de prueba
+const DEFAULT_PASANTIAS = [
+  {
+    id: 1,
+    titulo: "Pasantía en Desarrollo de Software",
+    tipo: "Académica",
+    modalidad: "Presencial",
+    duracion: "160H",
+    experiencia: "Sin experiencia",
+    sector: "Tecnología",
+    ciudad: "Managua",
+    descripcion: "Prácticas profesionales en el área de ingeniería de software dentro del Departamento de Sistemas de la UNI. El pasante participará en el ciclo completo de desarrollo: levantamiento de requerimientos, diseño de arquitectura, implementación en Python/Django, pruebas unitarias e integración continua con GitHub Actions. Se requiere disponibilidad de lunes a viernes de 8:00 a.m. a 12:00 p.m. durante 4 meses calendario. El equipo supervisor asignará tareas semanales con retroalimentación directa del coordinador de área. Al finalizar se otorga carta de reconocimiento oficial firmada por la Dirección de Extensión Universitaria.",
+    empresa: "Departamento de Sistemas — UNI",
+    requisitos: "Cursando al menos el 4° año de Ingeniería en Computación o carrera afín. Conocimientos básicos de Python y SQL. Proactividad y trabajo en equipo.",
+    beneficios: "Carta de recomendación, acceso a laboratorios especializados, mentoría técnica personalizada.",
+    estado: "Activo"
+  },
+  {
+    id: 2,
+    titulo: "Pasantía en Análisis Estructural",
+    tipo: "Profesional",
+    modalidad: "Híbrida",
+    duracion: "240H",
+    experiencia: "Prácticas",
+    sector: "Civil",
+    ciudad: "Managua",
+    descripcion: "Pasantía orientada a estudiantes avanzados de Ingeniería Civil con enfoque en análisis y diseño estructural. El pasante colaborará con el equipo técnico de la empresa en la elaboración de memorias de cálculo para estructuras de concreto reforzado, revisión de planos constructivos en AutoCAD y SAP2000, e inspección de obras en campo. Modalidad híbrida: 3 días presencial en oficina (zona Carretera Sur) y 2 días remoto. Se exige disponibilidad total de 6 meses.",
+    empresa: "COPRECA S.A.",
+    requisitos: "4° o 5° año de Ingeniería Civil. Manejo de AutoCAD y conocimiento básico de SAP2000. Carné universitario vigente.",
+    beneficios: "Estipendio mensual de C$3,500, equipo de protección personal incluido, posibilidad de incorporación laboral al concluir.",
+    estado: "Activo"
+  },
+  {
+    id: 3,
+    titulo: "Pasantía en Automatización Industrial",
+    tipo: "Académica",
+    modalidad: "Presencial",
+    duracion: "320H",
+    experiencia: "Junior",
+    sector: "Industrial",
+    ciudad: "León",
+    descripcion: "Programa de pasantías en planta industrial para estudiantes de Ingeniería Electrónica o Mecatrónica. El pasante trabajará en el área de automatización y control de procesos, apoyando la programación de PLCs Allen-Bradley, configuración de HMIs y análisis de fallas en líneas de producción. La pasantía incluye capacitación inicial de 2 semanas en el uso de software Studio 5000. Jornada completa de lunes a viernes. Duración: 8 meses.",
+    empresa: "Industrias León S.A. de C.V.",
+    requisitos: "Cursando 4° o 5° año de Ingeniería Electrónica, Mecatrónica o Industrial. Conocimientos de lógica de control y circuitos eléctricos. Experiencia previa en laboratorio es un plus.",
+    beneficios: "Estipendio mensual de C$5,000, transporte interno en planta, seguro contra accidentes, carta de pasantía con evaluación de desempeño.",
+    estado: "Activo"
+  }
+];
+
+// Candidatos de prueba iniciales para que el Administrador pueda visualizar y exportar de inmediato
+const DEFAULT_SOLICITUDES = [
+  {
+    id: "sol-101",
+    pasantiaId: 1,
+    pasantiaTitulo: "Pasantía en Desarrollo de Software",
+    nombre: "Juan Alejandro Pérez",
+    email: "juan.perez@est.uni.edu.ni",
+    telefono: "+505 8734-1122",
+    carrera: "Ing. en Computación - 4to Año",
+    cvFileName: "CV_Juan_Alejandro_Perez.pdf",
+    cvFileType: "application/pdf",
+    cvFileSize: "420 KB",
+    cvFileData: null,
+    fechaSolicitud: "2026-10-25T14:30:00",
+    mensaje: "Poseo experiencia en desarrollo backend con Python y bases de datos SQL.",
+    estado: "pendiente"
+  },
+  {
+    id: "sol-102",
+    pasantiaId: 1,
+    pasantiaTitulo: "Pasantía en Desarrollo de Software",
+    nombre: "María Fernanda López",
+    email: "maria.lopez@est.uni.edu.ni",
+    telefono: "+505 8421-9988",
+    carrera: "Ing. en Sistemas - 5to Año",
+    cvFileName: "Curriculum_Maria_Lopez.docx",
+    cvFileType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    cvFileSize: "850 KB",
+    cvFileData: null,
+    fechaSolicitud: "2026-10-26T09:15:00",
+    mensaje: "Interés en proyectos de extensión universitaria y desarrollo de APIs REST.",
+    estado: "aceptado"
+  },
+  {
+    id: "sol-103",
+    pasantiaId: 2,
+    pasantiaTitulo: "Pasantía en Análisis Estructural",
+    nombre: "Carlos Eduardo Ruiz",
+    email: "carlos.ruiz@est.uni.edu.ni",
+    telefono: "+505 8655-4321",
+    carrera: "Ing. Civil - 4to Año",
+    cvFileName: "CV_Carlos_Ruiz_Civil.pdf",
+    cvFileType: "application/pdf",
+    cvFileSize: "1.1 MB",
+    cvFileData: null,
+    fechaSolicitud: "2026-10-27T11:00:00",
+    mensaje: "Manejo intermedio de AutoCAD y SAP2000.",
+    estado: "pendiente"
+  }
+];
+
+// Notificaciones iniciales de prueba
+const DEFAULT_NOTIFICACIONES = [
+  {
+    id: "notif-1",
+    tipo: "bienvenida",
+    titulo: "Bienvenido al Sistema de Pasantías UNI",
+    mensaje: "Explora las convocatorias abiertas, guarda tus favoritas y postúlate adjuntando tu CV en el formato que desees.",
+    pasantiaId: null,
+    fecha: new Date(Date.now() - 3600000 * 4).toISOString(),
+    leida: false
+  }
+];
+
 class PasantiasApp {
   constructor() {
-    this.currentUser = null;
-    this.pasantias = [];
-    this.misAplicaciones = new Map(); // id_oferta -> aplicacion
-    this.expandedCardId = null;
+    this.checkDataVersion();
+    this.pasantias = this.loadPasantias();
+    this.solicitudes = this.loadSolicitudes();
+    this.notificaciones = this.loadNotificaciones();
+    this.guardadas = this.loadGuardadas(); // Set de IDs de pasantías favoritas
+
+    this.accountRole = document.body.dataset.accountRole;
+    this.canAdminister = ['Administrador', 'Coordinador'].includes(this.accountRole);
+    this.currentRole = this.getInitialRole(); // 'admin' | 'usuario'
+    this.currentTab = 'activo'; // 'activo' | 'historial'
+
+    // Estado del modal de postulación
+    this.activeSolPasantia = null;
+    this.tempCVFile = null;
+
+    // Estado del modal de candidatos (Admin)
+    this.activeCandPasantia = null;
+    this.candFilterState = 'todos';
+    this.candSearchQuery = '';
+
     this.filters = {
       search: "",
       experiencia: "",
@@ -34,13 +157,95 @@ class PasantiasApp {
     this.init();
   }
 
-  async init() {
-    document.addEventListener("DOMContentLoaded", async () => {
+  checkDataVersion() {
+    try {
+      const storedVersion = localStorage.getItem("uni_pasantias_version");
+      if (storedVersion !== DATA_VERSION) {
+        localStorage.removeItem("uni_pasantias_data");
+        localStorage.removeItem("uni_solicitudes_data");
+        localStorage.removeItem("uni_notificaciones_data");
+        localStorage.setItem("uni_pasantias_version", DATA_VERSION);
+      }
+    } catch (_) {}
+  }
+
+  loadPasantias() {
+    try {
+      const stored = localStorage.getItem("uni_pasantias_data");
+      if (stored) return JSON.parse(stored);
+    } catch (_) {}
+    return JSON.parse(JSON.stringify(DEFAULT_PASANTIAS));
+  }
+
+  savePasantias() {
+    try {
+      localStorage.setItem("uni_pasantias_data", JSON.stringify(this.pasantias));
+    } catch (_) {}
+  }
+
+  loadSolicitudes() {
+    try {
+      const stored = localStorage.getItem("uni_solicitudes_data");
+      if (stored) return JSON.parse(stored);
+    } catch (_) {}
+    return JSON.parse(JSON.stringify(DEFAULT_SOLICITUDES));
+  }
+
+  saveSolicitudes() {
+    try {
+      localStorage.setItem("uni_solicitudes_data", JSON.stringify(this.solicitudes));
+    } catch (_) {}
+  }
+
+  loadNotificaciones() {
+    try {
+      const stored = localStorage.getItem("uni_notificaciones_data");
+      if (stored) return JSON.parse(stored);
+    } catch (_) {}
+    return JSON.parse(JSON.stringify(DEFAULT_NOTIFICACIONES));
+  }
+
+  saveNotificaciones() {
+    try {
+      localStorage.setItem("uni_notificaciones_data", JSON.stringify(this.notificaciones));
+    } catch (_) {}
+  }
+
+  loadGuardadas() {
+    try {
+      const stored = localStorage.getItem("uni_guardadas_data");
+      if (stored) return new Set(JSON.parse(stored));
+    } catch (_) {}
+    return new Set();
+  }
+
+  saveGuardadas() {
+    try {
+      localStorage.setItem("uni_guardadas_data", JSON.stringify([...this.guardadas]));
+    } catch (_) {}
+  }
+
+  getInitialRole() {
+    if (!this.canAdminister) return 'usuario';
+    const urlParams = new URLSearchParams(window.location.search);
+    const roleParam = urlParams.get("role");
+    if (roleParam === "admin" || roleParam === "usuario") {
+      localStorage.setItem("uni_current_view_role", roleParam);
+      return roleParam;
+    }
+    const savedRole = localStorage.getItem("uni_current_view_role");
+    return savedRole === "usuario" ? "usuario" : "admin";
+  }
+
+  init() {
+    document.addEventListener("DOMContentLoaded", () => {
       this.bindElements();
       this.bindEvents();
-      this.initFilterDropdowns();
-      await this.fetchCurrentUser();
-      await this.loadPasantias();
+      this.applyRole(this.currentRole);
+      this.updateTabCounts();
+      this.renderGrid();
+      this.renderNotificaciones();
+      this.updateNotifBadge();
       this.initLucideIcons();
     });
   }
@@ -49,54 +254,81 @@ class PasantiasApp {
     this.pageWrapper = document.getElementById("pasantias-wrapper");
     this.gridContainer = document.getElementById("pasantias-grid");
     this.searchInput = document.getElementById("pasantias-search-input");
+    this.roleIndicatorBadge = document.getElementById("role-indicator-badge");
     this.btnAgregarPasantia = document.getElementById("btn-agregar-pasantia");
-    this.adminActionContainer = document.getElementById("admin-action-container");
-    this.statusTextCount = document.getElementById("status-text-count");
-    this.topbarUserBadge = document.getElementById("topbar-user-badge");
 
-    // Drawer elements
+    // Topbar & Drawer
+    this.btnNotifTrigger = document.getElementById("btn-notif-trigger");
+    this.notifBadgeCount = document.getElementById("notif-badge-count");
     this.btnProfileTrigger = document.getElementById("btn-profile-trigger");
     this.drawerPanel = document.getElementById("uni-drawer-panel");
     this.drawerBackdrop = document.getElementById("uni-drawer-backdrop");
     this.btnDrawerCollapse = document.getElementById("btn-drawer-collapse");
     this.btnDrawerLogout = document.getElementById("btn-drawer-logout");
-    this.drawerUserName = document.getElementById("drawer-user-name");
-    this.drawerUserCup = document.getElementById("drawer-user-cup");
-    this.drawerUserEmail = document.getElementById("drawer-user-email");
-    this.drawerNotificationsList = document.getElementById("drawer-notifications-list");
-    this.drawerNotifHeading = document.getElementById("drawer-notif-heading");
+    this.drawerNotifsList = document.getElementById("drawer-notifications-list");
+    this.btnClearAllNotifs = document.getElementById("btn-clear-all-notifs");
 
-    // Modal Pasantía elements
-    this.modalPasantia = document.getElementById("modal-agregar-pasantia");
-    this.modalPasantiaTitle = document.getElementById("modal-pasantia-form-title");
-    this.modalPasantiaId = document.getElementById("modal-pasantia-id");
+    // Tabs
+    this.tabBtnActivas = document.getElementById("tab-btn-activas");
+    this.tabBtnHistorial = document.getElementById("tab-btn-historial");
+    this.countActivas = document.getElementById("count-activas");
+    this.countHistorial = document.getElementById("count-historial");
+    this.tabSubtitleText = document.getElementById("tab-subtitle-text");
+
+    // Modal Crear Pasantía
+    this.modalOverlay = document.getElementById("modal-agregar-pasantia");
     this.btnCloseModal = document.getElementById("btn-close-modal");
     this.btnCancelModal = document.getElementById("btn-cancel-modal");
     this.formAgregarPasantia = document.getElementById("form-agregar-pasantia");
 
-    // Modal Postulantes elements
-    this.modalPostulantes = document.getElementById("modal-postulantes");
-    this.modalPostulantesTitle = document.getElementById("modal-postulantes-titulo");
-    this.modalPostulantesBody = document.getElementById("modal-postulantes-body");
-    this.btnCloseModalPostulantes = document.getElementById("btn-close-modal-postulantes");
+    // Modal Postulación (CV)
+    this.modalSolicitud = document.getElementById("modal-solicitar-pasantia");
+    this.btnCloseSolicitudModal = document.getElementById("btn-close-solicitud-modal");
+    this.btnCancelSolicitud = document.getElementById("btn-cancel-solicitud");
+    this.formSolicitarPasantia = document.getElementById("form-solicitar-pasantia");
+    this.solicitudModalTitle = document.getElementById("solicitud-modal-title");
+    this.solicitudPasantiaSubtitle = document.getElementById("solicitud-pasantia-subtitle");
+    this.solicitudPasantiaIdInput = document.getElementById("solicitud-pasantia-id");
+    this.cvDropzone = document.getElementById("cv-dropzone");
+    this.solicitudCvFileInput = document.getElementById("solicitud-cv-file");
+    this.cvDropzonePrompt = document.getElementById("cv-dropzone-prompt");
+    this.cvSelectedPreview = document.getElementById("cv-selected-preview");
+    this.cvPreviewName = document.getElementById("cv-preview-name");
+    this.cvPreviewSize = document.getElementById("cv-preview-size");
+    this.cvPreviewIcon = document.getElementById("cv-preview-icon");
+    this.btnRemoveCV = document.getElementById("btn-remove-cv");
 
-    // Modal Aplicar Pasantía elements (CU-03)
-    this.modalAplicar = document.getElementById("modal-aplicar-pasantia");
-    this.modalAplicarOfertaId = document.getElementById("modal-aplicar-oferta-id");
-    this.modalAplicarOfertaTitulo = document.getElementById("modal-aplicar-oferta-titulo");
-    this.modalAplicarOfertaEmpresa = document.getElementById("modal-aplicar-oferta-empresa");
-    this.modalAplicarDocsContainer = document.getElementById("modal-aplicar-docs-container");
-    this.modalAplicarMotivo = document.getElementById("modal-aplicar-motivo");
-    this.btnCloseModalAplicar = document.getElementById("btn-close-modal-aplicar");
-    this.btnCancelModalAplicar = document.getElementById("btn-cancel-modal-aplicar");
-    this.formConfirmarAplicacion = document.getElementById("form-confirmar-aplicacion");
-    this.btnSubmitAplicar = document.getElementById("btn-submit-aplicar");
+    // Modal Candidatos (Admin)
+    this.modalCandidatos = document.getElementById("modal-candidatos-admin");
+    this.btnCloseCandidatosModal = document.getElementById("btn-close-candidatos-modal");
+    this.btnCandidatosModalClose = document.getElementById("btn-candidatos-modal-close");
+    this.candidatosModalTitle = document.getElementById("candidatos-modal-title");
+    this.candidatosModalCompany = document.getElementById("candidatos-modal-company");
+    this.candidatosPasantiaStatusBadge = document.getElementById("candidatos-pasantia-status-badge");
+    this.candidatosTableTbody = document.getElementById("candidatos-table-tbody");
+    this.candidatosEmptyState = document.getElementById("candidatos-empty-state");
+    this.candidatosFooterInfo = document.getElementById("candidatos-footer-info");
+    this.candidatosSearchInput = document.getElementById("candidatos-search-input");
+    this.btnExportarCsv = document.getElementById("btn-exportar-csv");
+    this.btnExportarCsvFooter = document.getElementById("btn-exportar-csv-footer");
+
+    // Stats elements
+    this.statCountTotal = document.getElementById("stat-count-total");
+    this.statCountPendientes = document.getElementById("stat-count-pendientes");
+    this.statCountAceptados = document.getElementById("stat-count-aceptados");
+    this.statCountRechazados = document.getElementById("stat-count-rechazados");
   }
 
   bindEvents() {
-    // Drawer triggers
+    // 1. Drawer & Notificaciones
     if (this.btnProfileTrigger) {
       this.btnProfileTrigger.addEventListener("click", (e) => {
+        e.stopPropagation();
+        this.openDrawer();
+      });
+    }
+    if (this.btnNotifTrigger) {
+      this.btnNotifTrigger.addEventListener("click", (e) => {
         e.stopPropagation();
         this.openDrawer();
       });
@@ -107,10 +339,41 @@ class PasantiasApp {
     if (this.drawerBackdrop) {
       this.drawerBackdrop.addEventListener("click", () => this.closeDrawer());
     }
+    if (this.btnClearAllNotifs) {
+      this.btnClearAllNotifs.addEventListener("click", () => this.clearAllNotificaciones());
+    }
 
-    // Modal Pasantía triggers
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        this.closeDrawer();
+        this.closeModal();
+        this.closeSolicitudModal();
+        this.closeCandidatosModal();
+      }
+    });
+
+    // 2. Búsqueda en tiempo real de pasantías
+    if (this.searchInput) {
+      this.searchInput.addEventListener("input", (e) => {
+        this.filters.search = e.target.value.toLowerCase().trim();
+        this.renderGrid();
+      });
+    }
+
+    // 3. Dropdowns de Filtros
+    this.initFilterDropdowns();
+
+    // 4. Tabs Activas / Historial
+    if (this.tabBtnActivas) {
+      this.tabBtnActivas.addEventListener("click", () => this.switchTab('activo'));
+    }
+    if (this.tabBtnHistorial) {
+      this.tabBtnHistorial.addEventListener("click", () => this.switchTab('historial'));
+    }
+
+    // 5. Modal Agregar Pasantía (Admin)
     if (this.btnAgregarPasantia) {
-      this.btnAgregarPasantia.addEventListener("click", () => this.openModalCrear());
+      this.btnAgregarPasantia.addEventListener("click", () => this.openModal());
     }
     if (this.btnCloseModal) {
       this.btnCloseModal.addEventListener("click", () => this.closeModal());
@@ -119,755 +382,982 @@ class PasantiasApp {
       this.btnCancelModal.addEventListener("click", () => this.closeModal());
     }
     if (this.formAgregarPasantia) {
-      this.formAgregarPasantia.addEventListener("submit", (e) => this.handleSubmitPasantia(e));
+      this.formAgregarPasantia.addEventListener("submit", (e) => this.handleCreatePasantia(e));
     }
 
-    // Modal Postulantes triggers
-    if (this.btnCloseModalPostulantes) {
-      this.btnCloseModalPostulantes.addEventListener("click", () => this.closeModalPostulantes());
+    // 6. Modal Solicitud / CV
+    if (this.btnCloseSolicitudModal) {
+      this.btnCloseSolicitudModal.addEventListener("click", () => this.closeSolicitudModal());
     }
+    if (this.btnCancelSolicitud) {
+      this.btnCancelSolicitud.addEventListener("click", () => this.closeSolicitudModal());
+    }
+    if (this.formSolicitarPasantia) {
+      this.formSolicitarPasantia.addEventListener("submit", (e) => this.handleSolicitudSubmit(e));
+    }
+    if (this.btnRemoveCV) {
+      this.btnRemoveCV.addEventListener("click", (e) => {
+        e.stopPropagation();
+        this.removeSelectedCV();
+      });
+    }
+    this.initCVDropzone();
 
-    // Modal Aplicar Pasantía triggers
-    if (this.btnCloseModalAplicar) {
-      this.btnCloseModalAplicar.addEventListener("click", () => this.closeModalAplicar());
+    // 7. Modal Candidatos (Admin)
+    if (this.btnCloseCandidatosModal) {
+      this.btnCloseCandidatosModal.addEventListener("click", () => this.closeCandidatosModal());
     }
-    if (this.btnCancelModalAplicar) {
-      this.btnCancelModalAplicar.addEventListener("click", () => this.closeModalAplicar());
+    if (this.btnCandidatosModalClose) {
+      this.btnCandidatosModalClose.addEventListener("click", () => this.closeCandidatosModal());
     }
-    if (this.formConfirmarAplicacion) {
-      this.formConfirmarAplicacion.addEventListener("submit", (e) => this.handleSubmitConfirmarAplicacion(e));
+    if (this.btnExportarCsv) {
+      this.btnExportarCsv.addEventListener("click", () => this.exportarCandidatosCSV());
     }
-
-    // Logout
-    if (this.btnDrawerLogout) {
-      this.btnDrawerLogout.addEventListener("click", () => this.logout());
+    if (this.btnExportarCsvFooter) {
+      this.btnExportarCsvFooter.addEventListener("click", () => this.exportarCandidatosCSV());
     }
-
-    // Búsqueda con debounce
-    if (this.searchInput) {
-      let debounceTimer = null;
-      this.searchInput.addEventListener("input", (e) => {
-        clearTimeout(debounceTimer);
-        debounceTimer = setTimeout(() => {
-          this.filters.search = e.target.value.trim();
-          this.loadPasantias();
-        }, 300);
+    if (this.candidatosSearchInput) {
+      this.candidatosSearchInput.addEventListener("input", (e) => {
+        this.candSearchQuery = e.target.value.toLowerCase().trim();
+        this.renderCandidatosTable();
       });
     }
 
-    // Cerrar con Escape
-    document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape") {
+    // Filtros por estado dentro del modal de candidatos
+    document.querySelectorAll(".btn-cand-filter").forEach(btn => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".btn-cand-filter").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        this.candFilterState = btn.dataset.filter || 'todos';
+        this.renderCandidatosTable();
+      });
+    });
+
+    // 8. Selector de Rol en el Drawer
+    document.addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-set-role]");
+      if (btn) {
+        const newRole = btn.dataset.setRole;
+        this.setRole(newRole);
         this.closeDrawer();
-        this.closeModal();
-        this.closeModalPostulantes();
-        this.closeModalAplicar();
       }
     });
-  }
 
-  // ---------------------------------------------------------------------------
-  // 1. Autenticación y Carga de Perfil en Sesión (GET /api/auth/me)
-  // ---------------------------------------------------------------------------
-  async fetchCurrentUser() {
-    try {
-      const res = await fetch("/api/auth/me");
-      if (res.status === 401) {
-        window.location.href = "/login";
-        return;
-      }
-      const data = await res.json();
-      if (data.success && data.user) {
-        this.currentUser = data.user;
-        const u = data.user;
-
-        // Actualizar UI de usuario
-        if (this.drawerUserName) this.drawerUserName.textContent = u.nombre_completo || u.username;
-        if (this.drawerUserCup) this.drawerUserCup.textContent = u.cup ? `#CUP ${u.cup}` : `#ROL ${u.role}`;
-        if (this.drawerUserEmail) this.drawerUserEmail.textContent = u.email;
-
-        // Mostrar Badge de Rol en la barra superior
-        if (this.topbarUserBadge) {
-          this.topbarUserBadge.style.display = "inline-block";
-          this.topbarUserBadge.textContent = u.role;
-          if (u.role === "Estudiante") {
-            this.topbarUserBadge.style.background = "#059669";
-          } else if (u.role === "Supervisor") {
-            this.topbarUserBadge.style.background = "#D97706";
-          } else {
-            this.topbarUserBadge.style.background = "#033E8C";
-          }
+    // 9. Cerrar Sesión
+    if (this.btnDrawerLogout) {
+      this.btnDrawerLogout.addEventListener("click", async (e) => {
+        e.preventDefault();
+        if (this.isLoggingOut) return;
+        this.isLoggingOut = true;
+        this.btnDrawerLogout.setAttribute("aria-disabled", "true");
+        try {
+          await API.logout();
+        } catch (error) {
+          this.showToast(error.message, "error");
+        } finally {
+          this.isLoggingOut = false;
+          this.btnDrawerLogout.removeAttribute("aria-disabled");
         }
-
-        // Habilitar botón de agregar pasantía solo si es Admin o Empresa
-        if (u.role === "Administrador" || u.role === "Supervisor") {
-          if (this.adminActionContainer) this.adminActionContainer.style.display = "flex";
-        } else {
-          if (this.adminActionContainer) this.adminActionContainer.style.display = "none";
-        }
-
-        // Habilitar accesos exclusivos para Administrador
-        const btnTopbarUsuarios = document.getElementById("btn-topbar-admin-usuarios");
-        const btnDrawerUsuarios = document.getElementById("btn-drawer-admin-usuarios");
-        if (u.role === "Administrador") {
-          if (btnTopbarUsuarios) btnTopbarUsuarios.style.display = "inline-flex";
-          if (btnDrawerUsuarios) btnDrawerUsuarios.style.display = "inline-flex";
-        } else {
-          if (btnTopbarUsuarios) btnTopbarUsuarios.style.display = "none";
-          if (btnDrawerUsuarios) btnDrawerUsuarios.style.display = "none";
-        }
-
-        // Cargar postulaciones o empresas según el rol
-        await this.loadDrawerNotifications();
-      }
-    } catch (err) {
-      console.warn("No se pudo verificar la sesión:", err);
+      });
     }
   }
 
-  async logout() {
-    try {
-      await fetch("/api/auth/logout", { method: "POST" });
-    } catch (_) {}
-    window.location.href = "/login";
-  }
+  // --------------------------------------------------------------------------
+  // CONTROL DE ROLES & TABS
+  // --------------------------------------------------------------------------
+  setRole(role) {
+    if (role === 'admin' && !this.canAdminister) return;
+    this.currentRole = role;
+    localStorage.setItem("uni_current_view_role", role);
+    this.applyRole(role);
 
-  // ---------------------------------------------------------------------------
-  // 2. Lectura y Filtrado de Pasantías (GET /api/pasantias)
-  // ---------------------------------------------------------------------------
-  async loadPasantias() {
-    const params = new URLSearchParams();
-    if (this.filters.search) params.set("busqueda", this.filters.search);
-    if (this.filters.modalidad) params.set("modalidad", this.filters.modalidad);
-    if (this.filters.experiencia) params.set("experiencia", this.filters.experiencia);
-    if (this.filters.sector) params.set("sector", this.filters.sector);
-    if (this.filters.ciudad) params.set("ciudad", this.filters.ciudad);
-
-    try {
-      const res = await fetch(`/api/pasantias?${params.toString()}`);
-      if (res.status === 401) {
-        window.location.href = "/login";
-        return;
-      }
-      const data = await res.json();
-      if (data.success && Array.isArray(data.pasantias)) {
-        this.pasantias = data.pasantias;
-      } else {
-        this.pasantias = [];
-      }
-    } catch (err) {
-      console.error("Error al cargar pasantías desde la API:", err);
-      this.pasantias = [];
+    // Si pasa a rol usuario y estaba en Historial (privado), volver a Activo
+    if (role === 'usuario' && this.currentTab === 'historial') {
+      this.switchTab('activo');
     }
 
-    // Si es estudiante, refrescar mapa de aplicaciones para marcar las tarjetas
-    if (this.currentUser && this.currentUser.role === "Estudiante") {
-      await this.refreshMisAplicacionesMap();
+    this.updateTabCounts();
+    this.renderGrid();
+    this.showToast(`Vista cambiada: ${role === 'admin' ? 'Administrador' : 'Usuario'}`, "info");
+  }
+
+  applyRole(role) {
+    if (!this.canAdminister) role = 'usuario';
+    const isAdmin = role === "admin";
+    if (isAdmin) {
+      this.pageWrapper?.classList.remove("view-usuario-mode");
+      this.pageWrapper?.classList.add("view-admin-mode");
+    } else {
+      this.pageWrapper?.classList.remove("view-admin-mode");
+      this.pageWrapper?.classList.add("view-usuario-mode");
+    }
+
+    // Mostrar / Ocultar botón Agregar Pasantía
+    if (this.btnAgregarPasantia) {
+      this.btnAgregarPasantia.style.display = isAdmin ? 'block' : 'none';
+    }
+
+    // Mostrar / Ocultar Tab Historial (Solo Admin)
+    if (this.tabBtnHistorial) {
+      this.tabBtnHistorial.style.display = isAdmin ? 'inline-flex' : 'none';
+    }
+
+    this.updateRoleIndicator(role);
+    this.updateDrawerRoleButtons(role);
+  }
+
+  updateRoleIndicator(role) {
+    if (!this.roleIndicatorBadge) return;
+    const isAdmin = role === 'admin';
+    this.roleIndicatorBadge.textContent = isAdmin ? 'Administrador' : (this.accountRole === 'Estudiante' ? 'Estudiante' : 'Usuario');
+    this.roleIndicatorBadge.className = 'role-indicator-badge ' + (isAdmin ? 'role-admin' : 'role-usuario');
+  }
+
+  updateDrawerRoleButtons(role) {
+    const adminBtn = document.querySelector('[data-set-role="admin"]');
+    const usuarioBtn = document.querySelector('[data-set-role="usuario"]');
+    if (adminBtn) adminBtn.classList.toggle('role-btn-active', role === 'admin');
+    if (usuarioBtn) usuarioBtn.classList.toggle('role-btn-active', role === 'usuario');
+  }
+
+  switchTab(tab) {
+    this.currentTab = tab;
+    if (this.tabBtnActivas) {
+      this.tabBtnActivas.classList.toggle('active', tab === 'activo');
+    }
+    if (this.tabBtnHistorial) {
+      this.tabBtnHistorial.classList.toggle('active', tab === 'historial');
+    }
+
+    if (this.tabSubtitleText) {
+      this.tabSubtitleText.textContent = tab === 'activo'
+        ? "Pasantías vigentes disponibles para postulación"
+        : "Historial de pasantías finalizadas (Archivo privado de administración)";
     }
 
     this.renderGrid();
   }
 
-  async refreshMisAplicacionesMap() {
-    try {
-      const res = await fetch("/api/pasantias/mis-aplicaciones");
-      if (res.ok) {
-        const data = await res.json();
-        if (data.success && Array.isArray(data.aplicaciones)) {
-          this.misAplicaciones.clear();
-          data.aplicaciones.forEach(app => {
-            this.misAplicaciones.set(app.id_oferta, app);
-          });
-        }
-      }
-    } catch (_) {}
+  updateTabCounts() {
+    const activas = this.pasantias.filter(p => p.estado !== "Finalizado").length;
+    const historial = this.pasantias.filter(p => p.estado === "Finalizado").length;
+
+    if (this.countActivas) this.countActivas.textContent = activas;
+    if (this.countHistorial) this.countHistorial.textContent = historial;
   }
 
+  // --------------------------------------------------------------------------
+  // RENDERIZADO DEL GRID DE PASANTÍAS
+  // --------------------------------------------------------------------------
   renderGrid() {
     if (!this.gridContainer) return;
+    const role = this.currentRole;
+    const tab = this.currentTab;
 
-    if (this.statusTextCount) {
-      const cant = this.pasantias.length;
-      this.statusTextCount.textContent = cant === 1 ? "1 Oferta Activa" : `${cant} Ofertas Activas`;
+    // 1. Filtrar por estado de la pestaña (Activo vs Historial)
+    let list = this.pasantias.filter(p => {
+      const isFinalizada = p.estado === "Finalizado";
+      if (tab === 'activo') return !isFinalizada;
+      return isFinalizada;
+    });
+
+    // Si es usuario regular, nunca mostrar finalizadas
+    if (role === 'usuario') {
+      list = list.filter(p => p.estado !== "Finalizado");
     }
 
-    if (this.pasantias.length === 0) {
+    // 2. Filtrar por texto y dropdowns
+    const filtered = list.filter(p => {
+      if (this.filters.search) {
+        const query = this.filters.search;
+        const matchesText = p.titulo.toLowerCase().includes(query) ||
+                            p.descripcion.toLowerCase().includes(query) ||
+                            p.sector.toLowerCase().includes(query) ||
+                            p.ciudad.toLowerCase().includes(query) ||
+                            (p.empresa && p.empresa.toLowerCase().includes(query));
+        if (!matchesText) return false;
+      }
+      if (this.filters.experiencia && p.experiencia.toLowerCase() !== this.filters.experiencia.toLowerCase()) return false;
+      if (this.filters.modalidad  && p.modalidad.toLowerCase()  !== this.filters.modalidad.toLowerCase())  return false;
+      if (this.filters.sector     && p.sector.toLowerCase()     !== this.filters.sector.toLowerCase())     return false;
+      if (this.filters.ciudad     && p.ciudad.toLowerCase()     !== this.filters.ciudad.toLowerCase())     return false;
+      return true;
+    });
+
+    this.updateTabCounts();
+
+    if (filtered.length === 0) {
+      const emptyMsg = tab === 'historial'
+        ? "No hay pasantías archivadas en el historial."
+        : "No se encontraron pasantías con los filtros seleccionados.";
+
       this.gridContainer.innerHTML = `
-        <div style="grid-column: 1 / -1; text-align: center; padding: 60px 20px; color: #64748B;">
-          <i data-lucide="inbox" style="width: 48px; height: 48px; margin: 0 auto 12px; display: block; opacity: 0.5;"></i>
-          <h4 style="font-size: 16px; font-weight: 600; color: #334155;">No se encontraron pasantías en la base de datos</h4>
-          <p style="font-size: 13px;">Prueba ajustando los filtros de búsqueda o agrega una nueva pasantía.</p>
+        <div class="pasantias-empty-grid">
+          <i data-lucide="${tab === 'historial' ? 'archive' : 'inbox'}" class="empty-grid-icon"></i>
+          <h4>${emptyMsg}</h4>
+          <p>${tab === 'historial' ? 'Las pasantías que finalices aparecerán aquí de forma privada.' : 'Prueba cambiando tus términos de búsqueda o filtros.'}</p>
         </div>
       `;
       this.initLucideIcons();
       return;
     }
 
-    const isStudent = this.currentUser && this.currentUser.role === "Estudiante";
-    const canManage = this.currentUser && (this.currentUser.role === "Administrador" || this.currentUser.role === "Supervisor");
+    this.gridContainer.innerHTML = filtered.map(p => {
+      const candCount = this.solicitudes.filter(s => s.pasantiaId === p.id).length;
+      const yaPostulo = this.yaPostulo(p.id);
+      const isGuardada = this.guardadas.has(p.id);
+      const isFinalizada = p.estado === "Finalizado";
 
-    this.gridContainer.innerHTML = this.pasantias.map(p => {
-      const isExpanded = this.expandedCardId === p.id;
-      const aplicacionPrevia = this.misAplicaciones.get(p.id);
+      // Botones para Administrador
+      const adminButtons = `
+        <button type="button" class="btn-pasantia-candidatos" onclick="event.stopPropagation(); window.pasantiasApp.openCandidatosModal(${p.id})">
+          <i data-lucide="users"></i> CANDIDATOS (${candCount})
+        </button>
+        ${!isFinalizada ? `
+          <button type="button" class="btn-pasantia-terminar" onclick="event.stopPropagation(); window.pasantiasApp.terminarPeriodo(${p.id})">
+            TERMINAR
+          </button>
+        ` : `
+          <button type="button" class="btn-pasantia-reabrir" onclick="event.stopPropagation(); window.pasantiasApp.reabrirPeriodo(${p.id})">
+            <i data-lucide="rotate-ccw"></i> REABRIR
+          </button>
+        `}
+      `;
 
-      let studentActionHtml = "";
-      if (isStudent) {
-        if (aplicacionPrevia) {
-          studentActionHtml = `
-            <button type="button" class="btn-pasantia-guardar" style="background: #E2E8F0; color: #334155; cursor: default;" onclick="event.stopPropagation();">
-              Postulado (${aplicacionPrevia.estado})
-            </button>
-          `;
-        } else {
-          studentActionHtml = `
-            <button type="button" class="btn-pasantia-solicitar" onclick="event.stopPropagation(); window.pasantiasApp.solicitarPasantia(${p.id})">
-              POSTULARME
-            </button>
-          `;
-        }
-      }
+      // Botones para Usuario
+      const userButtons = `
+        <button type="button" class="btn-pasantia-guardar ${isGuardada ? 'is-guardada' : ''}" onclick="event.stopPropagation(); window.pasantiasApp.toggleGuardarPasantia(${p.id})">
+          <i data-lucide="${isGuardada ? 'bookmark-check' : 'bookmark'}"></i> ${isGuardada ? 'GUARDADA' : 'GUARDAR'}
+        </button>
+        ${yaPostulo ? `
+          <button type="button" class="btn-pasantia-solicitar btn-ya-postulado" disabled title="Ya has enviado tu solicitud">
+            <i data-lucide="check"></i> POSTULADO
+          </button>
+        ` : `
+          <button type="button" class="btn-pasantia-solicitar" onclick="event.stopPropagation(); window.pasantiasApp.openSolicitudModal(${p.id})">
+            SOLICITAR
+          </button>
+        `}
+      `;
 
-      let manageActionsHtml = "";
-      if (canManage) {
-        manageActionsHtml = `
-          <button type="button" class="btn-pasantia-guardar" style="background: #033E8C; color: #FFF;" onclick="event.stopPropagation(); window.pasantiasApp.verPostulantes(${p.id}, '${p.titulo.replace(/'/g, "\\'")}')">
-            POSTULANTES (${p.postulantes_count || 0})
-          </button>
-          <button type="button" class="btn-pasantia-guardar" style="background: #F1F5F9; color: #0F172A;" onclick="event.stopPropagation(); window.pasantiasApp.openModalEditar(${p.id})">
-            EDITAR
-          </button>
-          <button type="button" class="btn-pasantia-guardar" style="background: #FEE2E2; color: #DC2626;" onclick="event.stopPropagation(); window.pasantiasApp.eliminarPasantia(${p.id})">
-            ELIMINAR
-          </button>
-        `;
-      }
+      const actionButtons = role === 'admin' ? adminButtons : userButtons;
+
+      const badgeModalidadClass = p.modalidad === 'Presencial' ? 'badge-presencial'
+                                 : p.modalidad === 'Virtual'   ? 'badge-virtual'
+                                 : 'badge-hibrida';
 
       return `
-        <div class="pasantia-card ${isExpanded ? 'is-expanded' : ''}" data-id="${p.id}" id="pasantia-card-${p.id}">
-          <img src="/static/img/pasantia_banner.jpg" alt="Pasantía UNI" class="pasantia-card-banner" />
+        <div class="pasantia-card ${isFinalizada ? 'pasantia-card-finalizada' : ''}" data-id="${p.id}" id="pasantia-card-${p.id}">
+          <div class="pasantia-card-banner-wrapper">
+            <img src="/static/img/pasantia_banner.jpg" alt="Pasantía UNI" class="pasantia-card-banner" />
+            ${isFinalizada ? `<span class="card-status-overlay-badge"><i data-lucide="lock"></i> Período Finalizado</span>` : ''}
+          </div>
           <div class="pasantia-card-body">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
+            <!-- Vista colapsada (vista rápida) -->
+            <div class="pasantia-card-collapsed">
               <h3 class="pasantia-card-title">${p.titulo}</h3>
-              <span style="font-size: 11px; font-weight: 700; color: #059669; background: #ECFDF5; padding: 2px 8px; border-radius: 12px; white-space: nowrap;">
-                ${p.cupos || 1} plaza${(p.cupos || 1) > 1 ? 's' : ''}
-              </span>
+              <span class="pasantia-card-desc-label">Descripción:</span>
+              <p class="pasantia-card-desc-preview">${p.descripcion}</p>
             </div>
 
-            <div style="font-size: 12px; color: #475569; margin: 4px 0 8px 0; font-weight: 500;">
-              Empresa: <strong>${p.empresa_nombre || 'Entidad Receptora UNI'}</strong> · ${p.ciudad || 'Managua'}
-            </div>
-            
-            ${isExpanded ? `
+            <!-- Vista expandida (al pasar el cursor) -->
+            <div class="pasantia-card-expanded">
+              <h3 class="pasantia-card-title">${p.titulo}</h3>
               <div class="pasantia-badges-row">
-                <span class="pasantia-badge">${p.tipo || 'Académica'}</span>
-                <span class="pasantia-badge badge-presencial">${p.modalidad || 'Presencial'}</span>
-                <span class="pasantia-badge">${p.duracion || '160H'}</span>
-                <span class="pasantia-badge" style="background: #F8FAFC; border: 1px solid #CBD5E1;">${p.sector || 'General'}</span>
+                <span class="pasantia-badge">${p.tipo}</span>
+                <span class="pasantia-badge ${badgeModalidadClass}">${p.modalidad}</span>
+                <span class="pasantia-badge">${p.duracion}</span>
               </div>
-            ` : ''}
-
-            <span class="pasantia-card-desc-label">Descripción:</span>
-            <p class="pasantia-card-desc-text">${p.descripcion || 'Sin descripción detallada disponible.'}</p>
-
-            ${isExpanded && p.requisitos ? `
-              <span class="pasantia-card-desc-label" style="margin-top: 6px;">Requisitos:</span>
-              <p class="pasantia-card-desc-text" style="color: #334155; font-style: italic;">${p.requisitos}</p>
-            ` : ''}
-
-            ${isExpanded ? `
-              <div class="pasantia-actions-row" style="flex-wrap: wrap; gap: 6px; margin-top: 12px;">
-                ${studentActionHtml}
-                ${manageActionsHtml}
+              ${p.empresa ? `<p class="pasantia-empresa"><i data-lucide="building-2"></i> ${p.empresa}</p>` : ''}
+              
+              <div class="pasantia-expanded-scroll">
+                <span class="pasantia-card-desc-label">Descripción:</span>
+                <p class="pasantia-card-desc-full">${p.descripcion}</p>
+                ${p.requisitos ? `<span class="pasantia-card-desc-label" style="margin-top:10px;display:block;">Requisitos:</span><p class="pasantia-card-desc-full">${p.requisitos}</p>` : ''}
+                ${p.beneficios ? `<span class="pasantia-card-desc-label" style="margin-top:10px;display:block;">Beneficios:</span><p class="pasantia-card-desc-full">${p.beneficios}</p>` : ''}
               </div>
-            ` : ''}
+
+              <div class="pasantia-actions-row">
+                ${actionButtons}
+              </div>
+            </div>
           </div>
         </div>
       `;
     }).join("");
 
-    // Asignar clic para expandir
-    this.gridContainer.querySelectorAll(".pasantia-card").forEach(card => {
-      card.addEventListener("click", () => {
-        const id = parseInt(card.dataset.id, 10);
-        this.toggleCardExpand(id);
+    this.initLucideIcons();
+  }
+
+  yaPostulo(pasantiaId) {
+    return this.solicitudes.some(s => s.pasantiaId === pasantiaId && s.nombre === "Juan Alejandro Pérez");
+  }
+
+  // --------------------------------------------------------------------------
+  // FINALIZAR PERÍODO (TERMINAR) & NOTIFICACIONES
+  // --------------------------------------------------------------------------
+  terminarPeriodo(id) {
+    const item = this.pasantias.find(p => p.id === id);
+    if (!item) return;
+
+    if (!confirm(`¿Deseas finalizar el período de registro para "${item.titulo}"?\n\nLa pasantía dejará de proyectarse públicamente a los estudiantes y se archivará de manera privada en el Historial.`)) {
+      return;
+    }
+
+    item.estado = "Finalizado";
+    this.savePasantias();
+
+    // 1. Notificar a todos los postulantes de esta pasantía
+    const candidatosAfectados = this.solicitudes.filter(s => s.pasantiaId === id);
+    this.addNotificacion(
+      "pasantia_finalizada",
+      "Período de pasantía finalizado",
+      `El período de registro para "${item.titulo}" ha culminado. Tu postulación permanece registrada en evaluación.`,
+      id
+    );
+
+    // 2. Notificar si el usuario la tenía guardada
+    if (this.guardadas.has(id)) {
+      this.addNotificacion(
+        "favorito_finalizado",
+        "Pasantía guardada finalizada",
+        `La pasantía "${item.titulo}" que guardaste en tus favoritos ha finalizado su período de registro.`,
+        id
+      );
+    }
+
+    this.updateTabCounts();
+    this.renderGrid();
+    this.showToast(`Período finalizado. "${item.titulo}" se movió al Historial privado.`, "info");
+  }
+
+  reabrirPeriodo(id) {
+    const item = this.pasantias.find(p => p.id === id);
+    if (!item) return;
+
+    item.estado = "Activo";
+    this.savePasantias();
+    this.updateTabCounts();
+    this.renderGrid();
+    this.showToast(`Pasantía "${item.titulo}" reactivada para postulación pública.`, "success");
+  }
+
+  toggleGuardarPasantia(id) {
+    const item = this.pasantias.find(p => p.id === id);
+    if (!item) return;
+
+    if (this.guardadas.has(id)) {
+      this.guardadas.delete(id);
+      this.saveGuardadas();
+      this.renderGrid();
+      this.showToast(`Pasantía quitada de tus favoritos`, "info");
+    } else {
+      this.guardadas.add(id);
+      this.saveGuardadas();
+      this.renderGrid();
+      this.showToast(`¡Pasantía guardada en tus favoritos! Te avisaremos si finaliza`, "success");
+    }
+  }
+
+  // --------------------------------------------------------------------------
+  // MODAL DE POSTULACIÓN CON CARGA DE CV (CUALQUIER FORMATO)
+  // --------------------------------------------------------------------------
+  openSolicitudModal(id) {
+    const item = this.pasantias.find(p => p.id === id);
+    if (!item) return;
+
+    this.activeSolPasantia = item;
+    if (this.solicitudModalTitle) this.solicitudModalTitle.textContent = "Postulación a Pasantía";
+    if (this.solicitudPasantiaSubtitle) this.solicitudPasantiaSubtitle.textContent = item.titulo;
+    if (this.solicitudPasantiaIdInput) this.solicitudPasantiaIdInput.value = item.id;
+
+    // Resetear formulario
+    if (this.formSolicitarPasantia) {
+      this.formSolicitarPasantia.reset();
+      const nombreInput = document.getElementById("solicitud-nombre");
+      const emailInput = document.getElementById("solicitud-email");
+      const telInput = document.getElementById("solicitud-telefono");
+      const carreraInput = document.getElementById("solicitud-carrera");
+
+      if (nombreInput) nombreInput.value = "Juan Alejandro Pérez";
+      if (emailInput) emailInput.value = "juan.alejandro@uni.edu.ni";
+      if (telInput) telInput.value = "+505 8899-7711";
+      if (carreraInput) carreraInput.value = "Ingeniería en Computación - 4to Año";
+    }
+
+    this.removeSelectedCV();
+    this.modalSolicitud?.classList.add("is-visible");
+  }
+
+  closeSolicitudModal() {
+    this.modalSolicitud?.classList.remove("is-visible");
+    this.activeSolPasantia = null;
+    this.tempCVFile = null;
+  }
+
+  initCVDropzone() {
+    if (!this.cvDropzone || !this.solicitudCvFileInput) return;
+
+    // Click para abrir selector de archivos
+    this.cvDropzone.addEventListener("click", () => {
+      this.solicitudCvFileInput.click();
+    });
+
+    this.solicitudCvFileInput.addEventListener("change", (e) => {
+      if (e.target.files && e.target.files[0]) {
+        this.handleCVFileSelected(e.target.files[0]);
+      }
+    });
+
+    // Drag & Drop
+    ['dragenter', 'dragover'].forEach(eventName => {
+      this.cvDropzone.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        this.cvDropzone.classList.add('drag-over');
       });
     });
 
-    this.initLucideIcons();
+    ['dragleave', 'drop'].forEach(eventName => {
+      this.cvDropzone.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        this.cvDropzone.classList.remove('drag-over');
+      });
+    });
+
+    this.cvDropzone.addEventListener('drop', (e) => {
+      if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+        this.handleCVFileSelected(e.dataTransfer.files[0]);
+      }
+    });
   }
 
-  toggleCardExpand(id) {
-    this.expandedCardId = this.expandedCardId === id ? null : id;
-    this.renderGrid();
+  handleCVFileSelected(file) {
+    if (!file) return;
+
+    const formattedSize = this.formatFileSize(file.size);
+    const fileName = file.name;
+    const fileType = file.type || "application/octet-stream";
+
+    // Leer como base64 para permitir posterior descarga por parte del admin
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      this.tempCVFile = {
+        name: fileName,
+        type: fileType,
+        size: formattedSize,
+        sizeBytes: file.size,
+        data: e.target.result
+      };
+
+      // Actualizar UI del dropzone
+      if (this.cvDropzonePrompt) this.cvDropzonePrompt.style.display = 'none';
+      if (this.cvSelectedPreview) this.cvSelectedPreview.style.display = 'flex';
+      if (this.cvPreviewName) this.cvPreviewName.textContent = fileName;
+      if (this.cvPreviewSize) this.cvPreviewSize.textContent = formattedSize;
+
+      this.initLucideIcons();
+    };
+
+    reader.onerror = () => {
+      this.showToast("No se pudo leer el archivo seleccionado.", "error");
+    };
+
+    reader.readAsDataURL(file);
   }
 
-  // ---------------------------------------------------------------------------
-  // 3. Postulación de Estudiantes con Checklist de Documentos (CU-03)
-  // ---------------------------------------------------------------------------
-  async solicitarPasantia(id) {
-    const oferta = this.pasantias.find(p => p.id === id);
-    if (!oferta) {
-      this.showToast("No se encontró la oferta de pasantía seleccionada.", "error");
+  removeSelectedCV() {
+    this.tempCVFile = null;
+    if (this.solicitudCvFileInput) this.solicitudCvFileInput.value = "";
+    if (this.cvDropzonePrompt) this.cvDropzonePrompt.style.display = 'flex';
+    if (this.cvSelectedPreview) this.cvSelectedPreview.style.display = 'none';
+  }
+
+  formatFileSize(bytes) {
+    if (!bytes || bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+  }
+
+  handleSolicitudSubmit(e) {
+    e.preventDefault();
+    if (!this.activeSolPasantia) return;
+
+    if (!this.tempCVFile) {
+      this.showToast("Por favor adjunta tu Currículum Vitae (CV) antes de enviar.", "error");
       return;
     }
 
-    if (this.modalAplicarOfertaId) this.modalAplicarOfertaId.value = id;
-    if (this.modalAplicarOfertaTitulo) this.modalAplicarOfertaTitulo.textContent = oferta.titulo || "Pasantía";
-    if (this.modalAplicarOfertaEmpresa) {
-      this.modalAplicarOfertaEmpresa.textContent = `Empresa: ${oferta.empresa_nombre || 'Entidad Receptora UNI'} · Modalidad: ${oferta.modalidad || 'Presencial'} · Duración: ${oferta.duracion || '160H'}`;
+    const nombre = document.getElementById("solicitud-nombre")?.value.trim() || "Estudiante UNI";
+    const email = document.getElementById("solicitud-email")?.value.trim() || "estudiante@uni.edu.ni";
+    const telefono = document.getElementById("solicitud-telefono")?.value.trim() || "+505 0000-0000";
+    const carrera = document.getElementById("solicitud-carrera")?.value.trim() || "Ingeniería UNI";
+    const mensaje = document.getElementById("solicitud-mensaje")?.value.trim() || "";
+
+    const nuevaSolicitud = {
+      id: "sol-" + Date.now(),
+      pasantiaId: this.activeSolPasantia.id,
+      pasantiaTitulo: this.activeSolPasantia.titulo,
+      nombre,
+      email,
+      telefono,
+      carrera,
+      cvFileName: this.tempCVFile.name,
+      cvFileType: this.tempCVFile.type,
+      cvFileSize: this.tempCVFile.size,
+      cvFileData: this.tempCVFile.data,
+      fechaSolicitud: new Date().toISOString(),
+      mensaje,
+      estado: "pendiente"
+    };
+
+    this.solicitudes.unshift(nuevaSolicitud);
+    this.saveSolicitudes();
+
+    // Notificación en el Drawer para el usuario
+    this.addNotificacion(
+      "solicitud_enviada",
+      "Solicitud Registrada",
+      `Te has postulado con éxito a "${this.activeSolPasantia.titulo}". Tu CV (${this.tempCVFile.name}) está en revisión.`,
+      this.activeSolPasantia.id
+    );
+
+    this.closeSolicitudModal();
+    this.renderGrid();
+    this.showToast(`¡Tu solicitud con CV para "${this.activeSolPasantia.titulo}" fue enviada exitosamente!`, "success");
+  }
+
+  // --------------------------------------------------------------------------
+  // PANEL ADMINISTRADOR DE CANDIDATOS (ACEPTAR / RECHAZAR & EXPORTAR)
+  // --------------------------------------------------------------------------
+  openCandidatosModal(pasantiaId) {
+    const item = this.pasantias.find(p => p.id === pasantiaId);
+    if (!item) return;
+
+    this.activeCandPasantia = item;
+    this.candFilterState = 'todos';
+    this.candSearchQuery = '';
+
+    if (this.candidatosSearchInput) this.candidatosSearchInput.value = '';
+    document.querySelectorAll(".btn-cand-filter").forEach(b => {
+      b.classList.toggle('active', b.dataset.filter === 'todos');
+    });
+
+    if (this.candidatosModalTitle) {
+      this.candidatosModalTitle.textContent = `Postulantes: ${item.titulo}`;
     }
-    if (this.modalAplicarMotivo) this.modalAplicarMotivo.value = "";
-
-    // Cargar documentos del estudiante para selección
-    if (this.modalAplicarDocsContainer) {
-      this.modalAplicarDocsContainer.innerHTML = `
-        <div style="text-align: center; padding: 16px; color: #64748B; font-size: 13px;">
-          Cargando tus documentos registrados...
-        </div>
-      `;
+    if (this.candidatosModalCompany) {
+      this.candidatosModalCompany.textContent = `${item.empresa || 'UNI'} • Modalidad ${item.modalidad} • ${item.duracion}`;
+    }
+    if (this.candidatosPasantiaStatusBadge) {
+      const isFin = item.estado === 'Finalizado';
+      this.candidatosPasantiaStatusBadge.textContent = isFin ? 'Historial (Finalizada)' : 'Convocatoria Activa';
+      this.candidatosPasantiaStatusBadge.className = 'badge-status-pasantia ' + (isFin ? 'status-historial' : 'status-activa');
     }
 
-    this.modalAplicar.classList.add("is-visible");
-    this.initLucideIcons();
+    this.renderCandidatosTable();
+    this.modalCandidatos?.classList.add("is-visible");
+  }
 
-    try {
-      const res = await fetch("/api/estudiantes/documentos");
-      const data = await res.json();
+  closeCandidatosModal() {
+    this.modalCandidatos?.classList.remove("is-visible");
+    this.activeCandPasantia = null;
+  }
 
-      if (res.ok && data.success && Array.isArray(data.documentos) && data.documentos.length > 0) {
-        this.modalAplicarDocsContainer.innerHTML = data.documentos.map(doc => {
-          const tipoLegible = (doc.tipo_documento || 'Otro').replace(/_/g, ' ');
-          return `
-            <label style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; cursor: pointer; transition: background 0.15s ease;">
-              <div style="display: flex; align-items: center; gap: 12px;">
-                <input type="checkbox" class="check-doc-autorizar" value="${doc.id}" checked style="width: 18px; height: 18px; accent-color: #033E8C; cursor: pointer;" />
-                <div>
-                  <span style="font-weight: 700; font-size: 13px; color: #0F172A; display: block;">
-                    📄 ${tipoLegible}
-                  </span>
-                  <span style="font-size: 11px; color: #64748B;">
-                    ${doc.nombre_original || 'documento'}
-                  </span>
+  renderCandidatosTable() {
+    if (!this.activeCandPasantia) return;
+    const pId = this.activeCandPasantia.id;
+
+    // Todas las solicitudes para esta pasantía
+    const allForPasantia = this.solicitudes.filter(s => s.pasantiaId === pId);
+
+    // Actualizar estadísticas de la barra superior
+    const total = allForPasantia.length;
+    const pendientes = allForPasantia.filter(s => s.estado === 'pendiente').length;
+    const aceptados = allForPasantia.filter(s => s.estado === 'aceptado').length;
+    const rechazados = allForPasantia.filter(s => s.estado === 'rechazado').length;
+
+    if (this.statCountTotal) this.statCountTotal.textContent = total;
+    if (this.statCountPendientes) this.statCountPendientes.textContent = pendientes;
+    if (this.statCountAceptados) this.statCountAceptados.textContent = aceptados;
+    if (this.statCountRechazados) this.statCountRechazados.textContent = rechazados;
+
+    // Filtrar por estado y buscador
+    let filtered = allForPasantia.filter(s => {
+      if (this.candFilterState !== 'todos' && s.estado !== this.candFilterState) {
+        return false;
+      }
+      if (this.candSearchQuery) {
+        const q = this.candSearchQuery;
+        const matches = s.nombre.toLowerCase().includes(q) ||
+                        s.email.toLowerCase().includes(q) ||
+                        (s.carrera && s.carrera.toLowerCase().includes(q));
+        if (!matches) return false;
+      }
+      return true;
+    });
+
+    if (this.candidatosFooterInfo) {
+      this.candidatosFooterInfo.textContent = `Mostrando ${filtered.length} de ${total} postulante${total === 1 ? '' : 's'}`;
+    }
+
+    if (filtered.length === 0) {
+      if (this.candidatosTableTbody) this.candidatosTableTbody.innerHTML = '';
+      if (this.candidatosEmptyState) this.candidatosEmptyState.style.display = 'flex';
+      this.initLucideIcons();
+      return;
+    }
+
+    if (this.candidatosEmptyState) this.candidatosEmptyState.style.display = 'none';
+
+    if (this.candidatosTableTbody) {
+      this.candidatosTableTbody.innerHTML = filtered.map((s, index) => {
+        const fechaFormat = this.formatFecha(s.fechaSolicitud);
+        const estadoBadge = s.estado === 'aceptado'
+          ? `<span class="badge-cand-estado cand-aceptado"><i data-lucide="check-circle-2"></i> Aceptado</span>`
+          : s.estado === 'rechazado'
+          ? `<span class="badge-cand-estado cand-rechazado"><i data-lucide="x-circle"></i> Rechazado</span>`
+          : `<span class="badge-cand-estado cand-pendiente"><i data-lucide="clock"></i> Pendiente</span>`;
+
+        // Botón o enlace de descarga de CV
+        const cvBtn = s.cvFileData
+          ? `<a href="${s.cvFileData}" download="${s.cvFileName || 'CV_Postulante'}" class="btn-descargar-cv" title="Descargar archivo">
+               <i data-lucide="paperclip"></i>
+               <span>${s.cvFileName || 'Ver CV'}</span>
+               <span class="cv-table-size">(${s.cvFileSize || 'Descargar'})</span>
+             </a>`
+          : `<span class="btn-descargar-cv is-placeholder" title="Documento registrado: ${s.cvFileName}">
+               <i data-lucide="file-text"></i>
+               <span>${s.cvFileName || 'CV.pdf'}</span>
+             </span>`;
+
+        return `
+          <tr data-sol-id="${s.id}">
+            <td class="td-index">${index + 1}</td>
+            <td class="td-postulante">
+              <div class="cand-cell-user">
+                <div class="cand-avatar">${s.nombre.charAt(0)}</div>
+                <div class="cand-user-meta">
+                  <span class="cand-name">${s.nombre}</span>
+                  <span class="cand-carrera">${s.carrera || 'Estudiante UNI'}</span>
                 </div>
               </div>
-              <a href="${doc.ruta_archivo}" target="_blank" rel="noopener noreferrer" style="font-size: 11.5px; color: #033E8C; text-decoration: underline; font-weight: 600;" onclick="event.stopPropagation();">
-                Visualizar
-              </a>
-            </label>
-          `;
-        }).join("");
-      } else {
-        this.modalAplicarDocsContainer.innerHTML = `
-          <div style="padding: 14px; background: #FFFBEB; border: 1px solid #FCD34D; border-radius: 8px; color: #92400E; font-size: 12.5px; line-height: 1.5;">
-            <strong>Aviso:</strong> No tienes documentos adjuntos en tu perfil (CV, récord policial, licencia, etc.). Puedes postularte directamente ahora y agregar tus documentos posteriormente desde <a href="/perfil" target="_blank" style="color: #1E3A8A; font-weight: 700; text-decoration: underline;">Mi Perfil</a>.
-          </div>
+            </td>
+            <td class="td-contacto">
+              <span class="cand-email">${s.email}</span>
+              <span class="cand-tel">${s.telefono || 'Sin teléfono'}</span>
+            </td>
+            <td class="td-fecha">${fechaFormat}</td>
+            <td class="td-cv">${cvBtn}</td>
+            <td class="td-estado">${estadoBadge}</td>
+            <td class="td-acciones">
+              <div class="cand-actions-btn-group">
+                <button type="button" class="btn-cand-action btn-cand-accept ${s.estado === 'aceptado' ? 'is-selected' : ''}" 
+                        onclick="window.pasantiasApp.aceptarCandidato('${s.id}')" title="Aceptar postulante">
+                  <i data-lucide="check"></i>
+                </button>
+                <button type="button" class="btn-cand-action btn-cand-reject ${s.estado === 'rechazado' ? 'is-selected' : ''}" 
+                        onclick="window.pasantiasApp.rechazarCandidato('${s.id}')" title="Rechazar postulante">
+                  <i data-lucide="x"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
         `;
-      }
+      }).join('');
+    }
+
+    this.initLucideIcons();
+  }
+
+  aceptarCandidato(solId) {
+    const solicitud = this.solicitudes.find(s => s.id === solId);
+    if (!solicitud) return;
+
+    solicitud.estado = "aceptado";
+    this.saveSolicitudes();
+
+    // Notificación para el estudiante
+    this.addNotificacion(
+      "candidato_aceptado",
+      "¡Felicidades! Fuiste Aceptado",
+      `Tu postulación para la "${solicitud.pasantiaTitulo}" ha sido ACEPTADA por el departamento evaluador.`,
+      solicitud.pasantiaId
+    );
+
+    this.renderCandidatosTable();
+    this.renderGrid();
+    this.showToast(`Candidato "${solicitud.nombre}" ACEPTADO correctamente. Se notificó al estudiante.`, "success");
+  }
+
+  rechazarCandidato(solId) {
+    const solicitud = this.solicitudes.find(s => s.id === solId);
+    if (!solicitud) return;
+
+    solicitud.estado = "rechazado";
+    this.saveSolicitudes();
+
+    // Notificación para el estudiante
+    this.addNotificacion(
+      "candidato_rechazado",
+      "Actualización de Postulación",
+      `Tu solicitud para "${solicitud.pasantiaTitulo}" ha sido finalizada con estatus no seleccionada.`,
+      solicitud.pasantiaId
+    );
+
+    this.renderCandidatosTable();
+    this.renderGrid();
+    this.showToast(`Candidato "${solicitud.nombre}" marcado como rechazado.`, "info");
+  }
+
+  // --------------------------------------------------------------------------
+  // EXPORTACIÓN A CSV CON BOM UTF-8 (COMPATIBLE CON EXCEL)
+  // --------------------------------------------------------------------------
+  exportarCandidatosCSV() {
+    if (!this.activeCandPasantia) return;
+    const pId = this.activeCandPasantia.id;
+    const candidatos = this.solicitudes.filter(s => s.pasantiaId === pId);
+
+    if (candidatos.length === 0) {
+      this.showToast("No hay candidatos registrados en esta pasantía para exportar.", "info");
+      return;
+    }
+
+    // Cabecera CSV
+    const headers = [
+      "#",
+      "ID Solicitud",
+      "Pasantía",
+      "Nombre Completo",
+      "Correo Electrónico",
+      "Teléfono",
+      "Carrera / Año",
+      "Nombre Archivo CV",
+      "Fecha de Solicitud",
+      "Estado Postulación",
+      "Mensaje de Presentación"
+    ];
+
+    // Helper para escapar comillas dobles en campos CSV
+    const escapeCSV = (val) => {
+      if (val === null || val === undefined) return '""';
+      const str = String(val).replace(/"/g, '""');
+      return `"${str}"`;
+    };
+
+    const rows = candidatos.map((c, idx) => [
+      escapeCSV(idx + 1),
+      escapeCSV(c.id),
+      escapeCSV(c.pasantiaTitulo),
+      escapeCSV(c.nombre),
+      escapeCSV(c.email),
+      escapeCSV(c.telefono || 'N/A'),
+      escapeCSV(c.carrera || 'N/A'),
+      escapeCSV(c.cvFileName || 'N/A'),
+      escapeCSV(c.fechaSolicitud),
+      escapeCSV(c.estado.toUpperCase()),
+      escapeCSV(c.mensaje || '')
+    ]);
+
+    // Unir todo con salto de línea estándar
+    const csvContent = [
+      headers.map(escapeCSV).join(";"),
+      ...rows.map(r => r.join(";"))
+    ].join("\r\n");
+
+    // Agregar UTF-8 BOM (\uFEFF) para que Excel abra acentos, tildes y caracteres especiales con total nitidez
+    const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+
+    const safeTitle = this.activeCandPasantia.titulo
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, '_')
+      .replace(/_+/g, '_');
+    const fechaDescarga = new Date().toISOString().slice(0, 10);
+    const fileName = `candidatos_${safeTitle}_${fechaDescarga}.csv`;
+
+    const downloadLink = document.createElement("a");
+    downloadLink.href = url;
+    downloadLink.setAttribute("download", fileName);
+    document.body.appendChild(downloadLink);
+    downloadLink.click();
+    document.body.removeChild(downloadLink);
+    URL.revokeObjectURL(url);
+
+    this.showToast(`¡Lista de postulantes (${candidatos.length}) exportada exitosamente a ${fileName}!`, "success");
+  }
+
+  formatFecha(isoStr) {
+    if (!isoStr) return '';
+    try {
+      const d = new Date(isoStr);
+      return d.toLocaleDateString('es-NI', { day: '2-digit', month: 'short', year: 'numeric' });
     } catch (_) {
-      this.modalAplicarDocsContainer.innerHTML = `
-        <div style="text-align: center; padding: 14px; color: #DC2626; font-size: 12.5px;">
-          No se pudieron cargar tus documentos. Puedes proceder con la postulación.
+      return isoStr;
+    }
+  }
+
+  // --------------------------------------------------------------------------
+  // SISTEMA DE NOTIFICACIONES
+  // --------------------------------------------------------------------------
+  addNotificacion(tipo, titulo, mensaje, pasantiaId = null) {
+    const nuevaNotif = {
+      id: "notif-" + Date.now() + "-" + Math.floor(Math.random() * 1000),
+      tipo,
+      titulo,
+      mensaje,
+      pasantiaId,
+      fecha: new Date().toISOString(),
+      leida: false
+    };
+
+    this.notificaciones.unshift(nuevaNotif);
+    this.saveNotificaciones();
+    this.renderNotificaciones();
+    this.updateNotifBadge();
+  }
+
+  renderNotificaciones() {
+    if (!this.drawerNotifsList) return;
+
+    if (this.notificaciones.length === 0) {
+      this.drawerNotifsList.innerHTML = `
+        <div class="empty-notifs-box">
+          <i data-lucide="bell-off"></i>
+          <p>No tienes notificaciones pendientes</p>
         </div>
       `;
+      this.initLucideIcons();
+      return;
+    }
+
+    this.drawerNotifsList.innerHTML = this.notificaciones.map(n => {
+      const iconName = n.tipo === 'candidato_aceptado' ? 'check-circle'
+                     : n.tipo === 'candidato_rechazado' ? 'alert-triangle'
+                     : n.tipo === 'pasantia_finalizada' || n.tipo === 'favorito_finalizado' ? 'clock'
+                     : 'bell';
+
+      const accentColor = n.tipo === 'candidato_aceptado' ? '#00C853'
+                        : n.tipo === 'candidato_rechazado' ? '#EF4444'
+                        : '#3B82F6';
+
+      return `
+        <div class="notification-card-item" data-notif-id="${n.id}">
+          <div class="notif-avatar-col">
+            <div class="notif-avatar-circle" style="border-color: ${accentColor}; color: ${accentColor};">
+              <i data-lucide="${iconName}"></i>
+            </div>
+          </div>
+          <div class="notif-body-col">
+            <h5 class="notif-title">${n.titulo}</h5>
+            <p class="notif-text">${n.mensaje}</p>
+            <div class="notif-buttons-row">
+              <span class="notif-time-badge">${this.formatFecha(n.fecha)}</span>
+              ${n.pasantiaId ? `
+                <button type="button" class="btn-notif-vermas" onclick="window.pasantiasApp.openPasantiaFromNotif(${n.pasantiaId})">
+                  Ver pasantía
+                </button>
+              ` : ''}
+            </div>
+          </div>
+          <button type="button" class="btn-notif-dismiss" onclick="window.pasantiasApp.dismissNotificacion('${n.id}')" title="Descartar notificación">
+            <i data-lucide="x"></i>
+          </button>
+        </div>
+      `;
+    }).join("");
+
+    this.initLucideIcons();
+  }
+
+  openPasantiaFromNotif(pasantiaId) {
+    this.closeDrawer();
+    const card = document.getElementById(`pasantia-card-${pasantiaId}`);
+    if (card) {
+      card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      card.classList.add('pasantia-card-highlight');
+      setTimeout(() => card.classList.remove('pasantia-card-highlight'), 2500);
+    } else {
+      this.showToast("La pasantía referida se encuentra archivada o no está disponible.", "info");
     }
   }
 
-  closeModalAplicar() {
-    this.modalAplicar?.classList.remove("is-visible");
-    this.formConfirmarAplicacion?.reset();
+  dismissNotificacion(notifId) {
+    this.notificaciones = this.notificaciones.filter(n => n.id !== notifId);
+    this.saveNotificaciones();
+    this.renderNotificaciones();
+    this.updateNotifBadge();
   }
 
-  async handleSubmitConfirmarAplicacion(e) {
-    e.preventDefault();
-    const id = this.modalAplicarOfertaId.value;
-    if (!id) return;
+  clearAllNotificaciones() {
+    this.notificaciones = [];
+    this.saveNotificaciones();
+    this.renderNotificaciones();
+    this.updateNotifBadge();
+    this.showToast("Notificaciones limpiadas", "info");
+  }
 
-    const checkedBoxes = this.modalAplicarDocsContainer?.querySelectorAll(".check-doc-autorizar:checked") || [];
-    const documentosCompartidos = Array.from(checkedBoxes).map(cb => parseInt(cb.value, 10));
-    const motivo = (this.modalAplicarMotivo?.value || "").trim() || "Postulación directa enviada desde el portal web de pasantías.";
-
-    if (this.btnSubmitAplicar) {
-      this.btnSubmitAplicar.disabled = true;
-      this.btnSubmitAplicar.textContent = "Enviando postulación...";
-    }
-
-    try {
-      const res = await fetch(`/api/pasantias/${id}/aplicar`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          motivo_postulacion: motivo,
-          documentos_compartidos: documentosCompartidos
-        })
-      });
-      const data = await res.json();
-
-      if (res.status === 201 && data.success) {
-        this.showToast(data.message || "¡Postulación enviada exitosamente!", "success");
-        this.closeModalAplicar();
-        await this.loadPasantias();
-        await this.loadDrawerNotifications();
-      } else {
-        // Mostrar mensaje detallado de validación académica (CU-01 / CU-09)
-        this.showToast(data.message || "No cumples con los criterios para postularte a esta pasantía.", "error");
-      }
-    } catch (err) {
-      this.showToast("Error de red al procesar la postulación.", "error");
-    } finally {
-      if (this.btnSubmitAplicar) {
-        this.btnSubmitAplicar.disabled = false;
-        this.btnSubmitAplicar.textContent = "Enviar Postulación Formal";
-      }
+  updateNotifBadge() {
+    const unread = this.notificaciones.filter(n => !n.leida).length;
+    if (this.notifBadgeCount) {
+      this.notifBadgeCount.textContent = unread;
+      this.notifBadgeCount.style.display = unread > 0 ? 'flex' : 'none';
     }
   }
 
-  // ---------------------------------------------------------------------------
-  // 4. Creación y Edición de Ofertas (POST/PUT /api/pasantias - CU-06)
-  // ---------------------------------------------------------------------------
-  openModalCrear() {
-    this.formAgregarPasantia.reset();
-    this.modalPasantiaId.value = "";
-    this.modalPasantiaTitle.textContent = "Publicar Nueva Pasantía";
-    this.modalPasantia.classList.add("is-visible");
-  }
-
-  async openModalEditar(id) {
-    try {
-      const res = await fetch(`/api/pasantias/${id}`);
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        this.showToast("No se pudo obtener la información de la pasantía", "error");
-        return;
-      }
-      const p = data.pasantia;
-      this.modalPasantiaId.value = p.id;
-      this.modalPasantiaTitle.textContent = `Editar Pasantía: ${p.titulo}`;
-      document.getElementById("modal-pasantia-titulo").value = p.titulo || "";
-      document.getElementById("modal-pasantia-tipo").value = p.tipo || "Académica";
-      document.getElementById("modal-pasantia-modalidad").value = p.modalidad || "Presencial";
-      document.getElementById("modal-pasantia-horas").value = p.duracion || "160H";
-      document.getElementById("modal-pasantia-experiencia").value = p.experiencia || "Sin experiencia";
-      document.getElementById("modal-pasantia-sector").value = p.sector || "Tecnología";
-      document.getElementById("modal-pasantia-ciudad").value = p.ciudad || "Managua";
-      document.getElementById("modal-pasantia-cupos").value = p.cupos || 1;
-      document.getElementById("modal-pasantia-remuneracion").value = p.remunerada ? "Remunerada" : "No remunerada";
-      document.getElementById("modal-pasantia-requisitos").value = p.requisitos || "";
-      document.getElementById("modal-pasantia-desc").value = p.descripcion || "";
-
-      this.modalPasantia.classList.add("is-visible");
-    } catch (_) {
-      this.showToast("Error al cargar datos para edición", "error");
-    }
+  // --------------------------------------------------------------------------
+  // MODAL CREAR PASANTÍA (ADMIN)
+  // --------------------------------------------------------------------------
+  openModal() {
+    this.modalOverlay?.classList.add("is-visible");
   }
 
   closeModal() {
-    this.modalPasantia?.classList.remove("is-visible");
+    this.modalOverlay?.classList.remove("is-visible");
     this.formAgregarPasantia?.reset();
   }
 
-  async handleSubmitPasantia(e) {
+  handleCreatePasantia(e) {
     e.preventDefault();
-    const id = this.modalPasantiaId.value;
-    const isEdit = Boolean(id);
+    const titulo = document.getElementById("modal-pasantia-titulo")?.value.trim() || "Nueva Pasantía";
+    const tipo = document.getElementById("modal-pasantia-tipo")?.value || "Académica";
+    const modalidad = document.getElementById("modal-pasantia-modalidad")?.value || "Presencial";
+    const duracion = document.getElementById("modal-pasantia-horas")?.value.trim() || "160H";
+    const experiencia = document.getElementById("modal-pasantia-experiencia")?.value || "Sin experiencia";
+    const sector = document.getElementById("modal-pasantia-sector")?.value || "Tecnología";
+    const ciudad = document.getElementById("modal-pasantia-ciudad")?.value || "Managua";
+    const descripcion = document.getElementById("modal-pasantia-desc")?.value.trim() || "Descripción institucional.";
 
-    const payload = {
-      titulo: document.getElementById("modal-pasantia-titulo").value.trim(),
-      tipo: document.getElementById("modal-pasantia-tipo").value,
-      modalidad: document.getElementById("modal-pasantia-modalidad").value,
-      duracion: document.getElementById("modal-pasantia-horas").value.trim(),
-      experiencia: document.getElementById("modal-pasantia-experiencia").value,
-      sector: document.getElementById("modal-pasantia-sector").value,
-      ciudad: document.getElementById("modal-pasantia-ciudad").value,
-      cupos: parseInt(document.getElementById("modal-pasantia-cupos").value, 10) || 1,
-      remunerada: document.getElementById("modal-pasantia-remuneracion").value === "Remunerada",
-      requisitos: document.getElementById("modal-pasantia-requisitos").value.trim(),
-      descripcion: document.getElementById("modal-pasantia-desc").value.trim(),
+    const nuevaPasantia = {
+      id: Date.now(),
+      titulo,
+      tipo,
+      modalidad,
+      duracion,
+      experiencia,
+      sector,
+      ciudad,
+      descripcion,
+      empresa: "Universidad Nacional de Ingeniería",
+      requisitos: "Estudiantes activos con carné vigente.",
+      beneficios: "Certificado oficial de prácticas y carta de recomendación.",
+      estado: "Activo"
     };
 
-    const url = isEdit ? `/api/pasantias/${id}` : "/api/pasantias";
-    const method = isEdit ? "PUT" : "POST";
-
-    try {
-      const res = await fetch(url, {
-        method: method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      });
-      const data = await res.json();
-
-      if (res.ok && data.success) {
-        this.showToast(data.message || (isEdit ? "Pasantía actualizada" : "Pasantía creada"), "success");
-        this.closeModal();
-        await this.loadPasantias();
-      } else {
-        this.showToast(data.message || "Error al guardar en base de datos", "error");
-      }
-    } catch (err) {
-      this.showToast("Error de comunicación con el servidor", "error");
-    }
+    this.pasantias.unshift(nuevaPasantia);
+    this.savePasantias();
+    this.closeModal();
+    this.updateTabCounts();
+    this.renderGrid();
+    this.showToast(`Pasantía "${titulo}" publicada con éxito.`, "success");
   }
 
-  // ---------------------------------------------------------------------------
-  // 5. Eliminación de Ofertas (DELETE /api/pasantias/<id>)
-  // ---------------------------------------------------------------------------
-  async eliminarPasantia(id) {
-    if (!confirm("¿Confirmas la eliminación permanente de esta oferta de pasantía y sus postulaciones?")) {
-      return;
-    }
-
-    try {
-      const res = await fetch(`/api/pasantias/${id}`, { method: "DELETE" });
-      const data = await res.json();
-      if (res.ok && data.success) {
-        this.showToast(data.message || "Oferta eliminada con éxito", "success");
-        await this.loadPasantias();
-      } else {
-        this.showToast(data.message || "Error al eliminar oferta", "error");
-      }
-    } catch (_) {
-      this.showToast("Error de red al intentar eliminar la oferta", "error");
-    }
-  }
-
-  // ---------------------------------------------------------------------------
-  // 6. Evaluación de Postulantes (GET/PUT /api/pasantias/<id>/aplicaciones - CU-07)
-  // ---------------------------------------------------------------------------
-  async verPostulantes(idOferta, tituloOferta) {
-    this.modalPostulantesTitle.textContent = `Postulantes: ${tituloOferta}`;
-    this.modalPostulantesBody.innerHTML = `
-      <div style="text-align: center; padding: 24px; color: #64748B;">Cargando postulaciones desde la base de datos...</div>
-    `;
-    this.modalPostulantes.classList.add("is-visible");
-
-    try {
-      const res = await fetch(`/api/pasantias/${idOferta}/aplicaciones`);
-      const data = await res.json();
-
-      if (!res.ok || !data.success || !Array.isArray(data.aplicaciones) || data.aplicaciones.length === 0) {
-        this.modalPostulantesBody.innerHTML = `
-          <div style="text-align: center; padding: 30px; color: #64748B;">
-            <p>Aún no hay estudiantes postulados para esta oferta de pasantía.</p>
-          </div>
-        `;
-        return;
-      }
-
-      this.modalPostulantesBody.innerHTML = `
-        <div style="display: flex; flex-direction: column; gap: 14px;">
-          ${data.aplicaciones.map(app => {
-            const cand = app.candidato || {};
-            const docs = cand.documentos || app.documentos || [];
-            return `
-              <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 16px; display: flex; flex-direction: column; gap: 10px;">
-                <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap;">
-                  <div>
-                    <h4 style="margin: 0 0 4px 0; font-size: 15px; color: #0F172A; font-weight: 700;">
-                      ${cand.nombre_completo || 'Estudiante Postulante'}
-                    </h4>
-                    <div style="font-size: 12px; color: #475569; display: flex; flex-wrap: wrap; gap: 8px;">
-                      <span>CUP: <strong>${cand.cup || 'N/A'}</strong></span>
-                      <span>·</span>
-                      <span>Cédula: <strong>${cand.cedula || 'N/A'}</strong></span>
-                      <span>·</span>
-                      <span>${cand.carrera || 'Carrera afín'} (${cand.anio_academico || 4}° Año)</span>
-                    </div>
-                    <div style="font-size: 12px; color: #64748B; margin-top: 4px;">
-                      Contacto: <strong>${cand.email || 'Sin correo'}</strong> ${cand.telefono_principal ? `· Tel: <strong>${cand.telefono_principal}</strong>` : ''}
-                    </div>
-                  </div>
-
-                  <div style="display: flex; align-items: center; gap: 8px;">
-                    <span style="font-size: 11.5px; font-weight: 700; padding: 4px 10px; border-radius: 12px; background: ${app.estado === 'Aceptado' ? '#DCFCE7' : app.estado === 'Rechazado' ? '#FEE2E2' : '#FEF3C7'}; color: ${app.estado === 'Aceptado' ? '#15803D' : app.estado === 'Rechazado' ? '#B91C1C' : '#B45309'};">
-                      ${app.estado}
-                    </span>
-                    <div style="display: flex; gap: 6px;">
-                      ${app.estado !== 'Aceptado' ? `
-                        <button type="button" style="background: #059669; color: #fff; border: none; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer;" onclick="window.pasantiasApp.cambiarEstadoPostulacion(${app.id_aplicacion}, 'Aceptado', ${idOferta}, '${tituloOferta.replace(/'/g, "\\'")}')">
-                          Aceptar
-                        </button>
-                      ` : ''}
-                      ${app.estado !== 'Rechazado' ? `
-                        <button type="button" style="background: #DC2626; color: #fff; border: none; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer;" onclick="window.pasantiasApp.cambiarEstadoPostulacion(${app.id_aplicacion}, 'Rechazado', ${idOferta}, '${tituloOferta.replace(/'/g, "\\'")}')">
-                          Rechazar
-                        </button>
-                      ` : ''}
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Documentos adjuntos del postulante (CV, Récord, Licencia, etc.) -->
-                <div style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 6px; padding: 10px 12px;">
-                  <span style="font-size: 11px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 6px;">
-                    Documentos y Expediente del Candidato (${docs.length}):
-                  </span>
-                  ${docs.length > 0 ? `
-                    <div style="display: flex; flex-wrap: wrap; gap: 8px;">
-                      ${docs.map(d => `
-                        <a href="${d.ruta_archivo}" target="_blank" rel="noopener noreferrer" style="background: #EFF6FF; border: 1px solid #BFDBFE; color: #1D4ED8; padding: 5px 10px; border-radius: 6px; font-size: 11.5px; text-decoration: none; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
-                          <span>📄 ${d.tipo_documento.replace(/_/g, ' ')}</span>
-                          <span style="color: #64748B; font-size: 10.5px;">(${d.nombre_original})</span>
-                        </a>
-                      `).join("")}
-                    </div>
-                  ` : `
-                    <p style="margin: 0; font-size: 12px; color: #94A3B8; font-style: italic;">
-                      El estudiante no ha adjuntado documentos (CV, récord policial, etc.) en su expediente aún.
-                    </p>
-                  `}
-                </div>
-              </div>
-            `;
-          }).join("")}
-        </div>
-      `;
-    } catch (_) {
-      this.modalPostulantesBody.innerHTML = `
-        <div style="text-align: center; padding: 24px; color: #DC2626;">Error al consultar postulantes.</div>
-      `;
-    }
-  }
-
-  async cambiarEstadoPostulacion(idAplicacion, nuevoEstado, idOferta, tituloOferta) {
-    try {
-      const res = await fetch(`/api/pasantias/aplicaciones/${idAplicacion}/estado`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nuevo_estado: nuevoEstado })
-      });
-      const data = await res.json();
-      if (res.ok && data.success) {
-        this.showToast(data.message || `Estado actualizado a ${nuevoEstado}`, "success");
-        // Refrescar modal de postulantes
-        await this.verPostulantes(idOferta, tituloOferta);
-        await this.loadPasantias();
-      } else {
-        this.showToast(data.message || "Error al actualizar estado", "error");
-      }
-    } catch (_) {
-      this.showToast("Error de red", "error");
-    }
-  }
-
-  closeModalPostulantes() {
-    this.modalPostulantes?.classList.remove("is-visible");
-  }
-
-  // ---------------------------------------------------------------------------
-  // 7. Notificaciones Dinámicas en el Drawer Lateral
-  // ---------------------------------------------------------------------------
-  async loadDrawerNotifications() {
-    if (!this.drawerNotificationsList || !this.currentUser) return;
-
-    if (this.currentUser.role === "Estudiante") {
-      this.drawerNotifHeading.textContent = "Mis Postulaciones Realizadas";
-      try {
-        const res = await fetch("/api/pasantias/mis-aplicaciones");
-        const data = await res.json();
-        if (res.ok && data.success && Array.isArray(data.aplicaciones) && data.aplicaciones.length > 0) {
-          this.drawerNotificationsList.innerHTML = data.aplicaciones.map(app => `
-            <div class="notification-card-item">
-              <div class="notif-avatar-col">
-                <div class="notif-avatar-circle"><i data-lucide="briefcase"></i></div>
-              </div>
-              <div class="notif-body-col">
-                <h5 class="notif-title">${app.oferta_titulo || 'Pasantía'}</h5>
-                <p class="notif-text">Empresa: ${app.empresa_nombre || 'UNI'} · Estado: <strong>${app.estado}</strong></p>
-                <div style="font-size: 11px; color: #94A3B8; margin-top: 4px;">Enviado: ${app.created_at || 'Reciente'}</div>
-              </div>
-            </div>
-          `).join("");
-          this.initLucideIcons();
-          return;
-        }
-      } catch (_) {}
-      this.drawerNotificationsList.innerHTML = `
-        <p style="color: #94A3B8; font-size: 12.5px; text-align: center; padding: 20px 0;">No tienes postulaciones activas en este momento.</p>
-      `;
-    } else if (this.currentUser.role === "Administrador") {
-      this.drawerNotifHeading.textContent = "Empresas Pendientes de Validación";
-      try {
-        const res = await fetch("/api/empresas");
-        const data = await res.json();
-        if (res.ok && data.success && Array.isArray(data.empresas)) {
-          const pendientes = data.empresas.filter(e => e.estado_aprobacion === "Pendiente_Aprobacion");
-          if (pendientes.length > 0) {
-            this.drawerNotificationsList.innerHTML = pendientes.map(emp => `
-              <div class="notification-card-item">
-                <div class="notif-avatar-col">
-                  <div class="notif-avatar-circle"><i data-lucide="building"></i></div>
-                </div>
-                <div class="notif-body-col">
-                  <h5 class="notif-title">${emp.nombre_comercial || emp.razon_social}</h5>
-                  <p class="notif-text">Sector: ${emp.sector_economico || 'Empresarial'} · RUC: ${emp.ruc || 'N/A'}</p>
-                  <div class="notif-buttons-row" style="margin-top: 8px;">
-                    <button class="btn-notif-aceptar" onclick="window.pasantiasApp.aprobarEmpresa(${emp.id_entidad})">Aprobar</button>
-                    <button class="btn-notif-vermas" style="background: #EF4444;" onclick="window.pasantiasApp.rechazarEmpresa(${emp.id_entidad})">Rechazar</button>
-                  </div>
-                </div>
-              </div>
-            `).join("");
-            this.initLucideIcons();
-            return;
-          }
-        }
-      } catch (_) {}
-      this.drawerNotificationsList.innerHTML = `
-        <p style="color: #94A3B8; font-size: 12.5px; text-align: center; padding: 20px 0;">Todas las empresas registradas han sido validadas.</p>
-      `;
-    } else {
-      this.drawerNotifHeading.textContent = "Notificaciones Institucionales";
-      this.drawerNotificationsList.innerHTML = `
-        <p style="color: #94A3B8; font-size: 12.5px; text-align: center; padding: 20px 0;">Sin notificaciones pendientes para tu rol.</p>
-      `;
-    }
-  }
-
-  async aprobarEmpresa(id) {
-    try {
-      const res = await fetch(`/api/empresas/${id}/aprobar`, { method: "PUT" });
-      const data = await res.json();
-      if (res.ok && data.success) {
-        this.showToast(data.message || "Empresa aprobada exitosamente", "success");
-        await this.loadDrawerNotifications();
-        await this.loadPasantias();
-      } else {
-        this.showToast(data.message || "Error al aprobar empresa", "error");
-      }
-    } catch (_) {
-      this.showToast("Error de conexión", "error");
-    }
-  }
-
-  async rechazarEmpresa(id) {
-    try {
-      const res = await fetch(`/api/empresas/${id}/rechazar`, { method: "PUT" });
-      const data = await res.json();
-      if (res.ok && data.success) {
-        this.showToast(data.message || "Empresa rechazada", "info");
-        await this.loadDrawerNotifications();
-      } else {
-        this.showToast(data.message || "Error al rechazar empresa", "error");
-      }
-    } catch (_) {
-      this.showToast("Error de conexión", "error");
-    }
-  }
-
-  // ---------------------------------------------------------------------------
-  // 8. Drawer UI & Filtros
-  // ---------------------------------------------------------------------------
-  openDrawer() {
-    document.body.classList.add("drawer-opened");
-    this.drawerBackdrop?.classList.add("is-active");
-    this.drawerPanel?.classList.add("is-open");
-  }
-
-  closeDrawer() {
-    document.body.classList.remove("drawer-opened");
-    this.drawerBackdrop?.classList.remove("is-active");
-    this.drawerPanel?.classList.remove("is-open");
-  }
-
+  // --------------------------------------------------------------------------
+  // DROPDOWNS & DRAWER
+  // --------------------------------------------------------------------------
   initFilterDropdowns() {
     const filterContainers = document.querySelectorAll(".filter-dropdown-container");
     filterContainers.forEach(container => {
@@ -888,7 +1378,7 @@ class PasantiasApp {
       menu.querySelectorAll(".filter-dropdown-item").forEach(item => {
         item.addEventListener("click", () => {
           const val = item.dataset.value;
-          const label = item.textContent.trim();
+          const label = item.dataset.label || item.textContent.trim();
           this.filters[filterKey] = val;
 
           const textSpan = button.querySelector(".pill-text");
@@ -903,7 +1393,7 @@ class PasantiasApp {
           }
 
           menu.classList.remove("show");
-          this.loadPasantias();
+          this.renderGrid();
         });
       });
     });
@@ -913,10 +1403,16 @@ class PasantiasApp {
     });
   }
 
-  initLucideIcons() {
-    if (window.lucide && typeof window.lucide.createIcons === "function") {
-      window.lucide.createIcons();
-    }
+  openDrawer() {
+    document.body.classList.add("drawer-opened");
+    this.drawerBackdrop?.classList.add("is-active");
+    this.drawerPanel?.classList.add("is-open");
+  }
+
+  closeDrawer() {
+    document.body.classList.remove("drawer-opened");
+    this.drawerBackdrop?.classList.remove("is-active");
+    this.drawerPanel?.classList.remove("is-open");
   }
 
   showToast(message, type = "info") {
@@ -929,12 +1425,12 @@ class PasantiasApp {
     }
 
     const toast = document.createElement("div");
-    toast.className = `toast-message toast-${type}`;
+    toast.className = `custom-floating-toast toast-${type}`;
     toast.style.cssText = `
-      background: ${type === 'success' ? '#059669' : type === 'error' ? '#DC2626' : '#033E8C'};
+      background: ${type === 'success' ? '#00C853' : type === 'error' ? '#EF4444' : '#0B1B48'};
       color: #FFFFFF;
       padding: 12px 18px;
-      border-radius: 8px;
+      border-radius: 10px;
       font-size: 13.5px;
       font-weight: 600;
       box-shadow: 0 10px 25px rgba(0,0,0,0.25);
@@ -946,14 +1442,22 @@ class PasantiasApp {
       z-index: 10000;
     `;
     toast.textContent = message;
+
     container.appendChild(toast);
     setTimeout(() => {
       toast.style.opacity = "0";
+      toast.style.transform = "translateY(-10px)";
       toast.style.transition = "all 0.25s ease";
       setTimeout(() => toast.remove(), 250);
     }, 3500);
   }
+
+  initLucideIcons() {
+    if (typeof lucide !== "undefined" && lucide.createIcons) {
+      lucide.createIcons();
+    }
+  }
 }
 
-// Inicialización de la aplicación
+// Inicializar y exponer en window
 window.pasantiasApp = new PasantiasApp();

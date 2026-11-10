@@ -1,0 +1,132 @@
+/* Alternancia visual de acceso/registro. Paleta compartida con el login. */
+.login-card [hidden] {
+  display: none !important;
+}
+
+.auth-switch {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding-top: 18px;
+  border-top: 1px solid var(--color-border);
+  color: var(--color-gray-dark);
+  font-size: 13px;
+}
+
+.btn-auth-switch {
+  min-height: 44px;
+  width: 100%;
+  padding: 10px 16px;
+  border: 1px solid var(--color-primary);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--color-primary);
+  font: 600 14px var(--font-main);
+  cursor: pointer;
+}
+
+.btn-auth-switch:hover {
+  background: #edf3fb;
+}
+
+.login-card button:focus-visible,
+.login-card a:focus-visible,
+.login-card .input-field:focus-visible {
+  outline: 3px solid var(--color-primary);
+  outline-offset: 3px;
+}
+
+.login-card.is-register {
+  max-width: 620px;
+}
+
+.register-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.register-fields .input-field {
+  padding: 12px 14px;
+}
+
+.register-fields .input-group-full {
+  grid-column: 1 / -1;
+}
+
+.register-fields select.input-field {
+  min-height: 43px;
+  cursor: pointer;
+}
+
+.register-fields select.input-field:invalid {
+  color: var(--color-gray-text);
+}
+
+.register-fields .input-field::placeholder {
+  color: #6B7280;
+  opacity: 1;
+}
+
+.is-register .btn-submit:disabled {
+  cursor: not-allowed;
+  opacity: 1;
+}
+
+.register-fields .input-group {
+  min-width: 0;
+}
+
+.field-help,
+.field-error {
+  font-size: 12px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.field-help {
+  color: #4B5563;
+}
+
+.auth-status {
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #B42318;
+  background: #FFF1F0;
+}
+
+.auth-status[data-state="success"] {
+  color: #166534;
+  background: #F0FDF4;
+}
+
+.auth-status[data-state="pending"] {
+  color: var(--color-primary);
+  background: #EDF3FB;
+}
+
+.field-error {
+  color: #B42318;
+  font-weight: 600;
+}
+
+.register-fields .input-field[aria-invalid="true"] {
+  border-color: #B42318;
+  background: #FFF7F6;
+}
+
+@media (max-width: 540px) {
+  .login-card {
+    padding: 28px 22px;
+  }
+
+  .register-fields {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+}

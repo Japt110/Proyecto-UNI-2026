@@ -25,10 +25,9 @@ function setStoredToken(token) {
 }
 
 function clearStoredToken() {
-  try {
-    sessionStorage.removeItem('uni_session_token');
-    localStorage.removeItem('uni_session_token');
-  } catch (_) {}
+  // Un almacén bloqueado no debe impedir la limpieza del otro.
+  try { sessionStorage.removeItem('uni_session_token'); } catch (_) {}
+  try { localStorage.removeItem('uni_session_token'); } catch (_) {}
 }
 
 /**
@@ -455,13 +454,12 @@ const API = {
      ======================================================================== */
 
   /**
-   * Realiza la autenticación polimórfica de usuario en el sistema (Paso 1).
+   * Realiza la autenticación polimórfica de usuario en el sistema.
    * @param {string} identifier - Email, Carné, Cédula o Código de Trabajador.
    * @param {string} password - Contraseña en texto plano.
-   * @param {boolean} remember_me - Indicador para recordar la sesión de forma prolongada (30 días).
-   * @returns {Promise<Object>} Respuesta JSON con estado de 2FA o token.
+   * @returns {Promise<Object>} Respuesta JSON del servidor con estado y datos de usuario.
    */
-  async login(identifier, password, remember_me = false) {
+  async login(identifier, password) {
     try {
       // Purgar cualquier caché estática previa de la sesión anterior
       ClientCache.invalidateAll();
@@ -469,32 +467,11 @@ const API = {
       const response = await fetchWithAuth(`${API_BASE}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ identifier, password, remember_me })
-      });
-      const result = await response.json();
-      return result;
-    } catch (error) {
-      console.error('Error de red en login:', error);
-      return { success: false, message: 'Error de conexión con el servidor.' };
-    }
-  },
-
-  /**
-   * Valida el código de verificación de 2 pasos enviado por correo (Paso 2).
-   * @param {string} code - Código OTP de 6 dígitos.
-   * @param {boolean} remember_me - Política de recordar sesión persistente.
-   * @returns {Promise<Object>} Resultado de la autenticación formal.
-   */
-  async verify2FA(code, remember_me = false) {
-    try {
-      const response = await fetchWithAuth(`${API_BASE}/auth/verify-2fa`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code, remember_me })
+        body: JSON.stringify({ identifier, password })
       });
       const result = await response.json();
       if (result.success) {
-        ClientCache.invalidateAll();
+        ClientCache.invalidateAll(); // Limpieza completa post-login
         if (result.session_token) {
           setStoredToken(result.session_token);
         }
@@ -510,44 +487,8 @@ const API = {
       }
       return result;
     } catch (error) {
-      console.error('Error de red en verify2FA:', error);
-      return { success: false, message: 'Error de conexión al verificar código 2FA.' };
-    }
-  },
-
-  /**
-   * Solicita el reenvío de un nuevo código 2FA por correo electrónico.
-   * @returns {Promise<Object>} Confirmación de reenvío.
-   */
-  async resend2FA() {
-    try {
-      const response = await fetchWithAuth(`${API_BASE}/auth/resend-2fa`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-      });
-      return await response.json();
-    } catch (error) {
-      console.error('Error de red en resend2FA:', error);
-      return { success: false, message: 'Error al solicitar nuevo código.' };
-    }
-  },
-
-  /**
-   * Registra una nueva cuenta de usuario en la plataforma.
-   * @param {Object} payload - Datos de la cuenta (nombre, usuario, email, rol, password, etc.)
-   * @returns {Promise<Object>} Resultado del registro.
-   */
-  async register(payload) {
-    try {
-      const response = await fetchWithAuth(`${API_BASE}/auth/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      return await response.json();
-    } catch (error) {
-      console.error('Error de red en register:', error);
-      return { success: false, message: 'Error de conexión durante el registro.' };
+      console.error('Error de red en login:', error);
+      return { success: false, message: 'Error de conexión con el servidor.' };
     }
   },
 
@@ -556,22 +497,31 @@ const API = {
    * @returns {Promise<Object>} Resultado del cierre de sesión.
    */
   async logout() {
+    let response;
     try {
-      await fetchWithAuth(`${API_BASE}/auth/logout`, { method: 'POST' });
-    } catch (_) {}
+      response = await fetchWithAuth(`${API_BASE}/auth/logout`, {
+        method: 'POST', credentials: 'same-origin', cache: 'no-store'
+      });
+    } catch (_) {
+      throw new Error('No se pudo contactar al servidor para cerrar la sesión. Inténtalo de nuevo.');
+    }
+    if (!response.ok) {
+      throw new Error('El servidor no pudo confirmar el cierre de sesión. Inténtalo de nuevo.');
+    }
     clearStoredToken();
     ClientCache.invalidateAll();
+    try { localStorage.removeItem('uni_current_view_role'); } catch (_) {}
     const path = (typeof window !== 'undefined' && window.location.pathname) ? window.location.pathname.toLowerCase() : "";
     const isLoginPage = path.endsWith("/login") || path.endsWith("/login.html") || path.endsWith("login.html");
     if (!isLoginPage) {
-      window.location.replace("login.html");
+      window.location.replace("/login");
     }
     return { success: true, message: 'Sesión cerrada correctamente' };
   },
 
   /**
    * Obtiene la información del usuario autenticado en la sesión actual.
-   * Valida el token de sesión almacenado (HMAC con 8 horas de duración).
+   * El servidor valida la firma y comprueba que la sesión no esté revocada.
    * Redirige inmediatamente a login.html si la sesión no es válida.
    * @returns {Promise<Object|null>} Objeto de usuario o null si no está autenticado.
    */
@@ -579,7 +529,7 @@ const API = {
     const token = getStoredToken();
     const tokenPayload = _parseSessionToken(token);
 
-    if (!tokenPayload || !tokenPayload.uid) {
+    if (!tokenPayload || !tokenPayload.uid || !tokenPayload.sid) {
       clearStoredToken();
       ClientCache.invalidateAll();
       const path = (typeof window !== 'undefined' && window.location.pathname) ? window.location.pathname.toLowerCase() : "";
@@ -591,7 +541,7 @@ const API = {
     }
 
     try {
-      const response = await fetchWithAuth(`${API_BASE}/auth/me`);
+      const response = await fetchWithAuth(`${API_BASE}/auth/me`, { cache: 'no-store' });
       if (response.status === 401 || response.status === 403 || response.status === 404) {
         clearStoredToken();
         ClientCache.invalidateAll();
@@ -602,6 +552,7 @@ const API = {
         }
         return null;
       }
+      if (!response.ok) return null;
       const data = await response.json();
       if (data && data.success && data.user) {
         if (data.session_token) setStoredToken(data.session_token);
@@ -609,11 +560,8 @@ const API = {
       }
     } catch (_) {}
 
-    return {
-      id: tokenPayload.uid,
-      email: tokenPayload.email,
-      role: tokenPayload.role
-    };
+    // No considerar autenticado al usuario basándose solo en datos locales.
+    return null;
   },
 
   /* ========================================================================
@@ -1043,73 +991,6 @@ const API = {
     } catch (error) {
       console.error('Error al subir imagen:', error);
       return { success: false, message: 'Error de red al subir la imagen.' };
-    }
-  },
-
-  /* ========================================================================
-     8. MÓDULO DE PASANTÍAS Y POSTULACIONES
-     ======================================================================== */
-
-  async getPasantias(filters = {}) {
-    try {
-      const params = new URLSearchParams(filters).toString();
-      const res = await fetchWithAuth(`${API_BASE}/pasantias${params ? '?' + params : ''}`);
-      return await res.json();
-    } catch (error) {
-      console.error('Error al listar pasantías:', error);
-      return { success: false, pasantias: [] };
-    }
-  },
-
-  async createPasantia(data) {
-    try {
-      const res = await fetchWithAuth(`${API_BASE}/pasantias`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
-      });
-      return await res.json();
-    } catch (error) {
-      console.error('Error al crear pasantía:', error);
-      return { success: false, message: 'Error de conexión con el servidor.' };
-    }
-  },
-
-  async aplicarPasantia(idOferta, mensaje = '') {
-    try {
-      const res = await fetchWithAuth(`${API_BASE}/pasantias/${idOferta}/aplicar`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mensaje })
-      });
-      return await res.json();
-    } catch (error) {
-      console.error('Error al aplicar a pasantía:', error);
-      return { success: false, message: 'Error de red al enviar la solicitud.' };
-    }
-  },
-
-  async getMisAplicaciones() {
-    try {
-      const res = await fetchWithAuth(`${API_BASE}/pasantias/mis-aplicaciones`);
-      return await res.json();
-    } catch (error) {
-      console.error('Error al obtener mis aplicaciones:', error);
-      return { success: false, aplicaciones: [] };
-    }
-  },
-
-  async cambiarEstadoAplicacion(idAplicacion, estado) {
-    try {
-      const res = await fetchWithAuth(`${API_BASE}/pasantias/aplicaciones/${idAplicacion}/estado`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ estado })
-      });
-      return await res.json();
-    } catch (error) {
-      console.error('Error al actualizar postulación:', error);
-      return { success: false, message: 'Error de red.' };
     }
   }
 };

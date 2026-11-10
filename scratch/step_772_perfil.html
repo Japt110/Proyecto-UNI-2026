@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mi Perfil Socio-Académico - Universidad Nacional de Ingeniería (UNI)</title>
+
+  <!-- Estilos base y de pasantías -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/variables.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/global.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/pasantias.css') }}">
+
+  <!-- Google Fonts: Inter & Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@500;600;700;800&display=swap"
+    rel="stylesheet">
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+
+<body class="mode-reading">
+  <div class="perfil-page-wrapper">
+
+    <!-- BARRA SUPERIOR CON LOGO UNI Y ACCIONES -->
+    <header class="pasantias-topbar" style="margin-bottom: 12px;">
+      <a href="/" class="topbar-logo-link" title="Universidad Nacional de Ingeniería">
+        <img src="{{ url_for('static', filename='img/uni_logo.png') }}" alt="Logo UNI" class="uni-topbar-logo">
+      </a>
+    </header>
+
+    <!-- TOPBAR ESPECÍFICO DEL PERFIL: REGRESAR Y EDITAR / GUARDAR -->
+    <div class="perfil-topbar">
+      <!-- Botón '< Regresar' -->
+      <a href="/" class="btn-perfil-regresar" title="Regresar al catálogo">
+        <i data-lucide="chevron-left"></i>
+        <span>Regresar</span>
+      </a>
+
+      <!-- Botón 'EDITAR' o 'GUARDAR' -->
+      <button type="button" id="btn-perfil-toggle-mode" class="btn-perfil-mode-toggle mode-editar">
+        <i data-lucide="edit-3" id="mode-icon"></i>
+        <span id="mode-text">EDITAR</span>
+      </button>
+    </div>
+
+    <!-- CONTENEDOR CARD GRISÁCEO DEL PERFIL -->
+    <main class="perfil-card-container">
+      
+      <!-- Avatar central grande -->
+      <div class="perfil-avatar-wrapper">
+        <div class="perfil-avatar-circle">
+          <i data-lucide="user"></i>
+        </div>
+      </div>
+
+      <div id="perfil-loading" style="text-align: center; color: #64748B; padding: 20px 0; font-size: 14px;">
+        Cargando ficha socio-académica desde la base de datos...
+      </div>
+
+      <!-- Formulario de campos de estudiante conectado a SQLAlchemy -->
+      <form id="perfil-form" class="perfil-form-grid" style="display: none;">
+        
+        <!-- Fila 1: Cédula & Código Único de persona -->
+        <div class="perfil-row-2col">
+          <div class="perfil-field-group">
+            <label for="perfil-cedula">Cédula de Identidad</label>
+            <input type="text" id="perfil-cedula" class="perfil-input" readonly />
+          </div>
+          <div class="perfil-field-group">
+            <label for="perfil-cup">Código Único Permanente (CUP)</label>
+            <input type="text" id="perfil-cup" class="perfil-input" readonly />
+          </div>
+        </div>
+
+        <!-- Fila 2: Nombres -->
+        <div class="perfil-field-group">
+          <label for="perfil-nombres">Nombres *</label>
+          <input type="text" id="perfil-nombres" class="perfil-input" required />
+        </div>
+
+        <!-- Fila 3: Apellidos -->
+        <div class="perfil-field-group">
+          <label for="perfil-apellidos">Apellidos *</label>
+          <input type="text" id="perfil-apellidos" class="perfil-input" required />
+        </div>
+
+        <!-- Fila 4: Carrera & Año Académico (Elegibilidad CU-01 / CU-09) -->
+        <div class="perfil-row-2col">
+          <div class="perfil-field-group">
+            <label for="perfil-carrera">Carrera Universitaria</label>
+            <input type="text" id="perfil-carrera" class="perfil-input" readonly />
+          </div>
+          <div class="perfil-field-group">
+            <label for="perfil-anio">Año Académico</label>
+            <input type="text" id="perfil-anio" class="perfil-input" readonly />
+          </div>
+        </div>
+
+        <!-- Fila 5: Estado de Matrícula & Beca -->
+        <div class="perfil-row-2col">
+          <div class="perfil-field-group">
+            <label for="perfil-estado-matricula">Estado de Matrícula</label>
+            <input type="text" id="perfil-estado-matricula" class="perfil-input" readonly />
+          </div>
+          <div class="perfil-field-group">
+            <label for="perfil-beca">Beneficio de Beca</label>
+            <input type="text" id="perfil-beca" class="perfil-input" readonly />
+          </div>
+        </div>
+
+        <!-- Fila 6: Teléfono & Correo Institucional -->
+        <div class="perfil-row-2col">
+          <div class="perfil-field-group">
+            <label for="perfil-telefono">Teléfono de Contacto</label>
+            <input type="text" id="perfil-telefono" class="perfil-input" />
+          </div>
+          <div class="perfil-field-group">
+            <label for="perfil-correo">Correo Electrónico</label>
+            <input type="email" id="perfil-correo" class="perfil-input" />
+          </div>
+        </div>
+
+        <!-- Fila 7: Procedencia Geográfica -->
+        <div class="perfil-row-2col">
+          <div class="perfil-field-group">
+            <label for="perfil-departamento">Departamento</label>
+            <input type="text" id="perfil-departamento" class="perfil-input" readonly />
+          </div>
+          <div class="perfil-field-group">
+            <label for="perfil-municipio">Municipio</label>
+            <input type="text" id="perfil-municipio" class="perfil-input" readonly />
+          </div>
+        </div>
+
+        <!-- Fila 8: Dirección Domiciliar -->
+        <div class="perfil-field-group">
+          <label for="perfil-direccion">Dirección Domiciliar</label>
+          <textarea id="perfil-direccion" class="perfil-textarea" rows="2" placeholder="Dirección exacta de residencia"></textarea>
+        </div>
+
+      </form>
+
+      <!-- Botón inferior derecho: Cerrar Sesión -->
+      <div class="perfil-footer-actions">
+        <button type="button" id="btn-cerrar-sesion-perfil" class="btn-perfil-eliminar-cuenta" style="border: none; cursor: pointer;">
+          <i data-lucide="power"></i>
+          <span>Cerrar Sesión</span>
+        </button>
+      </div>
+
+    </main>
+
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- Conexión CRUD directa con SQLAlchemy -->
+  <script>
+    document.addEventListener("DOMContentLoaded", async () => {
+      lucide.createIcons();
+
+      const body = document.body;
+      const btnToggle = document.getElementById("btn-perfil-toggle-mode");
+      const modeIcon = document.getElementById("mode-icon");
+      const modeText = document.getElementById("mode-text");
+      const perfilForm = document.getElementById("perfil-form");
+      const perfilLoading = document.getElementById("perfil-loading");
+      const btnLogout = document.getElementById("btn-cerrar-sesion-perfil");
+      let isEditing = false;
+
+      // Deshabilitar campos inicialmente en modo lectura
+      function setInputsEditable(editable) {
+        const editableIds = ["perfil-nombres", "perfil-apellidos", "perfil-telefono", "perfil-correo", "perfil-direccion"];
+        editableIds.forEach(id => {
+          const el = document.getElementById(id);
+          if (el) {
+            if (editable) {
+              el.removeAttribute("readonly");
+              el.style.backgroundColor = "#FFFFFF";
+              el.style.borderColor = "#033E8C";
+            } else {
+              el.setAttribute("readonly", true);
+              el.style.backgroundColor = "";
+              el.style.borderColor = "";
+            }
+          }
+        });
+      }
+
+      // 1. Cargar datos del perfil desde SQLAlchemy
+      async function cargarPerfil() {
+        try {
+          const res = await fetch("/api/pasantias/perfil");
+          if (res.status === 401) {
+            window.location.href = "/login";
+            return;
+          }
+          const data = await res.json();
+          if (!res.ok || !data.success) {
+            showToast("No se pudo cargar la información del perfil", "error");
+            return;
+          }
+
+          if (data.es_estudiante && data.perfil) {
+            const p = data.perfil;
+            document.getElementById("perfil-cedula").value = p.cedula || "N/A";
+            document.getElementById("perfil-cup").value = p.cup || "N/A";
+            document.getElementById("perfil-nombres").value = p.nombre || "";
+            document.getElementById("perfil-apellidos").value = p.apellido || "";
+            document.getElementById("perfil-carrera").value = p.carrera || "Ingeniería";
+            document.getElementById("perfil-anio").value = `${p.anio_academico}° Año (${p.matricula_periodo || 'Activo'})`;
+            document.getElementById("perfil-estado-matricula").value = p.matricula_estado || "Activa";
+            document.getElementById("perfil-beca").value = p.beca || "Sin Beca";
+            document.getElementById("perfil-telefono").value = p.telefono_principal || "";
+            document.getElementById("perfil-correo").value = p.email || "";
+            document.getElementById("perfil-departamento").value = p.departamento_principal || "Managua";
+            document.getElementById("perfil-municipio").value = p.municipio_principal || "Managua";
+            document.getElementById("perfil-direccion").value = p.direccion_principal || "";
+          } else if (data.usuario) {
+            const u = data.usuario;
+            document.getElementById("perfil-cup").value = `#ROL ${u.rol}`;
+            document.getElementById("perfil-nombres").value = u.username;
+            document.getElementById("perfil-apellidos").value = `(${u.rol})`;
+            document.getElementById("perfil-correo").value = u.email;
+            document.getElementById("perfil-carrera").value = "Administración Universitaria";
+            document.getElementById("perfil-anio").value = "Personal Institucional";
+            document.getElementById("perfil-estado-matricula").value = "Activo";
+            document.getElementById("perfil-beca").value = "N/A";
+          }
+
+          perfilLoading.style.display = "none";
+          perfilForm.style.display = "block";
+          setInputsEditable(false);
+        } catch (err) {
+          showToast("Error de red al consultar el perfil", "error");
+        }
+      }
+
+      await cargarPerfil();
+
+      // 2. Conmutar Modo Lectura / Modo Edición con persistencia CRUD en SQLAlchemy
+      btnToggle.addEventListener("click", async () => {
+        if (!isEditing) {
+          // Activar Modo Edición
+          isEditing = true;
+          body.classList.remove("mode-reading");
+          body.classList.add("mode-editing");
+          btnToggle.className = "btn-perfil-mode-toggle mode-guardar";
+          modeText.textContent = "GUARDAR";
+          modeIcon.setAttribute("data-lucide", "save");
+          setInputsEditable(true);
+          showToast("Modo de edición activado. Modifica tus datos de contacto o personales.", "info");
+          lucide.createIcons();
+        } else {
+          // Guardar cambios en SQLAlchemy vía PUT /api/pasantias/perfil
+          const payload = {
+            nombre: document.getElementById("perfil-nombres").value.trim(),
+            apellido: document.getElementById("perfil-apellidos").value.trim(),
+            telefono: document.getElementById("perfil-telefono").value.trim(),
+            correo: document.getElementById("perfil-correo").value.trim(),
+            email: document.getElementById("perfil-correo").value.trim(),
+            direccion: document.getElementById("perfil-direccion").value.trim(),
+          };
+
+          try {
+            const res = await fetch("/api/pasantias/perfil", {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+
+            if (res.ok && data.success) {
+              showToast(data.message || "Ficha actualizada exitosamente en la base de datos", "success");
+              isEditing = false;
+              body.classList.remove("mode-editing");
+              body.classList.add("mode-reading");
+              btnToggle.className = "btn-perfil-mode-toggle mode-editar";
+              modeText.textContent = "EDITAR";
+              modeIcon.setAttribute("data-lucide", "edit-3");
+              setInputsEditable(false);
+              lucide.createIcons();
+            } else {
+              showToast(data.message || "Error al actualizar la ficha en la base de datos", "error");
+            }
+          } catch (err) {
+            showToast("Error de red al intentar guardar los cambios", "error");
+          }
+        }
+      });
+
+      // 3. Logout
+      if (btnLogout) {
+        btnLogout.addEventListener("click", async () => {
+          if (confirm("¿Deseas cerrar tu sesión activa?")) {
+            try {
+              await fetch("/api/auth/logout", { method: "POST" });
+            } catch (_) {}
+            window.location.href = "/login";
+          }
+        });
+      }
+
+      function showToast(message, type = "info") {
+        let container = document.getElementById("toast-container");
+        if (!container) {
+          container = document.createElement("div");
+          container.id = "toast-container";
+          container.className = "toast-container";
+          document.body.appendChild(container);
+        }
+
+        const toast = document.createElement("div");
+        toast.style.cssText = `
+          background: ${type === 'success' ? '#059669' : type === 'error' ? '#DC2626' : '#033E8C'};
+          color: #FFFFFF;
+          padding: 12px 18px;
+          border-radius: 8px;
+          font-size: 13.5px;
+          font-weight: 600;
+          box-shadow: 0 10px 25px rgba(0,0,0,0.25);
+          margin-bottom: 10px;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          animation: fadeInToast 0.25s ease-out;
+          z-index: 10000;
+        `;
+        toast.textContent = message;
+        container.appendChild(toast);
+        setTimeout(() => {
+          toast.style.opacity = "0";
+          toast.style.transition = "all 0.25s ease";
+          setTimeout(() => toast.remove(), 250);
+        }, 3500);
+      }
+    });
+  </script>
+</body>
+
+</html>

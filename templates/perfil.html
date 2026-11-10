@@ -20,6 +20,146 @@
 
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    /* Estilos dinámicos de Edición de Perfil */
+    .btn-perfil-mode-toggle.mode-editar {
+      background: #111827;
+      color: #FFFFFF;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 22px;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 14px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .btn-perfil-mode-toggle.mode-editar:hover {
+      background: #1F2937;
+      transform: translateY(-1px);
+    }
+    .btn-perfil-mode-toggle.mode-guardar {
+      background: #059669 !important;
+      color: #FFFFFF !important;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 22px;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 14px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(5, 150, 105, 0.4) !important;
+      transition: all 0.2s ease;
+    }
+    .btn-perfil-mode-toggle.mode-guardar:hover {
+      background: #047857 !important;
+      transform: translateY(-1px);
+    }
+
+    /* Campos en modo lectura vs edición */
+    .mode-reading .perfil-input,
+    .mode-reading .perfil-select,
+    .mode-reading .perfil-textarea {
+      background-color: #CAD5E2 !important;
+      border: 1px solid transparent !important;
+      color: #334155 !important;
+      pointer-events: none !important;
+      cursor: default;
+    }
+    .mode-editing [data-profile-editable] {
+      background-color: #FFFFFF !important;
+      border: 1.5px solid #033E8C !important;
+      color: #0F172A !important;
+      pointer-events: auto !important;
+      cursor: text !important;
+    }
+    .mode-editing select[data-profile-editable] {
+      cursor: pointer !important;
+    }
+    .mode-editing [data-profile-editable]:focus {
+      outline: none;
+      border-color: #1D4ED8 !important;
+      box-shadow: 0 0 0 3px rgba(3, 62, 140, 0.2) !important;
+    }
+    .mode-editing .perfil-input:not([data-profile-editable]) {
+      background-color: #E2E8F0 !important;
+      color: #64748B !important;
+      border: 1px dashed #CBD5E1 !important;
+      pointer-events: none !important;
+    }
+
+    /* Switch de 2FA */
+    .security-toggle-container {
+      background: #E8EEF5;
+      border: 1px solid #A8B8CC;
+      border-radius: 12px;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-top: 10px;
+    }
+    .security-toggle-label {
+      font-size: 14px;
+      font-weight: 700;
+      color: #0B3268;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+    .security-toggle-label small {
+      font-size: 12px;
+      font-weight: 400;
+      color: #475569;
+    }
+    .switch-2fa {
+      position: relative;
+      display: inline-block;
+      width: 48px;
+      height: 26px;
+      flex-shrink: 0;
+    }
+    .switch-2fa input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .switch-slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: #CBD5E1;
+      transition: .25s;
+      border-radius: 26px;
+    }
+    .switch-slider:before {
+      position: absolute;
+      content: "";
+      height: 20px;
+      width: 20px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: .25s;
+      border-radius: 50%;
+    }
+    .switch-2fa input:checked + .switch-slider {
+      background-color: #033E8C;
+    }
+    .switch-2fa input:checked + .switch-slider:before {
+      transform: translateX(22px);
+    }
+  </style>
 </head>
 
 <body class="mode-reading">
@@ -32,7 +172,7 @@
       </a>
     </header>
 
-    <!-- TOPBAR ESPECÍFICO DEL PERFIL: REGRESAR Y EDITAR / GUARDAR -->
+    <!-- NAVEGACIÓN DEL PERFIL: REGRESAR Y EDITAR / GUARDAR -->
     <div class="perfil-topbar">
       <!-- Botón '< Regresar' -->
       <a href="/" class="btn-perfil-regresar" title="Regresar al catálogo">
@@ -40,146 +180,176 @@
         <span>Regresar</span>
       </a>
 
-      <div style="display: flex; align-items: center; gap: 10px;">
-        {% if usuario.rol == 'Administrador' %}
-        <a href="/admin/usuarios" class="btn-perfil-regresar" style="background: #E0E7FF; color: #3730A3; border-color: #C7D2FE;" title="Panel de Gestión de Usuarios">
-          <i data-lucide="users"></i>
-          <span>Gestión de Usuarios</span>
-        </a>
-        {% endif %}
-
-        <!-- Botón 'EDITAR' o 'GUARDAR' -->
-        <button type="button" id="btn-perfil-toggle-mode" class="btn-perfil-mode-toggle mode-editar">
-          <i data-lucide="edit-3" id="mode-icon"></i>
-          <span id="mode-text">EDITAR</span>
-        </button>
-      </div>
+      <!-- Botón de Modo Edición / Guardar -->
+      <button type="button" id="perfil-editar" class="btn-perfil-mode-toggle mode-editar" aria-controls="perfil-form">
+        <i data-lucide="pencil" id="perfil-mode-icon" aria-hidden="true"></i>
+        <span id="perfil-mode-text">EDITAR PERFIL</span>
+      </button>
     </div>
 
-    <!-- CONTENEDOR CARD GRISÁCEO DEL PERFIL -->
+    <!-- CONTENEDOR CARD PRINCIPAL DEL PERFIL -->
     <main class="perfil-card-container">
-      
-      <!-- Avatar central grande -->
+
+      <!-- Avatar del perfil con botón de edición -->
       <div class="perfil-avatar-wrapper">
         <div class="perfil-avatar-circle">
           <i data-lucide="user"></i>
         </div>
+        <button type="button" id="perfil-cambiar-foto" class="btn-perfil-avatar-edit" aria-label="Cambiar foto de perfil" title="Cambiar foto de perfil">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m16 3 5 5-12 12-6 1 1-6Z M14 5l5 5"/></svg>
+        </button>
+        <input id="perfil-foto" type="file" accept="image/jpeg,image/png,image/webp" hidden>
       </div>
+      <small id="perfil-foto-status" class="perfil-field-help" role="status" hidden></small>
 
-      <!-- Formulario de campos de estudiante conectado y pre-renderizado al instante -->
-      <form id="perfil-form" class="perfil-form-grid">
-        
-        <!-- Fila 1: Cédula & Código Único de persona -->
-        <div class="perfil-row-2col">
-          <div class="perfil-field-group">
-            <label for="perfil-cedula">Cédula de Identidad</label>
-            <input type="text" id="perfil-cedula" class="perfil-input" value="{{ perfil.cedula or 'N/A' }}" readonly />
-          </div>
-          <div class="perfil-field-group">
-            <label for="perfil-cup">Código Único Permanente (CUP)</label>
-            <input type="text" id="perfil-cup" class="perfil-input" value="{{ perfil.cup or '' }}" readonly />
-          </div>
-        </div>
+      <!-- MACROS DE CAMPOS FORMULARIOS -->
+      {% macro text_field(id, label, value, type='text', hint='', min=none, max=none, editable=true) -%}
+      <div class="perfil-field-group">
+        <label for="{{ id }}">{{ label }}</label>
+        <input id="{{ id }}" class="perfil-input" type="{{ type }}" value="{{ value if value is not none and value != '' else '' }}" {% if not editable %}readonly{% else %}readonly data-profile-editable{% endif %} placeholder="Pendiente"{% if hint %} aria-describedby="{{ id }}-help"{% endif %}{% if min is not none %} min="{{ min }}"{% endif %}{% if max is not none %} max="{{ max }}"{% endif %}>
+        {% if hint %}<small id="{{ id }}-help" class="perfil-field-help">{{ hint }}</small>{% endif %}
+      </div>
+      {%- endmacro %}
 
-        <!-- Fila 2: Nombres -->
-        <div class="perfil-field-group">
-          <label for="perfil-nombres">Nombres *</label>
-          <input type="text" id="perfil-nombres" class="perfil-input" value="{{ perfil.nombre or '' }}" readonly required />
-        </div>
+      {% macro choice_field(id, label, value, options, hint='', editable=true) -%}
+      <div class="perfil-field-group">
+        <label for="{{ id }}">{{ label }}</label>
+        <select id="{{ id }}" class="perfil-select" disabled{% if editable %} data-profile-editable{% endif %}{% if hint or not options %} aria-describedby="{{ id }}-help"{% endif %}>
+          <option value=""{% if value is none or value == '' %} selected{% endif %}>Pendiente</option>
+          {% for key, text in options %}
+          <option value="{{ key }}"{% if value is not none and value|string == key|string %} selected{% endif %}>{{ text }}</option>
+          {% endfor %}
+        </select>
+        {% if hint %}<small id="{{ id }}-help" class="perfil-field-help">{{ hint }}</small>{% endif %}
+      </div>
+      {%- endmacro %}
 
-        <!-- Fila 3: Apellidos -->
-        <div class="perfil-field-group">
-          <label for="perfil-apellidos">Apellidos *</label>
-          <input type="text" id="perfil-apellidos" class="perfil-input" value="{{ perfil.apellido or '' }}" readonly required />
-        </div>
+      {% macro catalog_field(id, label, value, options, hint='', editable=true) -%}
+      <div class="perfil-field-group">
+        <label for="{{ id }}">{{ label }}</label>
+        <select id="{{ id }}" class="perfil-select" disabled{% if editable %} data-profile-editable{% endif %}{% if hint or not options %} aria-describedby="{{ id }}-help"{% endif %}>
+          <option value=""{% if value is none or value == '' %} selected{% endif %}>Pendiente</option>
+          {% for key, text in options %}
+          <option value="{{ key }}"{% if value is not none and value|string == key|string %} selected{% endif %}>{{ text }}</option>
+          {% endfor %}
+        </select>
+        {% if hint or not options %}<small id="{{ id }}-help" class="perfil-field-help">{{ hint if hint else 'Catálogo configurado desde la base de datos.' }}</small>{% endif %}
+      </div>
+      {%- endmacro %}
 
-        <!-- Fila 4: Carrera & Año Académico (Elegibilidad CU-01 / CU-09) -->
-        <div class="perfil-row-2col">
-          <div class="perfil-field-group">
-            <label for="perfil-carrera">Carrera Universitaria</label>
-            <input type="text" id="perfil-carrera" class="perfil-input" value="{{ perfil.carrera or 'Ingeniería' }}" readonly />
-          </div>
-          <div class="perfil-field-group">
-            <label for="perfil-anio">Año Académico</label>
-            <input type="text" id="perfil-anio" class="perfil-input" value="{{ perfil.anio_academico }}° Año ({{ perfil.matricula_periodo or 'I Semestre 2026' }})" readonly />
-          </div>
-        </div>
+      <!-- FORMULARIO PRINCIPAL CONECTADO A SUPABASE -->
+      <form id="perfil-form" class="perfil-form-grid" role="form" onsubmit="return false;">
 
-        <!-- Fila 5: Estado de Matrícula & Beca -->
-        <div class="perfil-row-2col">
-          <div class="perfil-field-group">
-            <label for="perfil-estado-matricula">Estado de Matrícula</label>
-            <input type="text" id="perfil-estado-matricula" class="perfil-input" value="{{ perfil.matricula_estado or 'Activa' }}" readonly />
+        <!-- ====================================================================
+             1. INFORMACIÓN PERSONAL
+             ==================================================================== -->
+        <section class="perfil-section" aria-label="Información personal">
+          <h2 class="perfil-section-title">Información personal</h2>
+          <div class="perfil-section-fields">
+            <div class="perfil-row-2col">
+              {{ text_field('perfil-cedula', 'Cédula', profile.cedula, editable=true) }}
+              {{ text_field('perfil-cup', 'Código único de persona', profile.cup, hint='Identificador de la cuenta.', editable=false) }}
+              {{ text_field('perfil-nombres', 'Nombres', profile.nombre, editable=true) }}
+              {{ text_field('perfil-apellidos', 'Apellidos', profile.apellido, editable=true) }}
+              {{ choice_field('perfil-sexo', 'Sexo', profile.sexo, [('Femenino','Femenino'),('Masculino','Masculino'),('Otro','Otro')], editable=true) }}
+              {{ text_field('perfil-nacimiento', 'Fecha de nacimiento', profile.fecha_nacimiento, 'date', editable=true) }}
+              {{ text_field('perfil-edad', 'Edad', profile.edad, 'number', 'Se calcula a partir de la fecha de nacimiento.', 0, editable=false) }}
+              {{ choice_field('perfil-nacionalidad', 'Condición de nacionalidad', profile.dimension_nacional, [('Natural','Natural'),('Nacionalizado','Nacionalizado'),('Residente','Residente'),('No Residente','No residente')], editable=true) }}
+              {{ catalog_field('perfil-pais', 'País de origen', profile.id_pais_origen, catalogs.paises, editable=true) }}
+              {{ catalog_field('perfil-etnia', 'Etnia', profile.id_etnia, catalogs.etnias, editable=true) }}
+              {{ choice_field('perfil-estado-civil', 'Estado civil', profile.estado_civil, [('Soltero','Soltero/a'),('Casado','Casado/a'),('Union de Hecho','Unión de hecho'),('Divorciado','Divorciado/a'),('Viudo','Viudo/a')], editable=true) }}
+              {{ text_field('perfil-hijos', 'Número de hijos', profile.hijos, 'number', min=0, editable=true) }}
+            </div>
           </div>
-          <div class="perfil-field-group">
-            <label for="perfil-beca">Beneficio de Beca</label>
-            <input type="text" id="perfil-beca" class="perfil-input" value="{{ perfil.beca or 'Sin Beca' }}" readonly />
-          </div>
-        </div>
+        </section>
 
-        <!-- Fila 6: Teléfono & Correo Institucional -->
-        <div class="perfil-row-2col">
-          <div class="perfil-field-group">
-            <label for="perfil-telefono">Teléfono de Contacto</label>
-            <input type="text" id="perfil-telefono" class="perfil-input" value="{{ perfil.telefono_principal or '' }}" readonly />
-          </div>
-          <div class="perfil-field-group">
-            <label for="perfil-correo">Correo Electrónico</label>
-            <input type="email" id="perfil-correo" class="perfil-input" value="{{ perfil.email or '' }}" readonly />
-          </div>
-        </div>
+        <!-- ====================================================================
+             2. MÉTODOS DE CONTACTO
+             ==================================================================== -->
+        <section class="perfil-section" aria-labelledby="perfil-section-contacto">
+          <h2 class="perfil-section-title" id="perfil-section-contacto">Métodos de contacto</h2>
+          <div class="perfil-section-fields">
+            <div class="perfil-row-2col">
+              {{ text_field('perfil-correo', 'Correo electrónico', profile.email, 'email', editable=true) }}
+              {{ text_field('perfil-telefono', 'Teléfono', profile.telefono, 'tel', editable=true) }}
+              {{ choice_field('perfil-tipo-telefono', 'Tipo de teléfono', profile.tipo_telefono, [('Movil','Móvil'),('Fijo','Fijo'),('Whatsapp','WhatsApp')], editable=true) }}
+              {{ choice_field('perfil-telefono-principal', 'Teléfono principal', profile.telefono_principal, [(true,'Sí'),(false,'No')], editable=true) }}
+            </div>
+            <p class="perfil-field-help">Se muestra el teléfono principal o, si no hay uno definido, el primer teléfono registrado.</p>
 
-        <!-- Fila 7: Procedencia Geográfica -->
-        <div class="perfil-row-2col">
-          <div class="perfil-field-group">
-            <label for="perfil-departamento">Departamento</label>
-            <input type="text" id="perfil-departamento" class="perfil-input" value="{{ perfil.departamento_principal or 'Managua' }}" readonly />
-          </div>
-          <div class="perfil-field-group">
-            <label for="perfil-municipio">Municipio</label>
-            <input type="text" id="perfil-municipio" class="perfil-input" value="{{ perfil.municipio_principal or 'Managua' }}" readonly />
-          </div>
-        </div>
-
-        <!-- Fila 8: Dirección Domiciliar -->
-        <div class="perfil-field-group">
-          <label for="perfil-direccion">Dirección Domiciliar</label>
-          <textarea id="perfil-direccion" class="perfil-textarea" rows="2" placeholder="Dirección exacta de residencia" readonly>{{ perfil.direccion_principal or '' }}</textarea>
-        </div>
-
-        <!-- Fila 9: Seguridad y Verificación en Dos Pasos (2FA) -->
-        <div class="perfil-field-group" style="margin-top: 18px; padding: 16px 18px; background: #F8FAFC; border: 1.5px solid #E2E8F0; border-radius: 10px; transition: border-color 0.2s ease;">
-          <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap;">
-            <div>
-              <label style="font-size: 13.5px; font-weight: 700; color: #0F172A; display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
-                <i data-lucide="shield-check" style="width: 18px; height: 18px; color: #033E8C;"></i>
-                <span>Seguridad y Verificación en Dos Pasos (2FA)</span>
-              </label>
-              <p style="font-size: 12.5px; color: #64748B; margin: 0 0 10px 0; line-height: 1.4;">
-                Si está activa, el sistema solicitará un código OTP temporal enviado a tu correo electrónico cada vez que inicies sesión.
-              </p>
+            <div class="perfil-row-2col">
+              {{ choice_field('perfil-departamento', 'Departamento', profile.id_departamento, catalogs.departamentos, editable=true) }}
+              {{ choice_field('perfil-municipio', 'Municipio', profile.id_municipio, catalogs.municipios, 'Selecciona el municipio correspondiente al departamento.', editable=true) }}
+              {{ text_field('perfil-comunidad', 'Comunidad o barrio', profile.comunidad, editable=true) }}
+              {{ choice_field('perfil-zona', 'Zona', profile.zona, [('Urbano','Urbana'),('Rural','Rural')], editable=true) }}
             </div>
 
-            <span id="badge-2fa-status" style="font-size: 11.5px; font-weight: 700; padding: 4px 10px; border-radius: 12px; background: {% if usuario.has_2fa or perfil.has_2fa %}#DCFCE7; color: #15803D;{% else %}#F1F5F9; color: #64748B;{% endif %}">
-              {% if usuario.has_2fa or perfil.has_2fa %}2FA Habilitado{% else %}2FA Desactivado{% endif %}
-            </span>
+            <div class="perfil-field-group">
+              <label for="perfil-direccion">Dirección domiciliar</label>
+              <textarea readonly data-profile-editable id="perfil-direccion" class="perfil-textarea" placeholder="Pendiente">{{ profile.direccion }}</textarea>
+            </div>
+            {{ choice_field('perfil-direccion-principal', 'Dirección principal', profile.direccion_principal, [(true,'Sí'),(false,'No')], 'Se muestra la dirección principal o, si no hay una definida, la primera dirección registrada.', editable=true) }}
           </div>
+        </section>
 
-          <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; user-select: none; margin-top: 4px;">
-            <input type="checkbox" id="perfil-has-2fa" style="width: 19px; height: 19px; accent-color: #033E8C; cursor: pointer;" {% if usuario.has_2fa or perfil.has_2fa %}checked{% endif %} />
-            <span style="font-size: 13px; font-weight: 600; color: #1E293B;">
-              Habilitar código de verificación de 2 pasos al iniciar sesión
-            </span>
-          </label>
-        </div>
+        <!-- ====================================================================
+             3. EDUCACIÓN
+             ==================================================================== -->
+        <section class="perfil-section" aria-labelledby="perfil-section-educacion">
+          <h2 class="perfil-section-title" id="perfil-section-educacion">Educación</h2>
+          <div class="perfil-section-fields">
+            {{ catalog_field('perfil-carrera', 'Carrera', profile.id_carrera, catalogs.carreras, editable=true) }}
+            <p class="perfil-field-help">Educación previa: se muestra el registro más reciente.</p>
+            {{ text_field('perfil-centro-educativo', 'Centro educativo de procedencia', profile.centro_educativo, editable=true) }}
+            <div class="perfil-row-2col">
+              {{ text_field('perfil-educacion-tecnica', 'Educación técnica', profile.educacion_tecnica, editable=true) }}
+              {{ text_field('perfil-titulo', 'Título obtenido', profile.titulo_obtenido, editable=true) }}
+              {{ text_field('perfil-graduacion', 'Año de graduación', profile.anio_graduacion, 'number', min=1950, editable=true) }}
+            </div>
+          </div>
+        </section>
+
+        <!-- ====================================================================
+             4. MATRÍCULA
+             ==================================================================== -->
+        <section class="perfil-section" aria-labelledby="perfil-section-matricula">
+          <h2 class="perfil-section-title" id="perfil-section-matricula">Matrícula</h2>
+          <div class="perfil-section-fields">
+            <div class="perfil-row-2col">
+              {{ text_field('perfil-periodo', 'Período académico', profile.periodo_academico, editable=true) }}
+              {{ text_field('perfil-anio', 'Año académico', profile.anio, 'number', min=1, max=10, editable=true) }}
+              {{ choice_field('perfil-modalidad', 'Modalidad', profile.modalidad, [('Presencial','Presencial'),('Virtual','Virtual'),('Mixta','Mixta')], editable=true) }}
+              {{ choice_field('perfil-turno', 'Turno', profile.turno, [('Matutino','Matutino'),('Vespertino','Vespertino'),('Nocturno','Nocturno'),('Sabatino','Sabatino'),('Dominical','Dominical')], editable=true) }}
+              {{ text_field('perfil-grupo', 'Grupo', profile.grupo_clase, editable=true) }}
+              {{ catalog_field('perfil-beca', 'Beca', profile.id_beca, catalogs.becas, 'Asignada por la institución.', editable=true) }}
+            </div>
+            {{ choice_field('perfil-estado-matricula', 'Estado de matrícula', profile.estado_matricula, [('Activa','Activa'),('Retirada','Retirada'),('Suspendida','Suspendida'),('Finalizada','Finalizada')], 'Gestionado por la institución.', editable=true) }}
+          </div>
+        </section>
+
+        <!-- ====================================================================
+             5. SEGURIDAD Y 2FA
+             ==================================================================== -->
+        <section class="perfil-section" aria-label="Seguridad de la cuenta">
+          <div class="security-toggle-container">
+            <div class="security-toggle-label">
+              <span>Autenticación en Dos Pasos (2FA por Correo)</span>
+              <small>Solicitar un código OTP de 6 dígitos enviado a tu correo cada vez que inicies sesión.</small>
+            </div>
+            <label class="switch-2fa" title="Activar / Desactivar 2FA">
+              <input type="checkbox" id="perfil-has-2fa" {% if profile.has_2fa %}checked{% endif %} disabled data-profile-editable>
+              <span class="switch-slider"></span>
+            </label>
+          </div>
+        </section>
 
       </form>
 
       <!-- ====================================================================
-           SECCIÓN DE DOCUMENTOS PERSONALES (EXCLUSIVA PARA ESTUDIANTES)
+           6. DOCUMENTOS PERSONALES Y EXPEDIENTE (EXCLUSIVO ESTUDIANTES)
            ==================================================================== -->
       {% if es_estudiante %}
-      <section id="perfil-documentos-seccion" style="margin-top: 28px; padding-top: 22px; border-top: 1px solid #E2E8F0;">
+      <section id="perfil-documentos-seccion" style="width: 100%; margin-top: 28px; padding-top: 22px; border-top: 1px solid #CBD5E1;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
           <div>
             <h4 style="margin: 0; font-size: 15px; font-weight: 700; color: #0F172A;">Documentos Personales y Expediente</h4>
@@ -187,19 +357,19 @@
           </div>
           <button type="button" id="btn-mostrar-subir-doc" class="btn-perfil-mode-toggle" style="background: #033E8C; color: #fff; padding: 7px 16px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px;">
             <i data-lucide="upload" style="width: 14px; height: 14px;"></i>
-            <span>Subir Documento</span>
+            <span>SUBIR DOCUMENTO</span>
           </button>
         </div>
 
-        <!-- Formulario Desplegable para Subir Documento con Selector Específico -->
-        <div id="subir-doc-form-wrapper" style="display: none; background: #F8FAFC; border: 1.5px solid #CBD5E1; border-radius: 10px; padding: 18px; margin-bottom: 18px;">
+        <!-- Formulario Desplegable para Subir Documento -->
+        <div id="subir-doc-form-wrapper" style="display: none; background: #FFFFFF; border: 1.5px solid #033E8C; border-radius: 12px; padding: 18px; margin-bottom: 18px; box-shadow: 0 4px 14px rgba(0,0,0,0.06);">
           <form id="form-subir-documento" style="display: flex; flex-direction: column; gap: 14px;">
             <div style="display: flex; gap: 14px; flex-wrap: wrap;">
               <div style="flex: 1; min-width: 220px;">
                 <label for="doc-tipo-select" style="font-size: 12.5px; font-weight: 700; color: #1E293B; display: block; margin-bottom: 6px;">
-                  Tipo de Documento a Subir *
+                  Tipo de Documento *
                 </label>
-                <select id="doc-tipo-select" class="perfil-select" style="width: 100%; padding: 9px 12px; font-size: 13px; border-radius: 8px; border: 1.5px solid #033E8C; background: #FFFFFF; color: #0F172A; font-weight: 600;" required>
+                <select id="doc-tipo-select" class="perfil-select" style="width: 100%; padding: 9px 12px; font-size: 13px; border-radius: 8px; border: 1.5px solid #CBD5E1; background: #FFFFFF; color: #0F172A; font-weight: 600;" required>
                   <option value="CV" selected>Curriculum Vitae (CV)</option>
                   <option value="Record_Policial">Récord Policial</option>
                   <option value="Licencia_Conducir">Licencia de Conducir</option>
@@ -225,11 +395,11 @@
           </form>
         </div>
 
-        <!-- Lista de Documentos Pre-renderizada -->
+        <!-- Lista de Documentos Pre-renderizada desde Supabase -->
         <div id="perfil-documentos-lista" style="display: flex; flex-direction: column; gap: 8px;">
           {% if documentos and documentos|length > 0 %}
             {% for d in documentos %}
-              <div style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 8px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; gap: 12px;">
+              <div style="background: #FFFFFF; border: 1px solid #CBD5E1; border-radius: 8px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; gap: 12px;">
                 <div style="display: flex; align-items: center; gap: 12px;">
                   <div style="width: 38px; height: 38px; border-radius: 8px; background: #EFF6FF; color: #1D4ED8; display: flex; align-items: center; justify-content: center; font-size: 18px;">
                     📄
@@ -276,62 +446,191 @@
 
   </div>
 
-  <!-- Toast Notification Container -->
+  <!-- Contenedor Toast -->
   <div id="toast-container" class="toast-container"></div>
 
-  <!-- Lógica interactiva rápida y optimizada -->
+  <!-- Catálogo de municipios estructurado para filtrado dinámico -->
+  <script id="perfil-municipios-data" type="application/json">{{ catalogs.municipios_por_departamento | tojson }}</script>
+
+  <!-- LÓGICA DE EDICIÓN, VALIDACIÓN Y PERSISTENCIA CRUD CON SUPABASE -->
   <script>
     document.addEventListener("DOMContentLoaded", () => {
-      lucide.createIcons();
+      if (window.lucide) lucide.createIcons();
 
       const body = document.body;
-      const btnToggle = document.getElementById("btn-perfil-toggle-mode");
-      const modeIcon = document.getElementById("mode-icon");
-      const modeText = document.getElementById("mode-text");
+      const form = document.getElementById("perfil-form");
+      const editButton = document.getElementById("perfil-editar");
+      const editIcon = document.getElementById("perfil-mode-icon");
+      const editText = document.getElementById("perfil-mode-text");
+      const departmentSelect = document.getElementById("perfil-departamento");
+      const municipalitySelect = document.getElementById("perfil-municipio");
+      const municipalitiesData = JSON.parse(document.getElementById("perfil-municipios-data")?.textContent || "[]");
+      const identityInput = document.getElementById("perfil-cedula");
+      const birthInput = document.getElementById("perfil-nacimiento");
+      const ageInput = document.getElementById("perfil-edad");
+      const ageHelp = document.getElementById("perfil-edad-help");
+      const check2FA = document.getElementById("perfil-has-2fa");
       const btnLogout = document.getElementById("btn-cerrar-sesion-perfil");
+
       let isEditing = false;
 
-      // Habilitar / deshabilitar campos para edición
-      function setInputsEditable(editable) {
-        const editableIds = ["perfil-nombres", "perfil-apellidos", "perfil-telefono", "perfil-correo", "perfil-direccion"];
-        editableIds.forEach(id => {
-          const el = document.getElementById(id);
-          if (el) {
-            if (editable) {
-              el.removeAttribute("readonly");
-              el.style.backgroundColor = "#FFFFFF";
-              el.style.borderColor = "#033E8C";
-            } else {
-              el.setAttribute("readonly", true);
-              el.style.backgroundColor = "";
-              el.style.borderColor = "";
-            }
+      // 1. Cálculo dinámico de edad a partir de la fecha de nacimiento o cédula
+      function calculateAge() {
+        if (!ageInput) return;
+        const bval = birthInput ? birthInput.value : "";
+        if (bval) {
+          const birthDate = new Date(bval);
+          const today = new Date();
+          let age = today.getFullYear() - birthDate.getFullYear();
+          const m = today.getMonth() - birthDate.getMonth();
+          if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+            age--;
           }
+          if (age >= 0 && age < 120) {
+            ageInput.value = age;
+            if (ageHelp) ageHelp.textContent = `Calculada a partir de la fecha de nacimiento (${age} años).`;
+            return;
+          }
+        }
+        // Intentar parsear de la cédula (ej. 001-101002-1028B)
+        const cedVal = identityInput ? identityInput.value.trim() : "";
+        const mCed = /^\d{3}-(\d{2})(\d{2})(\d{2})-\d{4}[A-Za-z]$/.exec(cedVal);
+        if (mCed) {
+          const [, dd, mm, yy] = mCed;
+          const day = parseInt(dd, 10);
+          const month = parseInt(mm, 10);
+          let year = 2000 + parseInt(yy, 10);
+          const currentYear = new Date().getFullYear();
+          if (year > currentYear) year -= 100;
+          const today = new Date();
+          let age = today.getFullYear() - year;
+          if (today.getMonth() + 1 < month || (today.getMonth() + 1 === month && today.getDate() < day)) {
+            age--;
+          }
+          if (age >= 0 && age < 120) {
+            ageInput.value = age;
+            if (ageHelp) ageHelp.textContent = `Calculada a partir de la cédula (${age} años).`;
+            return;
+          }
+        }
+        if (ageHelp) ageHelp.textContent = "Se calcula a partir de la fecha de nacimiento.";
+      }
+
+      if (birthInput) birthInput.addEventListener("change", calculateAge);
+      if (identityInput) identityInput.addEventListener("input", calculateAge);
+      calculateAge();
+
+      // 2. Filtrado dinámico de municipios por departamento seleccionado
+      function updateMunicipalityOptions(keepSelected = false) {
+        if (!departmentSelect || !municipalitySelect) return;
+        const depId = departmentSelect.value;
+        const currentMun = municipalitySelect.value;
+        
+        // Guardar opción seleccionada actual
+        const filtered = municipalitiesData.filter(m => !depId || String(m.id_departamento) === String(depId));
+        
+        municipalitySelect.innerHTML = `<option value="">Pendiente</option>`;
+        filtered.forEach(m => {
+          const opt = document.createElement("option");
+          opt.value = m.id_municipio;
+          opt.textContent = m.nombre;
+          if (keepSelected && String(currentMun) === String(m.id_municipio)) {
+            opt.selected = true;
+          }
+          municipalitySelect.appendChild(opt);
         });
       }
 
-      // 1. Conmutar Modo Lectura / Modo Edición con persistencia CRUD en SQLAlchemy
-      btnToggle.addEventListener("click", async () => {
+      if (departmentSelect) {
+        departmentSelect.addEventListener("change", () => updateMunicipalityOptions(false));
+      }
+
+      // 3. Conmutar Modo Lectura / Modo Edición y Guardar en Supabase
+      editButton.addEventListener("click", async () => {
         if (!isEditing) {
+          // ACTIVAR MODO EDICIÓN
           isEditing = true;
           body.classList.remove("mode-reading");
           body.classList.add("mode-editing");
-          btnToggle.className = "btn-perfil-mode-toggle mode-guardar";
-          modeText.textContent = "GUARDAR";
-          modeIcon.setAttribute("data-lucide", "save");
-          setInputsEditable(true);
-          showToast("Modo de edición activado. Modifica tus datos de contacto o personales.", "info");
-          lucide.createIcons();
+          editButton.className = "btn-perfil-mode-toggle mode-guardar";
+          editText.textContent = "GUARDAR CAMBIOS";
+          editIcon.setAttribute("data-lucide", "save");
+
+          // Desbloquear todos los campos editables
+          form.querySelectorAll("[data-profile-editable]").forEach(field => {
+            if (field instanceof HTMLSelectElement) {
+              field.disabled = false;
+            } else if (field instanceof HTMLInputElement && field.type === "checkbox") {
+              field.disabled = false;
+            } else {
+              field.readOnly = false;
+            }
+          });
+
+          showToast("Modo de edición activado. Modifica tus campos y presiona Guardar Cambios.", "info");
+          if (window.lucide) lucide.createIcons();
+
+          const firstField = document.getElementById("perfil-nombres");
+          if (firstField) firstField.focus();
+
         } else {
-          const payload = {
-            nombre: document.getElementById("perfil-nombres").value.trim(),
-            apellido: document.getElementById("perfil-apellidos").value.trim(),
-            telefono: document.getElementById("perfil-telefono").value.trim(),
-            correo: document.getElementById("perfil-correo").value.trim(),
-            email: document.getElementById("perfil-correo").value.trim(),
-            direccion: document.getElementById("perfil-direccion").value.trim(),
-            has_2fa: Boolean(document.getElementById("perfil-has-2fa")?.checked),
+          // GUARDAR CAMBIOS EN SUPABASE
+          const getValue = id => {
+            const el = document.getElementById(id);
+            if (!el) return "";
+            if (el.type === "checkbox") return el.checked;
+            return el.value.trim();
           };
+
+          const payload = {
+            cedula: getValue("perfil-cedula"),
+            nombre: getValue("perfil-nombres"),
+            apellido: getValue("perfil-apellidos"),
+            sexo: getValue("perfil-sexo"),
+            fecha_nacimiento: getValue("perfil-nacimiento"),
+            dimension_nacional: getValue("perfil-nacionalidad"),
+            id_pais_origen: getValue("perfil-pais"),
+            id_etnia: getValue("perfil-etnia"),
+            estado_civil: getValue("perfil-estado-civil"),
+            hijos: getValue("perfil-hijos"),
+            email: getValue("perfil-correo"),
+            correo: getValue("perfil-correo"),
+            telefono: getValue("perfil-telefono"),
+            tipo_telefono: getValue("perfil-tipo-telefono"),
+            telefono_principal: getValue("perfil-telefono-principal") === "true",
+            id_departamento: getValue("perfil-departamento"),
+            id_municipio: getValue("perfil-municipio"),
+            comunidad: getValue("perfil-comunidad"),
+            zona: getValue("perfil-zona"),
+            direccion: getValue("perfil-direccion"),
+            direccion_principal: getValue("perfil-direccion-principal") === "true",
+            id_carrera: getValue("perfil-carrera"),
+            centro_educativo: getValue("perfil-centro-educativo"),
+            id_centro_educativo: getValue("perfil-centro-educativo"),
+            educacion_tecnica: getValue("perfil-educacion-tecnica"),
+            titulo_obtenido: getValue("perfil-titulo"),
+            anio_graduacion: getValue("perfil-graduacion"),
+            periodo_academico: getValue("perfil-periodo"),
+            anio: getValue("perfil-anio"),
+            modalidad: getValue("perfil-modalidad"),
+            turno: getValue("perfil-turno"),
+            grupo_clase: getValue("perfil-grupo"),
+            id_beca: getValue("perfil-beca"),
+            estado_matricula: getValue("perfil-estado-matricula"),
+            has_2fa: check2FA ? check2FA.checked : false,
+          };
+
+          if (!payload.nombre) {
+            showToast("El campo Nombres no puede estar vacío.", "error");
+            return;
+          }
+          if (!payload.email) {
+            showToast("El correo electrónico es obligatorio.", "error");
+            return;
+          }
+
+          editButton.disabled = true;
+          editText.textContent = "GUARDANDO...";
 
           try {
             const res = await fetch("/api/pasantias/perfil", {
@@ -342,56 +641,40 @@
             const data = await res.json();
 
             if (res.ok && data.success) {
-              showToast(data.message || "Ficha actualizada exitosamente en la base de datos", "success");
+              showToast(data.message || "Ficha y perfil actualizados exitosamente en Supabase.", "success");
               isEditing = false;
               body.classList.remove("mode-editing");
               body.classList.add("mode-reading");
-              btnToggle.className = "btn-perfil-mode-toggle mode-editar";
-              modeText.textContent = "EDITAR";
-              modeIcon.setAttribute("data-lucide", "edit-3");
-              setInputsEditable(false);
-              lucide.createIcons();
+              editButton.className = "btn-perfil-mode-toggle mode-editar";
+              editText.textContent = "EDITAR PERFIL";
+              editIcon.setAttribute("data-lucide", "pencil");
+
+              // Bloquear campos nuevamente
+              form.querySelectorAll("[data-profile-editable]").forEach(field => {
+                if (field instanceof HTMLSelectElement || (field instanceof HTMLInputElement && field.type === "checkbox")) {
+                  field.disabled = true;
+                } else {
+                  field.readOnly = true;
+                }
+              });
+
+              calculateAge();
+              if (window.lucide) lucide.createIcons();
             } else {
-              showToast(data.message || "Error al actualizar la ficha en la base de datos", "error");
+              showToast(data.message || "Error al actualizar la ficha en la base de datos.", "error");
             }
           } catch (err) {
-            showToast("Error de red al intentar guardar los cambios", "error");
+            showToast("Error de conexión al guardar los datos.", "error");
+          } finally {
+            editButton.disabled = false;
+            if (isEditing) {
+              editText.textContent = "GUARDAR CAMBIOS";
+            }
           }
         }
       });
 
-      // 2. Control interactivo del checkbox de 2FA
-      const check2FA = document.getElementById("perfil-has-2fa");
-      const badge2FA = document.getElementById("badge-2fa-status");
-      if (check2FA) {
-        check2FA.addEventListener("change", async (e) => {
-          const nuevoValor = e.target.checked;
-          try {
-            const res = await fetch("/api/auth/toggle-2fa", {
-              method: "PUT",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ has_2fa: nuevoValor })
-            });
-            const data = await res.json();
-            if (res.ok && data.success) {
-              showToast(data.message || (nuevoValor ? "2FA activado" : "2FA desactivado"), "success");
-              if (badge2FA) {
-                badge2FA.textContent = nuevoValor ? "2FA Habilitado" : "2FA Desactivado";
-                badge2FA.style.background = nuevoValor ? "#DCFCE7" : "#F1F5F9";
-                badge2FA.style.color = nuevoValor ? "#15803D" : "#64748B";
-              }
-            } else {
-              showToast(data.message || "Error al cambiar estado de 2FA", "error");
-              e.target.checked = !nuevoValor;
-            }
-          } catch (_) {
-            showToast("Error de conexión al actualizar 2FA", "error");
-            e.target.checked = !nuevoValor;
-          }
-        });
-      }
-
-      // 3. Gestión de Documentos Personales (Exclusivo Estudiantes)
+      // 4. Subida y Eliminación de Documentos
       const btnMostrarSubirDoc = document.getElementById("btn-mostrar-subir-doc");
       const subirDocFormWrapper = document.getElementById("subir-doc-form-wrapper");
       const btnCancelarSubirDoc = document.getElementById("btn-cancelar-subir-doc");
@@ -421,6 +704,10 @@
             return;
           }
 
+          const btnSubmit = document.getElementById("btn-guardar-subir-doc");
+          btnSubmit.disabled = true;
+          btnSubmit.textContent = "Subiendo...";
+
           const formData = new FormData();
           formData.append("tipo_documento", tipo);
           formData.append("archivo", fileInput.files[0]);
@@ -432,7 +719,7 @@
             });
             const data = await res.json();
             if (res.ok && data.success) {
-              showToast(data.message || "Documento guardado exitosamente", "success");
+              showToast(data.message || "Documento guardado exitosamente en base de datos", "success");
               formSubirDocumento.reset();
               subirDocFormWrapper.style.display = "none";
               await refrescarDocumentos();
@@ -441,6 +728,9 @@
             }
           } catch (_) {
             showToast("Error de conexión al subir el documento", "error");
+          } finally {
+            btnSubmit.disabled = false;
+            btnSubmit.textContent = "Guardar en Base de Datos";
           }
         });
       }
@@ -470,7 +760,7 @@
           const tipoLabel = d.tipo_documento.replace(/_/g, ' ');
           const kb = Math.round((d.tamano_bytes || 0) / 1024);
           return `
-            <div style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 8px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; gap: 12px;">
+            <div style="background: #FFFFFF; border: 1px solid #CBD5E1; border-radius: 8px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; gap: 12px;">
               <div style="display: flex; align-items: center; gap: 12px;">
                 <div style="width: 38px; height: 38px; border-radius: 8px; background: #EFF6FF; color: #1D4ED8; display: flex; align-items: center; justify-content: center; font-size: 18px;">
                   📄
@@ -497,7 +787,7 @@
             </div>
           `;
         }).join("");
-        lucide.createIcons();
+        if (window.lucide) lucide.createIcons();
       }
 
       window.eliminarDocumentoEstudiante = async (idDoc) => {
@@ -512,11 +802,11 @@
             showToast(data.message || "Error al eliminar documento", "error");
           }
         } catch (_) {
-          showToast("Error de conexión", "error");
+          showToast("Error de conexión al eliminar documento", "error");
         }
       };
 
-      // 3. Logout
+      // 5. Cerrar Sesión
       if (btnLogout) {
         btnLogout.addEventListener("click", async () => {
           if (confirm("¿Deseas cerrar tu sesión activa?")) {
@@ -528,6 +818,7 @@
         });
       }
 
+      // 6. Notificaciones Toast
       function showToast(message, type = "info") {
         let container = document.getElementById("toast-container");
         if (!container) {

@@ -4,12 +4,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Bolsa de Pasantías - Universidad Nacional de Ingeniería (UNI)</title>
+  <title>Pasantías - Universidad Nacional de Ingeniería (UNI)</title>
   
   <!-- Estilos base y variables -->
   <link rel="stylesheet" href="{{ url_for('static', filename='css/variables.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/global.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/layout-components.css') }}">
+  <!-- Nueva hoja de estilos fiel al PDF -->
   <link rel="stylesheet" href="{{ url_for('static', filename='css/pasantias.css') }}">
 
   <!-- Google Fonts: Inter & Outfit -->
@@ -23,12 +24,12 @@
   <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 
-<body>
+<body data-account-role="{{ viewer_role }}">
   <!-- Contenedor Principal de la Página de Pasantías -->
-  <div id="pasantias-wrapper" class="pasantias-page-wrapper">
+  <div id="pasantias-wrapper" class="pasantias-page-wrapper {{ 'view-admin-mode' if viewer_is_admin else 'view-usuario-mode' }}">
 
     <!-- ====================================================================
-         HEADER INSTITUCIONAL REAL
+         HEADER INSTITUCIONAL (PÁGINAS 3, 5, 6 DEL PDF)
          ==================================================================== -->
     <header class="pasantias-topbar">
       <!-- Logotipo Oficial UNI a la izquierda -->
@@ -36,10 +37,18 @@
         <img src="{{ url_for('static', filename='img/uni_logo.png') }}" alt="Logo UNI" class="uni-topbar-logo">
       </a>
 
-      <!-- Rol activo en BD y Avatar de Usuario a la derecha -->
-      <div class="topbar-actions-group" style="display: flex; align-items: center; gap: 14px;">
-        <span id="topbar-user-badge" style="display: none; padding: 6px 14px; border-radius: 20px; font-size: 11.5px; font-weight: 700; letter-spacing: 0.5px; background: #033E8C; color: #FFFFFF; text-transform: uppercase;"></span>
+      <!-- Indicador de rol activo + Notificaciones + Avatar de usuario -->
+      <div class="topbar-actions-group">
+        <!-- Badge que muestra el rol del usuario logueado (no es un toggle manual) -->
+        <div id="role-indicator-badge" class="role-indicator-badge" title="Rol de usuario actual"></div>
 
+        <!-- Botón de Notificaciones con Badge de contador -->
+        <button type="button" id="btn-notif-trigger" class="topbar-notif-btn" title="Notificaciones del sistema">
+          <i data-lucide="bell"></i>
+          <span id="notif-badge-count" class="topbar-notif-badge">0</span>
+        </button>
+
+        <!-- Avatar circular — Abre el Drawer de Ajustes -->
         <button type="button" id="btn-profile-trigger" class="topbar-profile-avatar-btn" title="Abrir Ajustes y Perfil">
           <i data-lucide="user"></i>
         </button>
@@ -47,21 +56,16 @@
     </header>
 
     <!-- ====================================================================
-         BOTÓN "AGREGAR PASANTIA" (EXCLUSIVO ADMIN / EMPRESA)
+         BOTÓN "AGREGAR PASANTIA" (VISTA ADMIN - PÁGINA 3 DEL PDF)
          ==================================================================== -->
-    <div class="admin-action-container" id="admin-action-container" style="display: none; align-items: center; gap: 10px;">
-      <a href="/admin/usuarios" id="btn-topbar-admin-usuarios" style="display: none; text-decoration: none; background: #033E8C; color: #FFFFFF; padding: 10px 18px; border-radius: 8px; font-weight: 700; font-size: 13px; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(3, 62, 140, 0.2);">
-        <i data-lucide="users" style="width: 16px; height: 16px;"></i>
-        <span>USUARIOS DEL SISTEMA</span>
-      </a>
+    <div class="admin-action-container">
       <button type="button" id="btn-agregar-pasantia" class="btn-agregar-pasantia">
-        <i data-lucide="plus" style="width: 18px; height: 18px; margin-right: 6px;"></i>
         <span>AGREGAR PASANTIA</span>
       </button>
     </div>
 
     <!-- ====================================================================
-         BARRA DE BÚSQUEDA Y FILTROS TIPO PASTILLA
+         BARRA DE BÚSQUEDA Y FILTROS TIPO PASTILLA (PÁGINAS 3, 5, 6 DEL PDF)
          ==================================================================== -->
     <section class="pasantias-filter-section">
       <!-- Input de búsqueda centrado -->
@@ -70,7 +74,7 @@
           type="text" 
           id="pasantias-search-input" 
           class="pasantias-search-input" 
-          placeholder="Buscar por título, empresa o requisitos..." 
+          placeholder="Buscar pasantia" 
           autocomplete="off" 
         />
         <i data-lucide="search" class="pasantias-search-icon"></i>
@@ -92,7 +96,7 @@
           </div>
         </div>
 
-        <!-- Filtro 2: MODALIDAD -->
+        <!-- Filtro 2: MODALIDAD (En la Pág 6 se ilumina en azul sólido como 'PRESENCIAL') -->
         <div class="filter-dropdown-container" data-filter-key="modalidad">
           <button type="button" class="filter-pill-button" id="btn-filter-modalidad">
             <span class="pill-text">MODALIDAD</span>
@@ -141,24 +145,38 @@
     </section>
 
     <!-- ====================================================================
-         INDICADOR DE ESTADO "ACTIVO"
+         BARRA DE PESTAÑAS: ACTIVAS / HISTORIAL (PRIVADO ADMIN)
          ==================================================================== -->
-    <div class="pasantias-status-indicator">
-      <span class="status-dot-green"></span>
-      <span class="status-text-label" id="status-text-count">Cargando pasantías...</span>
+    <div class="pasantias-tabs-bar">
+      <div class="pasantias-tabs-nav">
+        <button type="button" class="pasantias-tab-btn active" id="tab-btn-activas" data-tab="activo">
+          <span class="status-dot-green"></span>
+          <span>Activas</span>
+          <span class="tab-count-badge" id="count-activas">0</span>
+        </button>
+        <button type="button" class="pasantias-tab-btn tab-admin-only" id="tab-btn-historial" data-tab="historial">
+          <i data-lucide="archive"></i>
+          <span>Historial</span>
+          <span class="tab-private-badge"><i data-lucide="lock"></i> Admin</span>
+          <span class="tab-count-badge" id="count-historial">0</span>
+        </button>
+      </div>
+      <div id="tab-context-info" class="tab-context-info">
+        <span id="tab-subtitle-text">Pasantías vigentes disponibles para postulación</span>
+      </div>
     </div>
 
     <!-- ====================================================================
-         GRID DE TARJETAS DE PASANTÍAS (ALIMENTADA DESDE SQLALCHEMY)
+         GRID DE TARJETAS DE PASANTÍAS (3 COLUMNAS)
          ==================================================================== -->
     <main id="pasantias-grid" class="pasantias-grid-container">
-      <!-- Se inyecta dinámicamente con fetch('/api/pasantias') -->
+      <!-- Se inyecta dinámicamente desde pasantias.js con tarjetas fieles al PDF -->
     </main>
 
   </div>
 
   <!-- ====================================================================
-       DRAWER LATERAL DE AJUSTES & NOTIFICACIONES EN VIVO
+       DRAWER LATERAL DE AJUSTES & NOTIFICACIONES (PÁGINA 7 DEL PDF)
        ==================================================================== -->
   <div id="uni-drawer-backdrop" class="uni-backdrop"></div>
   
@@ -175,55 +193,67 @@
       <div class="drawer-profile-avatar-circle">
         <i data-lucide="user"></i>
       </div>
-      <h3 class="drawer-user-name" id="drawer-user-name">Usuario</h3>
-      <span class="drawer-user-cup" id="drawer-user-cup">#CUP</span>
-      <span id="drawer-user-email" style="font-size: 12px; color: #64748B; margin-top: 4px; display: block;"></span>
+      <h3 class="drawer-user-name">{{ viewer_name }}</h3>
+      <span class="drawer-user-cup">{{ '#CUP ' ~ viewer_code if viewer_code else viewer_role }}</span>
 
       <!-- Botón 'Ajustes' con icono de engranaje -->
       <a href="/perfil" class="btn-drawer-ajustes" id="btn-drawer-ajustes" title="Ir a Configuración de Perfil">
         <i data-lucide="settings"></i>
-        <span>Mi Ficha / Perfil</span>
+        <span>Ajustes</span>
       </a>
 
-      <!-- Botón 'Gestión de Usuarios' (Exclusivo Administrador) -->
-      <a href="/admin/usuarios" class="btn-drawer-ajustes" id="btn-drawer-admin-usuarios" title="Directorio y Gestión de Usuarios" style="display: none; margin-top: 8px; background: #E0E7FF; color: #3730A3; border-color: #C7D2FE;">
-        <i data-lucide="users"></i>
-        <span>Gestión de Usuarios</span>
-      </a>
+      <!-- Selector de tipo de vista (reemplaza el toggle superior) -->
+      {% if viewer_is_admin %}
+      <div class="drawer-role-selector">
+        <span class="drawer-role-label">Tipo de vista</span>
+        <div class="drawer-role-buttons">
+          <button type="button" class="drawer-role-btn" data-set-role="admin">
+            <i data-lucide="shield"></i>
+            Administrador
+          </button>
+          <button type="button" class="drawer-role-btn" data-set-role="usuario">
+            <i data-lucide="user"></i>
+            Usuario
+          </button>
+        </div>
+      </div>
+      {% endif %}
     </div>
 
-    <!-- Sección 'Notificaciones / Postulaciones' -->
+    <!-- Sección 'Notificaciones' con tarjeta oscura y acento rojo -->
     <div class="drawer-notifications-section">
-      <span class="notifications-heading" id="drawer-notif-heading">Mis Postulaciones</span>
+      <div class="notifications-header-row">
+        <span class="notifications-heading">Notificaciones</span>
+        <button type="button" id="btn-clear-all-notifs" class="btn-clear-notifs-link" title="Limpiar notificaciones">Limpiar</button>
+      </div>
       
-      <div id="drawer-notifications-list" style="margin-top: 12px;">
-        <p style="color: #94A3B8; font-size: 12.5px; text-align: center;">Sin notificaciones pendientes</p>
+      <div id="drawer-notifications-list">
+        <!-- Renderizado dinámico desde pasantias.js -->
       </div>
     </div>
 
-    <!-- Botón inferior rojo: Cerrar Sesión Real -->
+    <!-- Botón inferior rojo: Cerrar Sesión -->
     <div class="drawer-footer-section">
-      <button type="button" id="btn-drawer-logout" class="btn-drawer-cerrar-sesion" style="width: 100%; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
+      <a href="/login" id="btn-drawer-logout" class="btn-drawer-cerrar-sesion">
         <i data-lucide="power"></i>
-        <span>Cerrar Sesión</span>
-      </button>
+        <span>Cerrar Sesion</span>
+      </a>
     </div>
   </aside>
 
   <!-- ====================================================================
-       MODAL PARA "AGREGAR / EDITAR PASANTIA" (CRUD SQLALCHEMY)
+       MODAL PARA "AGREGAR PASANTIA" (VISTA ADMIN)
        ==================================================================== -->
   <div id="modal-agregar-pasantia" class="uni-modal-overlay">
     <div class="uni-modal-content">
       <div class="uni-modal-header">
-        <h3 id="modal-pasantia-form-title">Publicar Nueva Pasantía</h3>
+        <h3>Publicar Nueva Pasantía</h3>
         <button type="button" id="btn-close-modal" class="btn-close-modal">
           <i data-lucide="x"></i>
         </button>
       </div>
 
       <form id="form-agregar-pasantia">
-        <input type="hidden" id="modal-pasantia-id" value="" />
         <div class="uni-modal-body">
           <div class="modal-form-group">
             <label for="modal-pasantia-titulo">Título de la Pasantía *</label>
@@ -286,25 +316,6 @@
             </div>
           </div>
 
-          <div class="modal-form-row">
-            <div class="modal-form-group">
-              <label for="modal-pasantia-cupos">Cupos Disponibles</label>
-              <input type="number" id="modal-pasantia-cupos" class="modal-form-input" value="1" min="1" max="20" />
-            </div>
-            <div class="modal-form-group">
-              <label for="modal-pasantia-remuneracion">Condición</label>
-              <select id="modal-pasantia-remuneracion" class="modal-form-select">
-                <option value="No remunerada">No remunerada</option>
-                <option value="Remunerada">Remunerada (Beca/Estipendio)</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="modal-form-group">
-            <label for="modal-pasantia-requisitos">Requisitos Específicos</label>
-            <input type="text" id="modal-pasantia-requisitos" class="modal-form-input" placeholder="Ej: Conocimientos en Python, SQL, Git..." />
-          </div>
-
           <div class="modal-form-group">
             <label for="modal-pasantia-desc">Descripción Detallada *</label>
             <textarea id="modal-pasantia-desc" class="modal-form-textarea" rows="3" placeholder="Describe los requisitos y actividades de la pasantía..." required></textarea>
@@ -313,89 +324,199 @@
 
         <div class="uni-modal-footer">
           <button type="button" id="btn-cancel-modal" class="btn-modal-cancel">Cancelar</button>
-          <button type="submit" class="btn-modal-submit" id="btn-submit-pasantia">Guardar en Base de Datos</button>
+          <button type="submit" class="btn-modal-submit">Publicar Pasantía</button>
         </div>
       </form>
     </div>
   </div>
 
   <!-- ====================================================================
-       MODAL DE CANDIDATOS POSTULANTES (CU-07 EVALUACIÓN EMPRESARIAL)
+       MODAL: POSTULARSE A PASANTÍA CON CV (VISTA USUARIO)
        ==================================================================== -->
-  <div id="modal-postulantes" class="uni-modal-overlay">
-    <div class="uni-modal-content" style="max-width: 640px;">
+  <div id="modal-solicitar-pasantia" class="uni-modal-overlay">
+    <div class="uni-modal-content modal-solicitud-custom">
       <div class="uni-modal-header">
-        <h3 id="modal-postulantes-titulo">Candidatos Postulados</h3>
-        <button type="button" id="btn-close-modal-postulantes" class="btn-close-modal">
-          <i data-lucide="x"></i>
-        </button>
-      </div>
-      <div class="uni-modal-body" id="modal-postulantes-body" style="max-height: 400px; overflow-y: auto;">
-        <!-- Se inyecta dinámicamente con las postulaciones reales -->
-      </div>
-    </div>
-  </div>
-
-  <!-- ====================================================================
-       MODAL DE POSTULACIÓN CON AUTORIZACIÓN DE DOCUMENTOS (CU-03)
-       ==================================================================== -->
-  <div id="modal-aplicar-pasantia" class="uni-modal-overlay">
-    <div class="uni-modal-content" style="max-width: 580px;">
-      <div class="uni-modal-header" style="background: linear-gradient(135deg, #033E8C 0%, #022859 100%);">
-        <h3 id="modal-aplicar-titulo" style="display: flex; align-items: center; gap: 8px;">
-          <i data-lucide="send" style="width: 20px; height: 20px;"></i>
-          <span>Postular a Pasantía</span>
-        </h3>
-        <button type="button" id="btn-close-modal-aplicar" class="btn-close-modal">
+        <div>
+          <h3 id="solicitud-modal-title">Formulario de Postulación</h3>
+          <p id="solicitud-pasantia-subtitle" class="modal-header-subtitle">Pasantía seleccionada</p>
+        </div>
+        <button type="button" id="btn-close-solicitud-modal" class="btn-close-modal">
           <i data-lucide="x"></i>
         </button>
       </div>
 
-      <form id="form-confirmar-aplicacion">
-        <input type="hidden" id="modal-aplicar-oferta-id" value="" />
+      <form id="form-solicitar-pasantia">
+        <input type="hidden" id="solicitud-pasantia-id" />
         <div class="uni-modal-body">
-          <div style="background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 8px; padding: 12px 14px;">
-            <h4 id="modal-aplicar-oferta-titulo" style="margin: 0 0 4px 0; font-size: 15px; color: #1E3A8A; font-weight: 700;">
-              Vacante
-            </h4>
-            <p id="modal-aplicar-oferta-empresa" style="margin: 0; font-size: 12.5px; color: #3B82F6; font-weight: 500;">
-              Empresa
-            </p>
+          <div class="modal-form-group">
+            <label for="solicitud-nombre">Nombre Completo *</label>
+            <input type="text" id="solicitud-nombre" class="modal-form-input" placeholder="Ej: Juan Alejandro Pérez" required />
           </div>
 
-          <div style="margin-top: 4px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-              <span style="font-size: 13px; font-weight: 700; color: #0F172A;">
-                Documentos a Compartir con el Ofertante:
-              </span>
-              <a href="/perfil" target="_blank" rel="noopener noreferrer" style="font-size: 11.5px; color: #033E8C; text-decoration: underline; font-weight: 600;">
-                + Administrar en Mi Perfil
-              </a>
+          <div class="modal-form-row">
+            <div class="modal-form-group">
+              <label for="solicitud-email">Correo Electrónico Institucional *</label>
+              <input type="email" id="solicitud-email" class="modal-form-input" placeholder="estudiante@uni.edu.ni" required />
             </div>
-            <p style="font-size: 12px; color: #64748B; margin-top: 0; margin-bottom: 10px;">
-              Marca con un check los documentos personales (CV, récord policial, etc.) que autorizas revisar a la empresa receptora para evaluar tu candidatura:
-            </p>
-
-            <div id="modal-aplicar-docs-container" style="display: flex; flex-direction: column; gap: 8px; max-height: 220px; overflow-y: auto; padding: 2px;">
-              <!-- Se listan dinámicamente los documentos del estudiante con checkboxes -->
+            <div class="modal-form-group">
+              <label for="solicitud-telefono">Teléfono / WhatsApp *</label>
+              <input type="tel" id="solicitud-telefono" class="modal-form-input" placeholder="+505 8888-0000" required />
             </div>
           </div>
 
-          <div class="modal-form-group" style="margin-top: 8px;">
-            <label for="modal-aplicar-motivo" style="font-size: 12.5px; font-weight: 600; color: #334155;">
-              Motivo o Mensaje para la Empresa (Opcional):
+          <div class="modal-form-group">
+            <label for="solicitud-carrera">Carrera / Año Académico</label>
+            <input type="text" id="solicitud-carrera" class="modal-form-input" placeholder="Ej: Ing. en Computación - 4to Año" />
+          </div>
+
+          <!-- Zona de Carga de CV (Cualquier formato) -->
+          <div class="modal-form-group">
+            <label class="cv-label-heading">
+              <span>Adjuntar Currículum Vitae (CV) *</span>
+              <span class="cv-format-badge">Cualquier formato permitido</span>
             </label>
-            <textarea id="modal-aplicar-motivo" class="modal-form-textarea" rows="2" placeholder="Describe brevemente por qué eres el candidato ideal para esta pasantía..."></textarea>
+            
+            <div class="cv-dropzone" id="cv-dropzone">
+              <input type="file" id="solicitud-cv-file" class="cv-file-input" />
+              <div class="cv-dropzone-content" id="cv-dropzone-prompt">
+                <div class="cv-icon-bubble">
+                  <i data-lucide="upload-cloud"></i>
+                </div>
+                <p class="cv-dropzone-text">
+                  <strong>Haz clic para examinar</strong> o arrastra tu archivo aquí
+                </p>
+                <p class="cv-dropzone-hint">
+                  PDF, Word (DOCX/DOC), imagen, archivo comprimido o cualquier formato conveniente
+                </p>
+              </div>
+
+              <!-- Vista previa del archivo seleccionado -->
+              <div class="cv-selected-preview" id="cv-selected-preview" style="display: none;">
+                <div class="cv-file-info">
+                  <div class="cv-file-icon">
+                    <i data-lucide="file-text" id="cv-preview-icon"></i>
+                  </div>
+                  <div class="cv-file-details">
+                    <span class="cv-file-name" id="cv-preview-name">cv_juan_perez.pdf</span>
+                    <span class="cv-file-size" id="cv-preview-size">1.2 MB</span>
+                  </div>
+                </div>
+                <button type="button" id="btn-remove-cv" class="btn-remove-cv" title="Quitar archivo">
+                  <i data-lucide="trash-2"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="modal-form-group">
+            <label for="solicitud-mensaje">Carta de Presentación o Mensaje (Opcional)</label>
+            <textarea id="solicitud-mensaje" class="modal-form-textarea" rows="2" placeholder="Describe brevemente tu motivación para esta pasantía..."></textarea>
           </div>
         </div>
 
         <div class="uni-modal-footer">
-          <button type="button" id="btn-cancel-modal-aplicar" class="btn-modal-cancel">Cancelar</button>
-          <button type="submit" class="btn-modal-submit" id="btn-submit-aplicar" style="background: #059669; border-color: #059669;">
-            Enviar Postulación Formal
+          <button type="button" id="btn-cancel-solicitud" class="btn-modal-cancel">Cancelar</button>
+          <button type="submit" class="btn-modal-submit btn-enviar-postulacion">
+            <i data-lucide="send"></i>
+            <span>Enviar Solicitud</span>
           </button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- ====================================================================
+       MODAL: PANEL DE CANDIDATOS (VISTA ADMIN) - ACEPTAR/RECHAZAR & EXPORTAR
+       ==================================================================== -->
+  <div id="modal-candidatos-admin" class="uni-modal-overlay">
+    <div class="uni-modal-content modal-candidatos-custom">
+      <div class="uni-modal-header">
+        <div>
+          <div class="modal-header-top-tag">
+            <span class="admin-shield-tag"><i data-lucide="shield-check"></i> Panel de Administración</span>
+            <span id="candidatos-pasantia-status-badge" class="badge-status-pasantia">Activa</span>
+          </div>
+          <h3 id="candidatos-modal-title">Postulantes: Pasantía</h3>
+          <p id="candidatos-modal-company" class="modal-header-subtitle">Empresa / Departamento</p>
+        </div>
+        <button type="button" id="btn-close-candidatos-modal" class="btn-close-modal">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+
+      <!-- Barra de estadísticas de candidatos -->
+      <div class="candidatos-stats-bar">
+        <div class="stat-pill-box stat-total">
+          <span class="stat-label">Total Postulantes</span>
+          <span class="stat-value" id="stat-count-total">0</span>
+        </div>
+        <div class="stat-pill-box stat-pendientes">
+          <span class="stat-label">Pendientes</span>
+          <span class="stat-value" id="stat-count-pendientes">0</span>
+        </div>
+        <div class="stat-pill-box stat-aceptados">
+          <span class="stat-label">Aceptados</span>
+          <span class="stat-value" id="stat-count-aceptados">0</span>
+        </div>
+        <div class="stat-pill-box stat-rechazados">
+          <span class="stat-label">Rechazados</span>
+          <span class="stat-value" id="stat-count-rechazados">0</span>
+        </div>
+      </div>
+
+      <!-- Barra de acciones y filtros dentro del modal -->
+      <div class="candidatos-filter-bar">
+        <div class="candidatos-search-wrapper">
+          <i data-lucide="search"></i>
+          <input type="text" id="candidatos-search-input" placeholder="Buscar por nombre, correo..." />
+        </div>
+        <div class="candidatos-state-filters">
+          <button type="button" class="btn-cand-filter active" data-filter="todos">Todos</button>
+          <button type="button" class="btn-cand-filter" data-filter="pendiente">Pendientes</button>
+          <button type="button" class="btn-cand-filter" data-filter="aceptado">Aceptados</button>
+          <button type="button" class="btn-cand-filter" data-filter="rechazado">Rechazados</button>
+        </div>
+        <button type="button" id="btn-exportar-csv" class="btn-exportar-csv-action" title="Descargar datos en formato CSV para Excel">
+          <i data-lucide="download"></i>
+          <span>Exportar Postulantes (CSV)</span>
+        </button>
+      </div>
+
+      <!-- Contenedor scrolleable con la tabla de postulantes -->
+      <div class="candidatos-table-wrapper">
+        <table class="candidatos-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Postulante</th>
+              <th>Contacto</th>
+              <th>Fecha</th>
+              <th>Currículum Vitae</th>
+              <th>Estado</th>
+              <th style="text-align: center;">Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="candidatos-table-tbody">
+            <!-- Filas inyectadas dinámicamente -->
+          </tbody>
+        </table>
+        <div id="candidatos-empty-state" class="candidatos-empty-state" style="display: none;">
+          <i data-lucide="users-2"></i>
+          <h4>No hay postulantes registrados</h4>
+          <p>Los estudiantes que envíen su solicitud aparecerán aquí para su revisión y exportación.</p>
+        </div>
+      </div>
+
+      <div class="uni-modal-footer candidatos-modal-footer">
+        <span class="candidatos-footer-info" id="candidatos-footer-info">Mostrando 0 candidatos</span>
+        <div class="candidatos-footer-buttons">
+          <button type="button" id="btn-candidatos-modal-close" class="btn-modal-cancel">Cerrar</button>
+          <button type="button" id="btn-exportar-csv-footer" class="btn-exportar-csv-action">
+            <i data-lucide="file-spreadsheet"></i>
+            <span>Exportar CSV</span>
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -403,6 +524,7 @@
   <div id="toast-container" class="toast-container"></div>
 
   <!-- Scripts -->
+  <script src="{{ url_for('static', filename='js/api-client.js') }}"></script>
   <script src="{{ url_for('static', filename='js/pasantias.js') }}"></script>
 </body>
 

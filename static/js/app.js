@@ -263,11 +263,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (typeof API !== "undefined" && API.logout) {
           await API.logout(); // Destruye la sesión Flask + limpia ClientCache
         }
-      } catch (_) {
-        // Aunque el servidor falle, limpiar el caché local igualmente
-        if (typeof ClientCache !== "undefined") ClientCache.invalidateAll();
-      } finally {
-        window.location.replace("/login"); // replace() evita volver atrás con el botón Back
+      } catch (error) {
+        alert(error.message || "No se pudo cerrar la sesión. Inténtalo de nuevo.");
       }
     });
   }

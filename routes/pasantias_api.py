@@ -32,7 +32,7 @@ from models.perfil_estudiante import (
     EducacionPreviaEstudiante,
 )
 from models.actores_externos import EntidadReceptora
-from models.catalogos import Carrera, Pais, Etnia, Departamento, Municipio, Beca
+from models.catalogos import Carrera, Pais, Etnia, Departamento, Municipio, Beca, CentroEducativo
 from models.usuarios_auditoria import Usuario, AuditoriaCambios
 from models.experiencias import Experiencia, Pasantia, AsignacionExperiencia, Documento
 from core.security import (
@@ -510,7 +510,7 @@ def get_perfil_estudiante():
 @estudiantes_bp.route("/perfil", methods=["PUT"])
 @login_required
 def update_perfil_estudiante():
-    """Actualiza los datos socio-demográficos y de contacto del estudiante en SQLAlchemy."""
+    """Actualiza los datos socio-demográficos y de contacto del estudiante o usuario en SQLAlchemy."""
     user_id = session.get("user_id")
     usuario = Usuario.query.get(user_id) if user_id else None
     if not usuario:
@@ -519,13 +519,22 @@ def update_perfil_estudiante():
     data = request.get_json() or {}
     estudiante = Estudiante.query.get(usuario.id_estudiante) if usuario.id_estudiante else None
 
+    email_val = data.get("email") or data.get("correo")
     if not estudiante:
-        if "email" in data and data["email"]:
-            usuario.email = data["email"].strip().lower()
+        if "nombre" in data and data["nombre"]:
+            usuario.nombre_usuario = data["nombre"].strip()
+        if email_val:
+            usuario.email = str(email_val).strip().lower()
         if "has_2fa" in data:
             usuario.has_2fa = bool(data["has_2fa"])
         db.session.commit()
-        return jsonify({"success": True, "message": "Perfil de usuario actualizado", "has_2fa": usuario.has_2fa}), 200
+        return jsonify({
+            "success": True,
+            "message": "Perfil institucional actualizado correctamente en la base de datos.",
+            "has_2fa": usuario.has_2fa,
+            "username": usuario.nombre_usuario,
+            "email": usuario.email,
+        }), 200
 
     if "has_2fa" in data:
         usuario.has_2fa = bool(data["has_2fa"])
@@ -533,42 +542,153 @@ def update_perfil_estudiante():
         estudiante.nombre = data["nombre"].strip()
     if "apellido" in data and data["apellido"]:
         estudiante.apellido = data["apellido"].strip()
+    if "sexo" in data and data["sexo"]:
+        estudiante.sexo = data["sexo"].strip()
+    if "fecha_nacimiento" in data and data["fecha_nacimiento"]:
+        try:
+            estudiante.fecha_nacimiento = datetime.strptime(data["fecha_nacimiento"].strip(), "%Y-%m-%d").date()
+            estudiante.edad = estudiante.calcular_edad()
+        except Exception:
+            pass
+    if "dimension_nacional" in data and data["dimension_nacional"]:
+        estudiante.dimension_nacional = data["dimension_nacional"].strip()
+    if "id_pais_origen" in data and str(data["id_pais_origen"]).isdigit():
+        estudiante.id_pais_origen = int(data["id_pais_origen"])
+    if "id_etnia" in data and str(data["id_etnia"]).isdigit():
+        estudiante.id_etnia = int(data["id_etnia"])
     if "estado_civil" in data:
         estudiante.estado_civil = data["estado_civil"]
     if "hijos" in data and str(data["hijos"]).isdigit():
         estudiante.hijos = int(data["hijos"])
-    if "email" in data and data["email"]:
-        usuario.email = data["email"].strip().lower()
+    if email_val:
+        usuario.email = str(email_val).strip().lower()
 
+    # Teléfono
     telefono_num = data.get("telefono") or data.get("telefono_principal")
+    tipo_tel = data.get("tipo_telefono") or "Móvil"
+    es_princ_tel = bool(data.get("telefono_principal", True))
     if telefono_num:
         tel = TelefonoEstudiante.query.filter_by(id_estudiante=estudiante.id_estudiante, es_principal=True).first()
+        if not tel:
+            tel = TelefonoEstudiante.query.filter_by(id_estudiante=estudiante.id_estudiante).first()
         if tel:
             tel.numero = str(telefono_num).strip()
+            tel.tipo = tipo_tel
+            tel.es_principal = es_princ_tel
         else:
             nuevo_tel = TelefonoEstudiante(
                 id_estudiante=estudiante.id_estudiante,
                 numero=str(telefono_num).strip(),
-                tipo="Móvil",
-                es_principal=True,
+                tipo=tipo_tel,
+                es_principal=es_princ_tel,
             )
             db.session.add(nuevo_tel)
 
+    # Dirección y Municipio
+    target_mun = None
+    if "id_municipio" in data and str(data["id_municipio"]).isdigit():
+        target_mun = Municipio.query.get(int(data["id_municipio"]))
+    if not target_mun:
+        mun_nombre = data.get("municipio") or data.get("municipio_principal")
+        if mun_nombre:
+            target_mun = Municipio.query.filter(func.lower(Municipio.nombre) == mun_nombre.strip().lower()).first()
+            if not target_mun:
+                target_mun = Municipio.query.filter(Municipio.nombre.ilike(f"%{mun_nombre.strip()}%")).first()
+
     dir_texto = data.get("direccion") or data.get("direccion_principal")
-    if dir_texto:
-        dir_obj = DireccionEstudiante.query.filter_by(id_estudiante=estudiante.id_estudiante, es_principal=True).first()
-        if dir_obj:
+    comunidad_val = data.get("comunidad")
+    zona_val = data.get("zona") or "Urbano"
+    es_princ_dir = bool(data.get("direccion_principal", True))
+
+    dir_obj = DireccionEstudiante.query.filter_by(id_estudiante=estudiante.id_estudiante, es_principal=True).first()
+    if not dir_obj:
+        dir_obj = DireccionEstudiante.query.filter_by(id_estudiante=estudiante.id_estudiante).first()
+
+    if dir_obj:
+        if dir_texto is not None:
             dir_obj.direccion_domiciliar = str(dir_texto).strip()
-        else:
-            mun = Municipio.query.first()
-            nueva_dir = DireccionEstudiante(
+        if target_mun:
+            dir_obj.id_municipio = target_mun.id_municipio
+        if comunidad_val is not None:
+            dir_obj.comunidad = str(comunidad_val).strip()
+        if zona_val:
+            dir_obj.zona = str(zona_val).strip()
+        dir_obj.es_principal = es_princ_dir
+    else:
+        if not target_mun:
+            target_mun = Municipio.query.first()
+        nueva_dir = DireccionEstudiante(
+            id_estudiante=estudiante.id_estudiante,
+            id_municipio=target_mun.id_municipio if target_mun else 1,
+            comunidad=str(comunidad_val or "").strip(),
+            direccion_domiciliar=str(dir_texto or "").strip(),
+            zona=str(zona_val).strip(),
+            es_principal=es_princ_dir,
+        )
+        db.session.add(nueva_dir)
+
+    # Educación previa
+    ed_obj = estudiante.educaciones_previas[0] if estudiante.educaciones_previas else None
+    centro_educativo_input = data.get("centro_educativo") or data.get("id_centro_educativo")
+    target_centro = None
+    if centro_educativo_input:
+        val_str = str(centro_educativo_input).strip()
+        if val_str.isdigit():
+            target_centro = CentroEducativo.query.get(int(val_str))
+        elif val_str:
+            target_centro = CentroEducativo.query.filter(func.lower(CentroEducativo.nombre) == val_str.lower()).first()
+            if not target_centro:
+                target_centro = CentroEducativo.query.filter(CentroEducativo.nombre.ilike(f"%{val_str}%")).first()
+            if not target_centro:
+                target_centro = CentroEducativo(
+                    nombre=val_str,
+                    tipo="Estatal",
+                    id_municipio=1,
+                )
+                db.session.add(target_centro)
+                db.session.flush()
+
+    if target_centro:
+        if not ed_obj:
+            ed_obj = EducacionPreviaEstudiante(
                 id_estudiante=estudiante.id_estudiante,
-                id_municipio=mun.id_municipio if mun else 1,
-                direccion_domiciliar=str(dir_texto).strip(),
-                zona="Urbano",
-                es_principal=True,
+                id_centro_educativo=target_centro.id_centro,
+                titulo_obtenido=data.get("titulo_obtenido") or "Bachiller en Ciencias y Letras",
+                anio_graduacion=int(data.get("anio_graduacion") or 2021),
             )
-            db.session.add(nueva_dir)
+            db.session.add(ed_obj)
+        else:
+            ed_obj.id_centro_educativo = target_centro.id_centro
+
+    if ed_obj:
+        if "educacion_tecnica" in data:
+            ed_obj.educacion_tecnica = data["educacion_tecnica"]
+        if "titulo_obtenido" in data and data["titulo_obtenido"]:
+            ed_obj.titulo_obtenido = data["titulo_obtenido"].strip()
+        if "anio_graduacion" in data and str(data["anio_graduacion"]).isdigit():
+            ed_obj.anio_graduacion = int(data["anio_graduacion"])
+
+    # Matrícula
+    mat_obj = Matricula.query.filter_by(id_estudiante=estudiante.id_estudiante).order_by(Matricula.id_matricula.desc()).first()
+    if mat_obj:
+        if "id_carrera" in data and str(data["id_carrera"]).isdigit():
+            mat_obj.id_carrera = int(data["id_carrera"])
+        if "periodo_academico" in data and data["periodo_academico"]:
+            mat_obj.periodo_academico = data["periodo_academico"].strip()
+        if "anio_academico" in data and str(data["anio_academico"]).isdigit():
+            mat_obj.anio_academico = int(data["anio_academico"])
+        elif "anio" in data and str(data["anio"]).isdigit():
+            mat_obj.anio_academico = int(data["anio"])
+        if "modalidad" in data and data["modalidad"]:
+            mat_obj.modalidad = data["modalidad"].strip()
+        if "turno" in data and data["turno"]:
+            mat_obj.turno = data["turno"].strip()
+        if "grupo_clase" in data and data["grupo_clase"]:
+            mat_obj.grupo_clase = data["grupo_clase"].strip()
+        if "id_beca" in data:
+            mat_obj.id_beca = int(data["id_beca"]) if str(data["id_beca"]).isdigit() else None
+        if "estado_matricula" in data and data["estado_matricula"]:
+            mat_obj.estado = data["estado_matricula"].strip()
 
     db.session.commit()
     _log_cambio("estudiantes", "UPDATE", estudiante.id_estudiante, {"nombre": estudiante.nombre, "apellido": estudiante.apellido})
@@ -577,6 +697,8 @@ def update_perfil_estudiante():
         "success": True,
         "message": "Ficha socio-académica y perfil actualizados exitosamente en la base de datos.",
         "nombre_completo": f"{estudiante.nombre} {estudiante.apellido}",
+        "has_2fa": usuario.has_2fa,
+        "email": usuario.email,
     }), 200
 
 
