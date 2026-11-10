@@ -205,6 +205,47 @@ def toggle_estado_usuario(id_usuario: int):
     }), 200
 
 
+@admin_bp.route("/usuarios/<int:id_usuario>/toggle-2fa", methods=["PUT"])
+@admin_required
+def toggle_2fa_usuario_admin(id_usuario: int):
+    """Permite al Administrador activar o desactivar la verificación en 2 pasos de un usuario."""
+    usuario = Usuario.query.get(id_usuario)
+    if not usuario:
+        return jsonify({"success": False, "message": "Usuario no encontrado"}), 404
+
+    current_user_id = session.get("user_id")
+    estado_anterior = bool(usuario.has_2fa)
+    payload = request.get_json(silent=True) or {}
+
+    if "has_2fa" in payload:
+        usuario.has_2fa = bool(payload["has_2fa"])
+    else:
+        usuario.has_2fa = not usuario.has_2fa
+
+    auditoria = AuditoriaCambios(
+        tabla_afectada="usuarios",
+        operacion="UPDATE",
+        registro_id=usuario.id_usuario,
+        datos_anteriores={"has_2fa": estado_anterior},
+        datos_nuevos={"has_2fa": usuario.has_2fa},
+        columnas_modificadas={"has_2fa": [estado_anterior, usuario.has_2fa]},
+        id_usuario=current_user_id,
+        usuario_bd="Sistema_Admin",
+        ip_origen=request.remote_addr,
+        user_agent=request.user_agent.string if request.user_agent else "WebAdmin"
+    )
+    db.session.add(auditoria)
+    db.session.commit()
+
+    nuevo_txt = "activada" if usuario.has_2fa else "desactivada"
+    return jsonify({
+        "success": True,
+        "message": f"Verificación 2FA {nuevo_txt} para el usuario '{usuario.nombre_usuario}'.",
+        "id_usuario": usuario.id_usuario,
+        "has_2fa": usuario.has_2fa
+    }), 200
+
+
 @admin_bp.route("/usuarios/estadisticas", methods=["GET"])
 @admin_required
 def estadisticas_usuarios():

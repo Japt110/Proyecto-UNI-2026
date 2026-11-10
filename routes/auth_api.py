@@ -360,7 +360,68 @@ def login():
         return jsonify({"success": False, "message": "Esta cuenta se encuentra inactiva. Contacte al administrador."}), 403
 
     # =========================================================================
-    # AUTENTICACIÓN DE 2 PASOS (2FA): GENERACIÓN Y ENVÍO DE CÓDIGO OTP
+    # VERIFICACIÓN DE POLÍTICA 2FA DEL USUARIO (has_2fa)
+    # =========================================================================
+    if not getattr(usuario, "has_2fa", False):
+        # El usuario tiene 2FA desactivado por defecto: Acceso directo a la plataforma
+        sesion_id = str(uuid.uuid4())
+        session.clear()
+        session["user_id"] = usuario.id_usuario
+        session["user_role"] = usuario.rol
+        session["sesion_id"] = sesion_id
+
+        if remember_me:
+            session.permanent = True
+            remember_days = current_app.config.get("SECURITY_REMEMBER_DAYS", 30)
+            current_app.permanent_session_lifetime = timedelta(days=remember_days)
+        else:
+            session.permanent = False
+            session_hours = current_app.config.get("SECURITY_SESSION_LIFETIME_HOURS", 8)
+            current_app.permanent_session_lifetime = timedelta(hours=session_hours)
+
+        aud_exito = AuditoriaSesiones(
+            id_usuario=usuario.id_usuario,
+            nombre_usuario_intento=usuario.nombre_usuario,
+            accion="LOGIN_DIRECTO",
+            resultado="EXITOSO",
+            ip_origen=ip_origen,
+            user_agent=user_agent,
+            detalle=f"Inicio de sesión exitoso sin 2FA (rol: {usuario.rol}). Recordar sesión: {remember_me}",
+            sesion_id=sesion_id,
+        )
+        db.session.add(aud_exito)
+        try:
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+
+        nombre_completo, cup = _get_user_display_name(usuario)
+        token = _build_session_token(usuario)
+
+        return jsonify({
+            "success": True,
+            "requires_2fa": False,
+            "message": f"Inicio de sesión exitoso. Bienvenido {usuario.nombre_usuario}",
+            "remember_me": remember_me,
+            "session_token": token,
+            "token": token,
+            "redirect_url": "/",
+            "user": {
+                "id": usuario.id_usuario,
+                "username": usuario.nombre_usuario,
+                "email": usuario.email,
+                "role": usuario.rol,
+                "has_2fa": False,
+                "nombre_completo": nombre_completo,
+                "cup": cup,
+                "id_estudiante": usuario.id_estudiante,
+                "id_tutor": usuario.id_tutor,
+                "id_supervisor": usuario.id_supervisor,
+            }
+        }), 200
+
+    # =========================================================================
+    # AUTENTICACIÓN DE 2 PASOS (2FA ACTIVO): GENERACIÓN Y ENVÍO DE CÓDIGO OTP
     # =========================================================================
     otp_code = f"{secrets.randbelow(900000) + 100000}"  # 6 dígitos numéricos
     exp_minutes = current_app.config.get("SECURITY_2FA_EXPIRATION_MINUTES", 10)
@@ -601,6 +662,35 @@ def get_current_user():
             "id_estudiante": usuario.id_estudiante,
             "id_tutor": usuario.id_tutor,
             "id_supervisor": usuario.id_supervisor,
+            "has_2fa": bool(getattr(usuario, "has_2fa", False)),
         },
         "session_token": _build_session_token(usuario),
+    }), 200
+
+
+# -----------------------------------------------------------------------------
+# 7. PUT /api/auth/toggle-2fa - Activación / Desactivación de 2FA
+# -----------------------------------------------------------------------------
+
+@auth_bp.route("/toggle-2fa", methods=["POST", "PUT"])
+@login_required
+def toggle_2fa():
+    """Activa o desactiva la verificación en 2 pasos (2FA) para el usuario autenticado."""
+    user_id = session.get("user_id")
+    usuario = Usuario.query.get(user_id) if user_id else None
+    if not usuario:
+        return jsonify({"success": False, "message": "Usuario no encontrado"}), 404
+
+    data = request.get_json(silent=True) or {}
+    if "has_2fa" in data:
+        usuario.has_2fa = bool(data["has_2fa"])
+    else:
+        usuario.has_2fa = not bool(usuario.has_2fa)
+
+    db.session.commit()
+    estado_txt = "activada" if usuario.has_2fa else "desactivada"
+    return jsonify({
+        "success": True,
+        "message": f"Verificación en dos pasos (2FA) {estado_txt} exitosamente.",
+        "has_2fa": bool(usuario.has_2fa)
     }), 200

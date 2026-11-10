@@ -560,13 +560,14 @@
               <th>Rol Institucional</th>
               <th>Personificación / Cup</th>
               <th>Estado</th>
+              <th>2FA</th>
               <th>Fecha Creación</th>
               <th style="text-align: right;">Acciones</th>
             </tr>
           </thead>
           <tbody id="usuarios-table-body">
             <tr>
-              <td colspan="7" style="text-align: center; padding: 40px; color: #64748B;">
+              <td colspan="8" style="text-align: center; padding: 40px; color: #64748B;">
                 Consultando directorio de usuarios...
               </td>
             </tr>
@@ -870,6 +871,11 @@
                 </span>
               </td>
               <td>
+                <span style="display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 10px; background: ${u.has_2fa ? '#DCFCE7' : '#F1F5F9'}; color: ${u.has_2fa ? '#15803D' : '#64748B'}; border: 1px solid ${u.has_2fa ? '#86EFAC' : '#E2E8F0'};">
+                  <span>${u.has_2fa ? '✓ Activo' : '✕ Inactivo'}</span>
+                </span>
+              </td>
+              <td>
                 <span style="font-size: 12px; color: #64748B;">${u.fecha_creacion ? u.fecha_creacion.split(' ')[0] : 'N/A'}</span>
               </td>
               <td style="text-align: right;">
@@ -1003,12 +1009,50 @@
                 </div>
               `}
             </div>
+
+            <!-- Control 2FA del Usuario -->
+            <div style="background: #EFF6FF; border: 1.5px solid #BFDBFE; border-radius: 8px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;">
+              <div>
+                <label style="font-size: 13px; font-weight: 700; color: #1E3A8A; display: flex; align-items: center; gap: 6px; margin-bottom: 2px;">
+                  <i data-lucide="shield-check" style="width: 16px; height: 16px;"></i>
+                  <span>Autenticación de Dos Pasos (2FA)</span>
+                </label>
+                <span style="font-size: 11.5px; color: #3B82F6;">Control institucional de segundo factor para esta cuenta.</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <label style="display: inline-flex; align-items: center; gap: 6px; cursor: pointer; font-size: 12.5px; font-weight: 600; color: #1E40AF;">
+                  <input type="checkbox" id="modal-user-has-2fa" ${u.has_2fa ? 'checked' : ''} style="width: 18px; height: 18px; accent-color: #033E8C; cursor: pointer;" onchange="window.adminApp.toggle2FA(${u.id_usuario}, this.checked)" />
+                  <span id="modal-label-2fa">${u.has_2fa ? '2FA Activado' : '2FA Desactivado'}</span>
+                </label>
+              </div>
+            </div>
           `;
 
           this.modalDetalle.classList.add("is-visible");
           lucide.createIcons();
         } catch (_) {
           this.showToast("Error de conexión al cargar la ficha", "error");
+        }
+      }
+
+      async toggle2FA(idUsuario, nuevoEstado) {
+        try {
+          const res = await fetch(`/api/admin/usuarios/${idUsuario}/toggle-2fa`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ has_2fa: nuevoEstado })
+          });
+          const data = await res.json();
+          if (res.ok && data.success) {
+            this.showToast(data.message || "2FA actualizado", "success");
+            const lbl = document.getElementById("modal-label-2fa");
+            if (lbl) lbl.textContent = nuevoEstado ? "2FA Activado" : "2FA Desactivado";
+            await this.cargarUsuarios();
+          } else {
+            this.showToast(data.message || "Error al actualizar 2FA", "error");
+          }
+        } catch (_) {
+          this.showToast("Error de conexión al actualizar 2FA", "error");
         }
       }
 

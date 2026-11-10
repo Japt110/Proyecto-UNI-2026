@@ -147,6 +147,32 @@
           <textarea id="perfil-direccion" class="perfil-textarea" rows="2" placeholder="Dirección exacta de residencia" readonly>{{ perfil.direccion_principal or '' }}</textarea>
         </div>
 
+        <!-- Fila 9: Seguridad y Verificación en Dos Pasos (2FA) -->
+        <div class="perfil-field-group" style="margin-top: 18px; padding: 16px 18px; background: #F8FAFC; border: 1.5px solid #E2E8F0; border-radius: 10px; transition: border-color 0.2s ease;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap;">
+            <div>
+              <label style="font-size: 13.5px; font-weight: 700; color: #0F172A; display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                <i data-lucide="shield-check" style="width: 18px; height: 18px; color: #033E8C;"></i>
+                <span>Seguridad y Verificación en Dos Pasos (2FA)</span>
+              </label>
+              <p style="font-size: 12.5px; color: #64748B; margin: 0 0 10px 0; line-height: 1.4;">
+                Si está activa, el sistema solicitará un código OTP temporal enviado a tu correo electrónico cada vez que inicies sesión.
+              </p>
+            </div>
+
+            <span id="badge-2fa-status" style="font-size: 11.5px; font-weight: 700; padding: 4px 10px; border-radius: 12px; background: {% if usuario.has_2fa or perfil.has_2fa %}#DCFCE7; color: #15803D;{% else %}#F1F5F9; color: #64748B;{% endif %}">
+              {% if usuario.has_2fa or perfil.has_2fa %}2FA Habilitado{% else %}2FA Desactivado{% endif %}
+            </span>
+          </div>
+
+          <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; user-select: none; margin-top: 4px;">
+            <input type="checkbox" id="perfil-has-2fa" style="width: 19px; height: 19px; accent-color: #033E8C; cursor: pointer;" {% if usuario.has_2fa or perfil.has_2fa %}checked{% endif %} />
+            <span style="font-size: 13px; font-weight: 600; color: #1E293B;">
+              Habilitar código de verificación de 2 pasos al iniciar sesión
+            </span>
+          </label>
+        </div>
+
       </form>
 
       <!-- ====================================================================
@@ -304,6 +330,7 @@
             correo: document.getElementById("perfil-correo").value.trim(),
             email: document.getElementById("perfil-correo").value.trim(),
             direccion: document.getElementById("perfil-direccion").value.trim(),
+            has_2fa: Boolean(document.getElementById("perfil-has-2fa")?.checked),
           };
 
           try {
@@ -333,7 +360,38 @@
         }
       });
 
-      // 2. Gestión de Documentos Personales (Exclusivo Estudiantes)
+      // 2. Control interactivo del checkbox de 2FA
+      const check2FA = document.getElementById("perfil-has-2fa");
+      const badge2FA = document.getElementById("badge-2fa-status");
+      if (check2FA) {
+        check2FA.addEventListener("change", async (e) => {
+          const nuevoValor = e.target.checked;
+          try {
+            const res = await fetch("/api/auth/toggle-2fa", {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ has_2fa: nuevoValor })
+            });
+            const data = await res.json();
+            if (res.ok && data.success) {
+              showToast(data.message || (nuevoValor ? "2FA activado" : "2FA desactivado"), "success");
+              if (badge2FA) {
+                badge2FA.textContent = nuevoValor ? "2FA Habilitado" : "2FA Desactivado";
+                badge2FA.style.background = nuevoValor ? "#DCFCE7" : "#F1F5F9";
+                badge2FA.style.color = nuevoValor ? "#15803D" : "#64748B";
+              }
+            } else {
+              showToast(data.message || "Error al cambiar estado de 2FA", "error");
+              e.target.checked = !nuevoValor;
+            }
+          } catch (_) {
+            showToast("Error de conexión al actualizar 2FA", "error");
+            e.target.checked = !nuevoValor;
+          }
+        });
+      }
+
+      // 3. Gestión de Documentos Personales (Exclusivo Estudiantes)
       const btnMostrarSubirDoc = document.getElementById("btn-mostrar-subir-doc");
       const subirDocFormWrapper = document.getElementById("subir-doc-form-wrapper");
       const btnCancelarSubirDoc = document.getElementById("btn-cancelar-subir-doc");

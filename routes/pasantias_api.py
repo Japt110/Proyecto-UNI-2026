@@ -522,9 +522,13 @@ def update_perfil_estudiante():
     if not estudiante:
         if "email" in data and data["email"]:
             usuario.email = data["email"].strip().lower()
-            db.session.commit()
-        return jsonify({"success": True, "message": "Perfil de usuario actualizado"}), 200
+        if "has_2fa" in data:
+            usuario.has_2fa = bool(data["has_2fa"])
+        db.session.commit()
+        return jsonify({"success": True, "message": "Perfil de usuario actualizado", "has_2fa": usuario.has_2fa}), 200
 
+    if "has_2fa" in data:
+        usuario.has_2fa = bool(data["has_2fa"])
     if "nombre" in data and data["nombre"]:
         estudiante.nombre = data["nombre"].strip()
     if "apellido" in data and data["apellido"]:

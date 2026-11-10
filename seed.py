@@ -14,7 +14,6 @@ Inicializa y puebla la base de datos local (app_local.db) o clúster PostgreSQL:
 """
 
 import os
-from dotenv import load_dotenv
 import uuid
 from datetime import datetime, timezone, date, timedelta
 from app import create_app
@@ -841,6 +840,4 @@ def seed_database():
 
 
 if __name__ == "__main__":
-    # Esto fuerza a Python a leer el archivo .env antes de conectar la base de datos
-    load_dotenv()
     seed_database()

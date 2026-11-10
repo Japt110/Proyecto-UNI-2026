@@ -27,6 +27,7 @@ class Usuario(db.Model):
     ruta_imagen = db.Column(db.String(255), nullable=True)
     fecha_creacion = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
     activo = db.Column(db.Boolean, default=True, nullable=False)
+    has_2fa = db.Column(db.Boolean, default=False, nullable=False)
 
     # Personificaciones 1:1 parciales (Foreign Keys opcionales y únicas)
     id_estudiante = db.Column(
@@ -129,6 +130,7 @@ class Usuario(db.Model):
             "email": self.email,
             "rol": self.rol,
             "activo": bool(self.activo),
+            "has_2fa": bool(getattr(self, "has_2fa", False)),
             "nombre_completo": nombre_completo,
             "detalles_actor": detalles_actor,
             "fecha_creacion": self.fecha_creacion.strftime("%Y-%m-%d %H:%M:%S") if self.fecha_creacion else None,

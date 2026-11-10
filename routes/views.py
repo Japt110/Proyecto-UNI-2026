@@ -36,6 +36,7 @@ def _get_perfil_context():
                 "username": usuario.nombre_usuario,
                 "email": usuario.email,
                 "rol": usuario.rol,
+                "has_2fa": bool(getattr(usuario, "has_2fa", False)),
             },
             "perfil": {
                 "cup": f"#ROL {usuario.rol}",
@@ -43,6 +44,7 @@ def _get_perfil_context():
                 "nombre": usuario.nombre_usuario,
                 "apellido": f"({usuario.rol})",
                 "email": usuario.email,
+                "has_2fa": bool(getattr(usuario, "has_2fa", False)),
                 "carrera": "Personal Institucional",
                 "anio_academico": "Personal Institucional",
                 "matricula_estado": "Activo",
@@ -91,8 +93,12 @@ def _get_perfil_context():
             "username": usuario.nombre_usuario,
             "email": usuario.email,
             "rol": usuario.rol,
+            "has_2fa": bool(getattr(usuario, "has_2fa", False)),
         },
-        "perfil": perfil,
+        "perfil": {
+            **perfil,
+            "has_2fa": bool(getattr(usuario, "has_2fa", False)),
+        },
         "documentos": docs,
     }
 
